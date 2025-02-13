@@ -52,7 +52,7 @@ Framework Rust pour gérer les différentes méthodes associées au projet.<br>R
 ### 🦫 DBeaver
 Logiciel de gestion de base de données.<br>Raison: Compatible avec de nombreux système de gestion de base de donnée, gratuit et populaire.
 
-###🐬 MySQL
+### 🐬 MySQL
 Système de gestion de base de données utilisé dans le projet.<br>Raison: Populaire et adapté aux petits projets.
 
 ### ⛽ Diesel
