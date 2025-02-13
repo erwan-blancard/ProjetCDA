@@ -6,12 +6,10 @@ Ce document répertorie les technologies utilisées pour développer Randomi GO,
 ## 🖊️ Organisation 
 
 ### 🎨 Figma
-Outil de schématisation visuel
-Raison: verision gratuite limitée, coopération en live, conversion vers html/css...
+Outil de schématisation visuel  Raison: verision gratuite limitée, coopération en live, conversion vers html/css...
 
 ### 📃 Google Docs
-Editeur de texte inclus dans la suite Google
-Raison: gratuit, fluide, efficace pour résumer, écrire
+Editeur de texte inclus dans la suite Google  Raison: gratuit, fluide, efficace pour résumer, écrire
 
 ### ⏹️ LucidChart
 Outil de schématisation de base de données.
