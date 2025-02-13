@@ -70,8 +70,7 @@ Serveur gratuit pour un nombre réduit d’utilisateurs, parfait pour tester le 
 Gestion sécurisée des utilisateurs.<br>Raison: populaire
 
 ### 🏨 Hébergement (WordPress, Plesk ou Odoo à déterminer)
-Pour le déploiement du site vitrine du projet. Dans un premier temps Wordpress via un nom de domaine actuellement fonctionnel.
-Raison: On dispose d'un nom de domaine hébergé via Wordpress. Plesk est fourni par la plateforme. Odoo est de plus en plus popualaire et offre une gamme de service varié. Cela reste encore à étudier.
+Pour le déploiement du site vitrine du projet. Dans un premier temps Wordpress via un nom de domaine actuellement fonctionnel.<br>Raison: On dispose d'un nom de domaine hébergé via Wordpress. Plesk est fourni par la plateforme. Odoo est de plus en plus popualaire et offre une gamme de service varié. Cela reste encore à étudier.
 
 ## 🎁 Distribution 
 
