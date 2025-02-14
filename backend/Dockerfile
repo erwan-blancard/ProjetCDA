@@ -12,4 +12,6 @@ RUN cargo install --path .
 
 ENV DATABASE_URL mysql://localhost:3307/randomi
 
+EXPOSE 8080
+
 CMD [ "backend" ]

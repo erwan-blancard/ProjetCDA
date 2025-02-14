@@ -1,82 +1,96 @@
+# Projet CDA
 
-# 🃏🔥🍃⛰️🌊🎲 Randomi GO - Technologies utilisées
+Repository du projet réalisé en vue de l'obtention du titre "Concepteur Développeur d'Applications".
 
-Ce document répertorie les technologies utilisées pour développer Randomi GO, un jeu de cartes stratégique en ligne jouable sur mobile et web.
+Les phases d'[idéation](#idéation) et de [conception](#conception) du projet sont exposées dans ce document.
+Le cahier des charges du projet est quand à lui disponible sur Google Drive [ici](https://docs.google.com/document/d/1q1_h__Q5QH4UED8aIS-Iv8AhZG0YckE_t92xyG4v_JA/edit?usp=sharing).
 
-## 🖊️ Organisation 
+Le dossier [docs](./docs/) contient des documents annexes, comme par exemple un schéma de la structure envisagée pour la base de données.
 
-### 🎨 Figma
-Outil de schématisation visuel<br>Raison: verision gratuite limitée, coopération en live, conversion vers html/css...
+## Table des matières
+- [Semaine 1](#semaine-1)
+    - [Idéation](#idéation)
+    - [Conception](#conception)
+        - [Frontend](#frontend)
+        - [Backend](#backend)
+            - [Base de données](#base-de-données)
+            - [API Web](#api-web)
+            - [Serveur de jeu](#serveur-de-jeu)
+- [Semaine 2](#semaine-2)
 
-### 📃 Google Docs
-Editeur de texte inclus dans la suite Google<br>Raison: gratuit, fluide, efficace pour résumer, écrire
 
-### ⏹️ LucidChart
-Outil de schématisation de base de données.<br>Raison: propose une version gratuite, système de coopération, conversion des tables 
+# Semaine 1
 
-### 👾 Discord 
-Messagerie texte, appel audio et vidéo.<br>Raison: version gratuite, permet de passer des appels de bonne qualité, partage d'écran...
+Objectifs:
+- Idéation
+- Cahier des charges
+- Conception
 
-## 🏭 Production 
+## Idéation
 
-### 📝 Visual Studio Code
-IDE Complet avec supportant de nombreux langage de programmation<br>Raison: Gratuit, populaire, extensible, permettant d'organiser ses projets.
+Nous avons décidé de créer une version numérique du jeu de carte [Randomi](https://sgave.net/2024/09/28/randomi-vous-avez-carte-blanche-pour-gagner/) créé par [Driss Khelfi](https://github.com/driss-khelfi/), que l'on appellera **Randomi GO**.
 
-### 🐙 Github: Versioning du projet
-Comprend une branche main, dev, et des branches selon l'avancement du projet (back, front, transactions sql, éléments graphiques...).<br>Raison: Populaire, adapté à la gestion de projet en petit groupe.
+**Randomi GO** se présentera comme une Progressive Web App afin de permettre à tout les appareils disposant d'un navigateur Web de jouer au jeu.
 
-### 🐋 Docker: Déploiement et Intégration Continue
-Assure un projet propre et sans crash au lancement selon les différentes dépendances.<br>Raison: Populaire et permet un déploiement sur n'importe quel système sans prendre en compte les environnement locaux qui peuvent perturber le lancement.
+Plusieurs autres idées de projets ont été envisagé:
+- Un "AdBlock" pour les stations de radio.
+- Un GPS où l'utilisateur pourrait filmer ce qu'il y a devant lui et visualiser l'itinéraire grâce à la Réalité Augmentée, et potentiellement des informations sur les enseignes à proximité.
+- Un Scanner d'images pour vérifier les droits d'auteurs qui lui sont associés.
+- Une plateforme de création de mèmes dans des mini-jeux en groupe avec un système de vote.
 
-## 🖥️ Front
+Nous avons choisi de retenir **Randomi GO** pour le challenge technique que ce projet représente, et également pour nous donner l'occasion de découvrir le langage [Rust](https://www.rust-lang.org/) pour la gestion des parties en ligne et les intéractions avec une base de données à travers une API Web.
 
-### 🔰 HTML/CSS
-Langage de balisage pour réaliser le front en version web, faire interagir les différents boutons et zones de texte, en coordination avec JavaScript et ses frameworks.<br>Raison: Langage universel de balisage.
 
-### ✨ JavaScript
-Langage de script pour dynamiser l’app web et travailler avec les frameworks associés.<br>Raison: Langage universel de script orienté web.
+## Conception
 
-### 🔺 Three.js
-Framework JavaScript pour la modélisation 3D et la réalisation du jeu sur navigateur.<br>Raison: Populaire dans le développement de jeu web, permet la gestion de la 3D et l'ajout de divers plugin. Framework intuitif.
+Comme énoncé, **Randomi GO** se présentera comme un jeu de cartes en ligne sous la forme d'une Progressive Web App.
 
-## 🏢 Back
+Les joueurs pourront s'affronter dans des parties en ligne grâce à un système de matchmaking.
 
-### 🦀 Rust
-Langage bas niveau utilisé pour le back et les transactions SQL, rapide, efficace et permettant une gestion simplifiée de la mémoire comparé au C/C++.<br>Raison: Performant, fiable et adapté au développement web.
+Le projet sera divisé en deux parties: le [client](#frontend) et le [serveur](#backend).
 
-### ⚙️ Actix
-Framework Rust pour gérer les différentes méthodes associées au projet.<br>Raison: Populaire parmis les framework utilisant Rust
+### Frontend
 
-## 🗃️ Base de données
+Le Frontend sera réalisé en utilisant la bibliothèque [`Three.js`](https://threejs.org/).
 
-### 🦫 DBeaver
-Logiciel de gestion de base de données.<br>Raison: Compatible avec de nombreux système de gestion de base de donnée, gratuit et populaire.
+`Three.js` sera utilisé pour afficher des éléments en 3D (cartes notamment) et gérer les animations, mais aussi les animations graphiques, les effets sonores et les particules, dans le but de proposer une expérience de jeu plus immersive.
 
-### 🐬 MySQL
-Système de gestion de base de données utilisé dans le projet.<br>Raison: Populaire et adapté aux petits projets.
+Nous aurions également pu utiliser [`Babylon.js`](https://www.babylonjs.com/), qui est un framework plus axé sur le développement de jeux web en 3D, mais au vu de sa complexité et de celle du projet, nous avons plutôt opté pour `Three.js` pour avoir quelque chose de plus simple.
 
-### ⛽ Diesel
-ORM Rust adapté pour l’interaction avec la base de données.<br>Raison: populaire parmis les ORM Rust
+### Backend
 
-### 🛠 CI/CD
-GitHub Actions ou GitLab CI pour automatiser les tests et le déploiement.
+Le Backend sera composé d'une base de données, d'une API Web et d'un (ou plusieurs) Serveur de jeu.
+La base de données, l'API et le Serveur seront containerisées avec Docker.
 
-## ☁️ Serveur
+#### Base de données
 
-### 🛸 Fly.io
-Serveur gratuit pour un nombre réduit d’utilisateurs, parfait pour tester le projet à moindre coût.<br>Raison: Offre gratuite ou peu onéreuse et scalable.
+Utilisation de **Postgres** comme système de base de données.
+Elle sera utilisée pour stocker les informations relatives aux joueurs (cartes, niveau, objets, etc.).
 
-### 🔒 Firebase Auth
-Gestion sécurisée des utilisateurs.<br>Raison: populaire
+La structure de la base de données est détaillée [ici](./docs/Structure%20BDD%20Randomi%20GO.pdf).
 
-### 🏨 Hébergement (WordPress, Plesk ou Odoo à déterminer)
-Pour le déploiement du site vitrine du projet. Dans un premier temps Wordpress via un nom de domaine actuellement fonctionnel.<br>Raison: On dispose d'un nom de domaine hébergé via Wordpress. Plesk est fourni par la plateforme. Odoo est de plus en plus popualaire et offre une gamme de service varié. Cela reste encore à étudier.
+#### API Web
 
-## 🎁 Distribution 
+L'API sera réalisé en **Rust** avec le framework web [`Actix`](https://actix.rs/), couplé avec [`Diesel`](https://diesel.rs) comme ORM pour manipuler les objects dans la base de données.
 
-### 📱 Flutter
-Permet un déploiement vers les formats d’application mobile.<br>Raison: Populaire, flexible et utile pour déploiement projet de petite ou moyenne envergure.
+`Actix` et `Diesel` semblaient être des choix évidents: `Actix` étant l'un des plus populaires, et `Diesel` lui est complémentaire.
 
-### 🤖 Android Studio
-Outil pour déployer sur l'App Store.<br>Raison: Populaire et propose une gamme d'outil complet pour déployer une application vers le Google Play Store.
+Elle sera utilisée pour:
+- la création et gestion des comptes
+- la gestion d'une liste d'amis
+- l'inventaire des joueurs (cartes, objets cosmétiques, etc.) et l'achats d'objets
+- le matchmaking
 
+#### Serveur de jeu
+
+**(TODO)**
+
+Le Serveur sera également réalisé en Rust et utilisera WebSocket pour les communications client/serveur.
+
+
+# Semaine 2
+
+Objectifs:
+- Décision des technos et features à garder pour la durée du projet
+- Mise en place de la base de données et modélisation
+- Création du Backend et containerisation

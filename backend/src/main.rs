@@ -95,7 +95,7 @@ async fn send_friend_request(pool: web::Data<DbPool>, path: web::Path<(i32,)>, j
     .await?
     .map_err(error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(requests))
+    Ok(HttpResponse::Created().json(requests))
 }
 
 #[derive(Deserialize)]
