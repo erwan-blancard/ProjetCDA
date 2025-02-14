@@ -94,3 +94,30 @@ Objectifs:
 - Décision des technos et features à garder pour la durée du projet
 - Mise en place de la base de données et modélisation
 - Création du Backend et containerisation
+
+## Configuration et Exécution
+
+#### Variables d'environnement
+
+Les variables d'environnement utilisées dans [**docker-compose.yml**](./backend/docker-compose.yml) doivent être définies dans un fichier **.env**.
+
+Le fichier devra contenir les variables suivantes:
+
+```
+DATABASE_HOST=randomi-db    # same name as db service
+DATABASE_PORT=5432
+POSTGRES_DB=randomi
+POSTGRES_USER=backend
+POSTGRES_PASSWORD=root
+```
+
+Ces variables seront utilisées dans le **docker-compose.yml** pour déterminer l'URL avec laquelle l'API pourra se connecter à la base de données.
+
+#### Exécution des services
+
+Pour lancer les services du Backend, il suffit d'utiliser `docker compose up` dans le répertoire [backend](./backend/):
+
+```
+cd backend
+docker compose up
+```

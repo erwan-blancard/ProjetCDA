@@ -1,5 +1,5 @@
 use diesel::dsl::insert_into;
-use diesel::MysqlConnection;
+use diesel::PgConnection;
 use diesel::prelude::*;
 use serde_derive::Deserialize;
 
@@ -32,7 +32,7 @@ pub struct NewEmptyStats {
 }
 
 
-pub fn create_account(conn: &mut MysqlConnection, username: &String, email: &String, password: &String) -> diesel::QueryResult<Account> {
+pub fn create_account(conn: &mut PgConnection, username: &String, email: &String, password: &String) -> diesel::QueryResult<Account> {
     use super::schema::accounts::dsl::{accounts, id};
     use super::schema::account_stats::dsl::account_stats;
 
@@ -61,7 +61,7 @@ pub fn create_account(conn: &mut MysqlConnection, username: &String, email: &Str
     })
 }
 
-pub fn get_account(conn: &mut MysqlConnection, account_id: i32) -> diesel::QueryResult<Account> {
+pub fn get_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Account> {
     use super::schema::accounts::dsl::*;
 
     let account = accounts.filter(id.eq(&account_id))
@@ -70,20 +70,20 @@ pub fn get_account(conn: &mut MysqlConnection, account_id: i32) -> diesel::Query
     Ok(account)
 }
 
-pub fn get_account_by_username(conn: &mut MysqlConnection, username: &String) -> diesel::QueryResult<Account> {
+pub fn get_account_by_username(conn: &mut PgConnection, username: &String) -> diesel::QueryResult<Account> {
     accounts::table.filter(accounts::dsl::username.eq(username))
         .first(conn)
 }
 
 
-pub fn get_account_stats(conn: &mut MysqlConnection, account_id: i32) -> diesel::QueryResult<AccountStats> {
+pub fn get_account_stats(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<AccountStats> {
     account_stats::table.select(AccountStats::as_select())
         .filter(account_stats::dsl::account_id.eq(account_id))
         .first(conn)
 }
 
 
-pub fn send_friend_request(conn: &mut MysqlConnection, sender_id: i32, username: &String) -> diesel::QueryResult<Friend> {
+pub fn send_friend_request(conn: &mut PgConnection, sender_id: i32, username: &String) -> diesel::QueryResult<Friend> {
     use super::schema::friends::dsl::{friends, id};
 
     let target_account_id: i32 = accounts::table.select(accounts::id)
@@ -110,7 +110,7 @@ pub fn send_friend_request(conn: &mut MysqlConnection, sender_id: i32, username:
     })
 }
 
-pub fn get_friend_request_of_account_by_username(conn: &mut MysqlConnection, receiver_id: i32, username: &String) -> diesel::QueryResult<Friend> {
+pub fn get_friend_request_of_account_by_username(conn: &mut PgConnection, receiver_id: i32, username: &String) -> diesel::QueryResult<Friend> {
     use super::schema::friends::dsl::{friends, account1, account2, status};
 
     let target_account_id: i32 = accounts::table.select(accounts::id)
@@ -126,7 +126,7 @@ pub fn get_friend_request_of_account_by_username(conn: &mut MysqlConnection, rec
         .first(conn)
 }
 
-pub fn change_friend_request_status(conn: &mut MysqlConnection, receiver_id: i32, username: &String, accepted: bool) -> diesel::QueryResult<Friend> {
+pub fn change_friend_request_status(conn: &mut PgConnection, receiver_id: i32, username: &String, accepted: bool) -> diesel::QueryResult<Friend> {
     use super::schema::friends::dsl::{friends, status};
 
     let new_status = if accepted { 1 } else { 2 };
@@ -146,7 +146,7 @@ pub fn change_friend_request_status(conn: &mut MysqlConnection, receiver_id: i32
     })
 }
 
-pub fn list_friends_for_account(conn: &mut MysqlConnection, account_id: i32) -> diesel::QueryResult<Vec<Friend>> {
+pub fn list_friends_for_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Vec<Friend>> {
     use super::schema::friends::dsl::{friends, account1, account2, status};
 
     friends.select(Friend::as_select())
@@ -158,7 +158,7 @@ pub fn list_friends_for_account(conn: &mut MysqlConnection, account_id: i32) -> 
         .load(conn)
 }
 
-pub fn list_friend_requests_for_account(conn: &mut MysqlConnection, account_id: i32) -> diesel::QueryResult<Vec<Friend>> {
+pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Vec<Friend>> {
     use super::schema::friends::dsl::{friends, account1, account2, status};
 
     friends.select(Friend::as_select())

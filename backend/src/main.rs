@@ -5,7 +5,7 @@ use diesel::dsl::insert_into;
 use diesel::query_dsl::methods::FilterDsl;
 use diesel::query_dsl::methods::SelectDsl;
 use diesel::{ExpressionMethods, Insertable, QueryDsl};
-use diesel::MysqlConnection;
+use diesel::PgConnection;
 use diesel::r2d2;
 use diesel::RunQueryDsl;
 use diesel::SelectableHelper;
@@ -22,7 +22,7 @@ mod database {
 use database::models::*;
 use database::actions::{self, NewAccount, FriendRequest};
 
-type DbPool = r2d2::Pool<r2d2::ConnectionManager<MysqlConnection>>;
+type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 
 #[get("/accounts/{account_id}/friends")]
@@ -175,10 +175,10 @@ async fn create_account(pool: web::Data<DbPool>, json: web::Json<NewAccount>) ->
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not set !");
-    let manager = r2d2::ConnectionManager::<MysqlConnection>::new(database_url.clone());
+    let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url.clone());
     let pool = r2d2::Pool::builder()
         .build(manager)
-        .expect(format!("Unable to connect to MySQL database with URL \"{}\" !", database_url).as_str());
+        .expect(format!("Unable to connect to database with URL \"{}\" !", database_url).as_str());
 
     println!("Connected to database!");
 
@@ -197,7 +197,7 @@ async fn main() -> std::io::Result<()> {
             .service(send_friend_request)
             .service(change_friend_request_status)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }

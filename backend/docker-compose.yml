@@ -1,18 +1,17 @@
 services:
   db:
-    image: mysql:8.0
+    image: postgres:17
     container_name: randomi-db
     ports:
-      - '3307:${DATABASE_PORT}'
+      - '5432:5432'
     env_file: .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     
     volumes:
-      - randomi_db_data:/var/lib/mysql
+      - randomi_db_data:/var/lib/postgresql/data
     
     networks:
       - randomi-backend
@@ -24,7 +23,7 @@ services:
       - "8080:8080"
     env_file: .env
     environment:
-      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${MYSQL_DATABASE}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${POSTGRES_DB}
     
     networks:
       - randomi-backend

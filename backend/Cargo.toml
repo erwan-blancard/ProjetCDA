@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 chrono = { version = "0.4", features = ["serde"] }
-diesel = { version = "2.2.0", features = ["mysql", "r2d2", "chrono"] }
+diesel = { version = "2.2.0", features = ["postgres", "r2d2", "chrono"] }
 r2d2 = "0.8.10"
 
 serde = "1.0"

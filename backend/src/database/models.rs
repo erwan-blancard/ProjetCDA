@@ -5,7 +5,7 @@ use chrono::NaiveDateTime;
 
 #[derive(Queryable, Selectable, Insertable, Serialize)]
 #[diesel(table_name = super::schema::accounts)]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Account {
     pub id: i32,
     pub username: String,
@@ -17,7 +17,7 @@ pub struct Account {
 
 #[derive(Queryable, Selectable, Insertable, Serialize)]
 #[diesel(table_name = super::schema::account_stats)]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AccountStats {
     pub id: i32,
     pub account_id: i32,
@@ -34,7 +34,7 @@ pub struct AccountStats {
 
 #[derive(Queryable, Selectable, Insertable, Serialize)]
 #[diesel(table_name = super::schema::friends)]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Friend {
     pub id: i32,
     pub account1: i32,

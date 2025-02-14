@@ -1,7 +1,10 @@
 DROP TABLE collection_cosmetics;
 DROP TABLE cosmetics;
+DROP TYPE cosmetic_type;
 DROP TABLE collection_cards;
 DROP TABLE cards;
+DROP TYPE card_element;
+DROP TYPE card_type;
 DROP TABLE friends;
 DROP TABLE account_stats;
 DROP TABLE accounts;

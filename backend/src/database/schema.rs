@@ -2,37 +2,37 @@
 
 pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
-    #[diesel(mysql_type(name = "Enum"))]
-    pub struct CardsElementEnum;
+    #[diesel(postgres_type(name = "card_element"))]
+    pub struct CardElement;
 
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
-    #[diesel(mysql_type(name = "Enum"))]
-    pub struct CardsTypeEnum;
+    #[diesel(postgres_type(name = "card_type"))]
+    pub struct CardType;
 
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
-    #[diesel(mysql_type(name = "Enum"))]
-    pub struct CosmeticsTypeEnum;
+    #[diesel(postgres_type(name = "cosmetic_type"))]
+    pub struct CosmeticType;
 }
 
 diesel::table! {
     account_stats (id) {
-        id -> Integer,
-        account_id -> Integer,
-        first_log -> Datetime,
-        last_log -> Datetime,
-        games_played -> Bigint,
-        games_won -> Bigint,
-        wallet -> Bigint,
-        experience -> Bigint,
-        level -> Integer,
-        season_rank -> Integer,
-        best_rank -> Integer,
+        id -> Int4,
+        account_id -> Int4,
+        first_log -> Timestamp,
+        last_log -> Timestamp,
+        games_played -> Int8,
+        games_won -> Int8,
+        wallet -> Int8,
+        experience -> Int8,
+        level -> Int4,
+        season_rank -> Int4,
+        best_rank -> Int4,
     }
 }
 
 diesel::table! {
     accounts (id) {
-        id -> Integer,
+        id -> Int4,
         #[max_length = 32]
         username -> Varchar,
         #[max_length = 255]
@@ -46,60 +46,57 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
-    use super::sql_types::CardsElementEnum;
-    use super::sql_types::CardsTypeEnum;
+    use super::sql_types::CardElement;
+    use super::sql_types::CardType;
 
     cards (id) {
-        id -> Integer,
+        id -> Int4,
         #[max_length = 255]
         name -> Varchar,
-        #[max_length = 5]
-        element -> CardsElementEnum,
+        element -> CardElement,
         #[sql_name = "type"]
-        #[max_length = 6]
-        type_ -> CardsTypeEnum,
-        stars -> Integer,
+        type_ -> CardType,
+        stars -> Int4,
         disabled -> Bool,
     }
 }
 
 diesel::table! {
     collection_cards (id) {
-        id -> Integer,
-        account_id -> Integer,
-        card_id -> Integer,
+        id -> Int4,
+        account_id -> Int4,
+        card_id -> Int4,
     }
 }
 
 diesel::table! {
     collection_cosmetics (id) {
-        id -> Integer,
-        account_id -> Integer,
-        cosmetic_id -> Integer,
+        id -> Int4,
+        account_id -> Int4,
+        cosmetic_id -> Int4,
     }
 }
 
 diesel::table! {
     use diesel::sql_types::*;
-    use super::sql_types::CosmeticsTypeEnum;
+    use super::sql_types::CosmeticType;
 
     cosmetics (id) {
-        id -> Integer,
+        id -> Int4,
         #[max_length = 255]
         name -> Varchar,
-        price -> Integer,
+        price -> Int4,
         #[sql_name = "type"]
-        #[max_length = 5]
-        type_ -> CosmeticsTypeEnum,
+        type_ -> CosmeticType,
     }
 }
 
 diesel::table! {
     friends (id) {
-        id -> Integer,
-        account1 -> Integer,
-        account2 -> Integer,
-        status -> Integer,
+        id -> Int4,
+        account1 -> Int4,
+        account2 -> Int4,
+        status -> Int4,
     }
 }
 

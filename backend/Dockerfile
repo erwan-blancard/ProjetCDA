@@ -10,7 +10,7 @@ COPY ./diesel.toml ./diesel.toml
 
 RUN cargo install --path .
 
-ENV DATABASE_URL mysql://localhost:3307/randomi
+ENV DATABASE_URL postgres://localhost:3307/randomi
 
 EXPOSE 8080
 
