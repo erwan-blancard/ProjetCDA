@@ -80,3 +80,17 @@ Permet un déploiement vers les formats d’applications mobile.<br>Raison: Popu
 ### 🤖 Android Studio
 Outil pour déployer sur l'App Store.<br>Raison: Populaire et propose une gamme d'outil complète pour déployer une application vers le Google Play Store.
 
+# 🔗 Liens utiles
+
+## 💡 Idéation
+
+## 📓 Cahier des charges
+
+https://docs.google.com/document/d/1nBWuafzOJ0Ry4JP69ps5df1_py-3cjOuNRErDQIjI9o/edit?usp=sharing
+
+## 🪧 Powerpoint
+
+https://docs.google.com/presentation/d/1ITtxvwF4SyTxi-_HtnsYJE0bk_1MeJzer3F60HAFQyk/edit?usp=sharing
+
+
+
