@@ -6,10 +6,10 @@ Ce document répertorie les technologies utilisées pour développer Randomi GO,
 ## 🖊️ Organisation 
 
 ### 🎨 Figma
-Outil de schématisation visuel<br>Raison: verision gratuite limitée, coopération en live, conversion vers html/css...
+Outil de schématisation visuel<br>Raison: version gratuite limitée, coopération en live, conversion vers html/css...
 
 ### 📃 Google Docs
-Editeur de texte inclus dans la suite Google<br>Raison: gratuit, fluide, efficace pour résumer, écrire
+Editeur de texte inclus dans la suite Google<br>Raison: gratuit, fluide, efficace pour résumer, écrire, organiser...
 
 ### ⏹️ LucidChart
 Outil de schématisation de base de données.<br>Raison: propose une version gratuite, système de coopération, conversion des tables 
@@ -20,7 +20,7 @@ Messagerie texte, appel audio et vidéo.<br>Raison: version gratuite, permet de 
 ## 🏭 Production 
 
 ### 📝 Visual Studio Code
-IDE Complet avec supportant de nombreux langage de programmation<br>Raison: Gratuit, populaire, extensible, permettant d'organiser ses projets.
+IDE Complet avec supportant de nombreux langages de programmation<br>Raison: Gratuit, populaire, extensible, permettant d'organiser ses projets.
 
 ### 🐙 Github: Versioning du projet
 Comprend une branche main, dev, et des branches selon l'avancement du projet (back, front, transactions sql, éléments graphiques...).<br>Raison: Populaire, adapté à la gestion de projet en petit groupe.
@@ -69,14 +69,14 @@ Serveur gratuit pour un nombre réduit d’utilisateurs, parfait pour tester le 
 ### 🔒 Firebase Auth
 Gestion sécurisée des utilisateurs.<br>Raison: populaire
 
-### 🏨 Hébergement (WordPress, Plesk ou Odoo à déterminer)
+### 🏨 Hébergement (WordPress, Plesk ou Odoo, à déterminer)
 Pour le déploiement du site vitrine du projet. Dans un premier temps Wordpress via un nom de domaine actuellement fonctionnel.<br>Raison: On dispose d'un nom de domaine hébergé via Wordpress. Plesk est fourni par la plateforme. Odoo est de plus en plus popualaire et offre une gamme de service varié. Cela reste encore à étudier.
 
 ## 🎁 Distribution 
 
 ### 📱 Flutter
-Permet un déploiement vers les formats d’application mobile.<br>Raison: Populaire, flexible et utile pour déploiement projet de petite ou moyenne envergure.
+Permet un déploiement vers les formats d’applications mobile.<br>Raison: Populaire, flexible et utile pour déploiement projet de petite ou moyenne taille.
 
 ### 🤖 Android Studio
-Outil pour déployer sur l'App Store.<br>Raison: Populaire et propose une gamme d'outil complet pour déployer une application vers le Google Play Store.
+Outil pour déployer sur l'App Store.<br>Raison: Populaire et propose une gamme d'outil complète pour déployer une application vers le Google Play Store.
 
