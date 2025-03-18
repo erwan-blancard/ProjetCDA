@@ -24,6 +24,7 @@ services:
     env_file: .env
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${POSTGRES_DB}
+      - BACKEND_SECRET_KEY={BACKEND_SECRET_KEY}
     
     networks:
       - randomi-backend

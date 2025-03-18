@@ -15,6 +15,18 @@ pub struct Account {
     pub suspended: bool,
 }
 
+// Account struct with sensible fields hidden from the user
+#[derive(Queryable, Selectable, Insertable, Serialize)]
+#[diesel(table_name = super::schema::accounts)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FilteredAccount {
+    pub id: i32,
+    pub username: String,
+    pub email: String,
+    pub premium: bool,
+    pub suspended: bool,
+}
+
 #[derive(Queryable, Selectable, Insertable, Serialize)]
 #[diesel(table_name = super::schema::account_stats)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

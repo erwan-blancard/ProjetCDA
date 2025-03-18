@@ -19,6 +19,13 @@ pub struct NewAccount {
 }
 
 #[derive(Insertable, Deserialize)]
+#[diesel(table_name = super::schema::accounts)]
+pub struct AccountLogin {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Insertable, Deserialize)]
 #[diesel(table_name = super::schema::friends)]
 pub struct FriendRequest {
     pub account1: i32,
@@ -32,7 +39,7 @@ pub struct NewEmptyStats {
 }
 
 
-pub fn create_account(conn: &mut PgConnection, username: &String, email: &String, password: &String) -> diesel::QueryResult<Account> {
+pub fn create_account(conn: &mut PgConnection, username: &String, email: &String, password: &String) -> diesel::QueryResult<FilteredAccount> {
     use super::schema::accounts::dsl::{accounts, id};
     use super::schema::account_stats::dsl::account_stats;
 
@@ -48,7 +55,7 @@ pub fn create_account(conn: &mut PgConnection, username: &String, email: &String
             .execute(conn)?;
         
         // get newly inserted account
-        let account = accounts.select(Account::as_select())
+        let account = accounts.select(FilteredAccount::as_select())
             .order_by(id.desc())
             .first(conn)?;
 
@@ -61,17 +68,26 @@ pub fn create_account(conn: &mut PgConnection, username: &String, email: &String
     })
 }
 
-pub fn get_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Account> {
+pub fn get_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<FilteredAccount> {
     use super::schema::accounts::dsl::*;
 
-    let account = accounts.filter(id.eq(&account_id))
-        .first::<Account>(conn)?;
+    let account = accounts.select(FilteredAccount::as_select())
+        .filter(id.eq(&account_id))
+        .first::<FilteredAccount>(conn)?;
 
     Ok(account)
 }
 
-pub fn get_account_by_username(conn: &mut PgConnection, username: &String) -> diesel::QueryResult<Account> {
-    accounts::table.filter(accounts::dsl::username.eq(username))
+pub fn get_account_by_username(conn: &mut PgConnection, username: &String) -> diesel::QueryResult<FilteredAccount> {
+    accounts::table.select(FilteredAccount::as_select())
+        .filter(accounts::dsl::username.eq(username))
+        .first(conn)
+}
+
+pub fn get_account_for_login(conn: &mut PgConnection, username: &String, password: &String) -> diesel::QueryResult<FilteredAccount> {
+    accounts::table.select(FilteredAccount::as_select())
+        .filter(accounts::dsl::username.eq(username)
+                .and(accounts::dsl::password.eq(password)))
         .first(conn)
 }
 
