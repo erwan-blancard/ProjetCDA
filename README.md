@@ -17,6 +17,7 @@ Le dossier [docs](./docs/) contient des documents annexes, comme par exemple un 
             - [API Web](#api-web)
             - [Serveur de jeu](#serveur-de-jeu)
 - [Semaine 2](#semaine-2)
+- [Semaine 3](#semaine-3)
 
 
 # Semaine 1
@@ -121,3 +122,7 @@ Pour lancer les services du Backend, il suffit d'utiliser `docker compose up` da
 cd backend
 docker compose up
 ```
+
+# Semaine 3
+
+
