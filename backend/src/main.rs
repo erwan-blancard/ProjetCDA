@@ -1,6 +1,8 @@
+use actix_web::cookie::{Cookie, SameSite};
 use actix_web::{get, patch, post, HttpMessage, HttpRequest};
 use actix_web::{error, web, App, HttpServer, Responder, HttpResponse};
 use actix_web::middleware::Logger;
+use actix_cors::Cors;
 use database::schema::accounts;
 use diesel::dsl::insert_into;
 use diesel::query_dsl::methods::FilterDsl;
@@ -241,7 +243,14 @@ async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_
 
     let token = auth::create_jwt(account.id);
 
-    Ok(HttpResponse::Ok().json(token))
+    // create a cookie containing the token and send it to the user
+    let cookie = Cookie::build("token", token.clone())
+        // FIXME cookie config is permissive
+        .secure(true)
+        .same_site(SameSite::None)
+        .finish();
+
+    Ok(HttpResponse::Ok().cookie(cookie).json(token))
 }
 
 
@@ -256,8 +265,11 @@ async fn main() -> std::io::Result<()> {
     println!("Connected to database!");
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();         // FIXME configure
+
         App::new()
             .wrap(Logger::default())
+            .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .wrap(auth::JwtMiddleware)
 

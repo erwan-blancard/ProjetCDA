@@ -1,5 +1,6 @@
 use actix_service::forward_ready;
 use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, body::EitherBody, Error, HttpMessage, HttpResponse, error::ErrorUnauthorized};
+use diesel::expression::is_aggregate::No;
 use futures::future::{ok, Ready};
 use futures::future::LocalBoxFuture;
 use jsonwebtoken::{decode, encode, EncodingKey, DecodingKey, Validation, Algorithm};
@@ -93,35 +94,63 @@ where
             }
         }
 
-        // extract JWT from Authorization header
+        let mut opt_token: Option<String> = None;
+
+        // get JWT from either auth header or cookie
+
         if let Some(token_value) = req.headers().get("Authorization") {
+            // extract JWT from Authorization header
             if let Ok(token_str) = token_value.to_str() {
-                if let Ok(claims) = validate_jwt(token_str.trim_start_matches("Bearer ")) {
-                    // insert user_id in request extensions for later use in handlers
-                    req.extensions_mut().insert(claims.user_id);
+                opt_token = Some(token_str.trim_start_matches("Bearer ").to_string());
+            }
+        
+        } else if let Some(cookie) = req.cookie("token") {
+            // extract JWT from cookies
+            opt_token = Some(cookie.value().to_string());
+        }
 
-                    // let fut = self.service.call(req);
-                    // return Box::pin(async move {
-                    //     let res = fut.await?;
-                    //     Ok(res)
-                    // });
-                    // return Box::pin(self.service.call(req));
+        if let Some(token) = opt_token {
+            if let Ok(claims) = validate_jwt(&token) {
+                // insert user_id in request extensions for later use in handlers
+                req.extensions_mut().insert(claims.user_id);
 
-                    // let res = self.service.call(req);
+                let fut = self.service.call(req);
 
-                    // return Box::pin(async move {
-                    //     // forwarded responses map to "left" body
-                    //     res.await.map(ServiceResponse::map_into_left_body)
-                    // });
-                    let fut = self.service.call(req);
-
-                    return Box::pin(async move {
-                        let res = fut.await?;
-                        Ok(res)
-                    });
-                }
+                return Box::pin(async move {
+                    let res = fut.await?;
+                    Ok(res)
+                });
             }
         }
+
+        // if let Some(token_value) = req.headers().get("Authorization") {
+        //     if let Ok(token_str) = token_value.to_str() {
+        //         if let Ok(claims) = validate_jwt(token_str.trim_start_matches("Bearer ")) {
+        //             // insert user_id in request extensions for later use in handlers
+        //             req.extensions_mut().insert(claims.user_id);
+
+        //             // let fut = self.service.call(req);
+        //             // return Box::pin(async move {
+        //             //     let res = fut.await?;
+        //             //     Ok(res)
+        //             // });
+        //             // return Box::pin(self.service.call(req));
+
+        //             // let res = self.service.call(req);
+
+        //             // return Box::pin(async move {
+        //             //     // forwarded responses map to "left" body
+        //             //     res.await.map(ServiceResponse::map_into_left_body)
+        //             // });
+        //             let fut = self.service.call(req);
+
+        //             return Box::pin(async move {
+        //                 let res = fut.await?;
+        //                 Ok(res)
+        //             });
+        //         }
+        //     }
+        // }
 
         // let http_res = HttpResponse::Unauthorized().json("Unauthorized");
         // let (http_req, _) = req.into_parts();
