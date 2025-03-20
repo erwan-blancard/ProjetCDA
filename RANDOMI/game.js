@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 // Initialisation de la scène
 const scene = new THREE.Scene();
+scene.background = new THREE.Color().setHex(0xf0f0f0);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -13,7 +14,7 @@ light.position.set(5, 10, 5);
 scene.add(light);
 
 // Création du plateau avec texture
-const boardTexture = new THREE.TextureLoader().load('assets/board_texture.jpg');
+const boardTexture = new THREE.TextureLoader().load('assets/board.jpg');
 const boardMaterial = new THREE.MeshStandardMaterial({ map: boardTexture });
 const boardGeometry = new THREE.PlaneGeometry(10, 10);
 const board = new THREE.Mesh(boardGeometry, boardMaterial);
@@ -72,7 +73,7 @@ window.addEventListener('click', (event) => {
 
 // Animation de rendu
 function animate() {
-    requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
-animate();
+
+renderer.setAnimationLoop( animate );
