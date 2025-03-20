@@ -1,10 +1,10 @@
 {
   "name": "frontend",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "index.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite src",
+    "build": "vite build src --outDir ../dist",
     "preview": "vite preview"
   },
   "author": "",
@@ -12,5 +12,8 @@
   "description": "",
   "dependencies": {
     "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "vite": "^6.2.2"
   }
 }
