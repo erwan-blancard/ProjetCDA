@@ -12,19 +12,18 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5, 10, 5);
 scene.add(light);
 
-// Création du plateau avec texture
-const boardTexture = new THREE.TextureLoader().load('assets/board_texture.jpg');
-const boardMaterial = new THREE.MeshStandardMaterial({ map: boardTexture });
-const boardGeometry = new THREE.PlaneGeometry(10, 10);
-const board = new THREE.Mesh(boardGeometry, boardMaterial);
-board.rotation.x = -Math.PI / 2;
-scene.add(board);
+// Création de l'arène circulaire
+const arenaGeometry = new THREE.CircleGeometry(6, 64);
+const arenaMaterial = new THREE.MeshStandardMaterial({ color: 0x008000 });
+const arena = new THREE.Mesh(arenaGeometry, arenaMaterial);
+arena.rotation.x = -Math.PI / 2;
+scene.add(arena);
 
 // Position de la caméra
-camera.position.set(0, 6, 8);
+camera.position.set(0, 8, 10);
 camera.lookAt(0, 0, 0);
 
-// Création des cartes avec animations et effets
+// Fonction pour créer une carte
 function createCard(x, z, texturePath) {
     const cardGeometry = new THREE.PlaneGeometry(1, 1.5);
     const cardTexture = new THREE.TextureLoader().load(texturePath);
@@ -36,6 +35,49 @@ function createCard(x, z, texturePath) {
     return card;
 }
 
+// Création de la pioche au centre
+const drawPile = createCard(0, 0, 'assets/deck.jpg');
+
+// Création des piles de défausse pour chaque joueur
+const discardPiles = [];
+const playerPositions = [
+    { x: 5, z: 0 },
+    { x: 3.5, z: 3.5 },
+    { x: 0, z: 5 },
+    { x: -3.5, z: 3.5 },
+    { x: -5, z: 0 },
+    { x: -3.5, z: -3.5 }
+];
+
+for (let i = 0; i < 6; i++) {
+    discardPiles.push(createCard(playerPositions[i].x, playerPositions[i].z, 'assets/discard.jpg'));
+}
+
+// Création des cartes en main pour chaque joueur
+const hands = [];
+for (let i = 0; i < 6; i++) {
+    hands.push([
+        createCard(playerPositions[i].x - 1, playerPositions[i].z - 1, 'assets/card1.jpg'),
+        createCard(playerPositions[i].x, playerPositions[i].z - 1, 'assets/card2.jpg'),
+        createCard(playerPositions[i].x + 1, playerPositions[i].z - 1, 'assets/card3.jpg')
+    ]);
+}
+
+// Bouton pour terminer le tour
+const endTurnButton = document.createElement('button');
+endTurnButton.innerText = 'Fin de tour';
+endTurnButton.style.position = 'absolute';
+endTurnButton.style.bottom = '20px';
+endTurnButton.style.left = '50%';
+endTurnButton.style.transform = 'translateX(-50%)';
+endTurnButton.style.padding = '10px 20px';
+document.body.appendChild(endTurnButton);
+
+endTurnButton.addEventListener('click', () => {
+    console.log('Tour terminé !');
+    socket.send(JSON.stringify({ action: 'end_turn' }));
+});
+
 // Connexion WebSocket
 const socket = new WebSocket('ws://127.0.0.1:3030/ws');
 socket.onopen = () => {
@@ -45,30 +87,6 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
     console.log('Message reçu:', event.data);
 };
-
-// Ajout de cartes avec différentes textures
-const cards = [
-    createCard(-2, -2, 'assets1.jpg'),
-    createCard(0, -2, 'assets2.jpg'),
-    createCard(2, -2, 'assets3.jpg')
-];
-
-// Interaction : cliquer sur une carte et envoyer l'action au serveur
-window.addEventListener('click', (event) => {
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-    
-    const intersects = raycaster.intersectObjects(cards);
-    if (intersects.length > 0) {
-        const selectedCard = intersects[0].object;
-        selectedCard.position.y += 0.5; // Simule la sélection
-        console.log('Carte sélectionnée !');
-        socket.send(JSON.stringify({ action: 'play_card', card: selectedCard.uuid }));
-    }
-});
 
 // Animation de rendu
 function animate() {
