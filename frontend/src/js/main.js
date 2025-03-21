@@ -5,10 +5,10 @@ function getCookie(name) {
     return null;
 }
 
-if (!getCookie("token")) {
-    alert("Not logged in!");
-    window.location.href = "/login.html";
-}
+// if (!getCookie("token")) {
+//     alert("Not logged in!");
+//     window.location.href = "/login.html";
+// }
 
 import * as THREE from 'three';
 import * as GAME from './game';

@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "gsap": "^3.12.7",
     "three": "^0.174.0"
   },
   "devDependencies": {
