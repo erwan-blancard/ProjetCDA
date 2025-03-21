@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { Card } from './cards';
+import { Card, CardPile, getCardTexturePathById } from './cards';
 
 export let scene, camera, renderer;
 
 export let raycaster = new THREE.Raycaster();
 export let pointer = new THREE.Vector2();
 export const player_cards = [];
+export let cardPile;
 
 
 export function initGame() {
@@ -40,8 +41,11 @@ export function initGame() {
     board.rotation.x = -Math.PI / 2;
     scene.add(board);
 
-    const card1 = new Card("assets/randomi_recto_cards_page-0001.jpg");
-    card1.position.set(0, 6, 5);
+    cardPile = new CardPile();
+    scene.add(cardPile);
+
+    const card1 = new Card(getCardTexturePathById(1));
+    card1.position.set(-2, 6, 5);
     scene.add(card1);
     player_cards.push(card1);
 
@@ -55,13 +59,13 @@ export function initGame() {
     const gridHelper = new THREE.GridHelper(10, 10);
     scene.add(gridHelper);
 
-    const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00, opacity: 0.5 } );
-    const cube = new THREE.Mesh( geometry, material );
-    scene.add( cube );
+    // const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+    // const material = new THREE.MeshBasicMaterial( { color: 0x00ff00, opacity: 0.5 } );
+    // const cube = new THREE.Mesh( geometry, material );
+    // scene.add( cube );
 
     renderer.setAnimationLoop( () => {
-        cube.rotateY(THREE.MathUtils.degToRad(0.1));
+        // cube.rotateY(THREE.MathUtils.degToRad(0.1));
         renderSceneView();
     } );
 }
@@ -123,9 +127,24 @@ function onPointerDown( event ) {
         
             default:
                 card.stopSwingLoop();
+                card.quaternion.copy(camera.quaternion);
                 break;
         }
-        
+    } else {
+        const pile_intersects = raycaster.intersectObject( cardPile, false );
+
+        if (pile_intersects.length > 0) {
+            if (cardPile.count > 0) {
+                console.log("draw card");
+                const new_card = cardPile.drawCard();
+                new_card.position.set(-10 + player_cards.length * 0.5, 2, -2);
+                scene.add(new_card);
+                player_cards.push(new_card);
+            } else {
+                console.log("no more cards");
+            }
+            
+        }
     }
 
 }
