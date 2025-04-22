@@ -1,0 +1,125 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|c:\\users\\dkhel\\onedrive\\bureau\\randomi go\\testc#\\randomi_go_test1\\randomi_go_test1\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|solutionrelative:randomi_go_test1\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|c:\\users\\dkhel\\onedrive\\bureau\\randomi go\\testc#\\randomi_go_test1\\randomi_go_test1\\deck.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|solutionrelative:randomi_go_test1\\deck.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|c:\\users\\dkhel\\onedrive\\bureau\\randomi go\\testc#\\randomi_go_test1\\randomi_go_test1\\cards.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|solutionrelative:randomi_go_test1\\cards.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|c:\\users\\dkhel\\onedrive\\bureau\\randomi go\\testc#\\randomi_go_test1\\randomi_go_test1\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|solutionrelative:randomi_go_test1\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|c:\\users\\dkhel\\onedrive\\bureau\\randomi go\\testc#\\randomi_go_test1\\randomi_go_test1\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|solutionrelative:randomi_go_test1\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|c:\\users\\dkhel\\onedrive\\bureau\\randomi go\\testc#\\randomi_go_test1\\randomi_go_test1\\actionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{276AF5DD-D677-450E-84F2-14D37600CA71}|Randomi_Go_Test1\\Randomi_Go_Test1.csproj|solutionrelative:randomi_go_test1\\actionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ActionManager.cs",
+              "DocumentMoniker": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\ActionManager.cs",
+              "RelativeDocumentMoniker": "Randomi_Go_Test1\\ActionManager.cs",
+              "ToolTip": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\ActionManager.cs",
+              "RelativeToolTip": "Randomi_Go_Test1\\ActionManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-19T14:44:07.625Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Deck.cs",
+              "DocumentMoniker": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\Deck.cs",
+              "RelativeDocumentMoniker": "Randomi_Go_Test1\\Deck.cs",
+              "ToolTip": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\Deck.cs",
+              "RelativeToolTip": "Randomi_Go_Test1\\Deck.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAwC0AAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-19T10:28:30.063Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Cards.cs",
+              "DocumentMoniker": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\Cards.cs",
+              "RelativeDocumentMoniker": "Randomi_Go_Test1\\Cards.cs",
+              "ToolTip": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\Cards.cs",
+              "RelativeToolTip": "Randomi_Go_Test1\\Cards.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAAABcAAAALAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-19T09:49:37.748Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "GameManager.cs",
+              "DocumentMoniker": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\GameManager.cs",
+              "RelativeDocumentMoniker": "Randomi_Go_Test1\\GameManager.cs",
+              "ToolTip": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\GameManager.cs",
+              "RelativeToolTip": "Randomi_Go_Test1\\GameManager.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAqwBUAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-19T09:04:59.57Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "Randomi_Go_Test1\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\MainWindow.xaml",
+              "RelativeToolTip": "Randomi_Go_Test1\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-19T08:13:23.796Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Randomi_Go_Test1\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\dkhel\\OneDrive\\Bureau\\Randomi GO\\TestC#\\Randomi_Go_Test1\\Randomi_Go_Test1\\MainWindow.xaml.cs",
+              "RelativeToolTip": "Randomi_Go_Test1\\MainWindow.xaml.cs",
+              "ViewState": "AgIAABgBAAAAAAAAAAAAADEBAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-19T08:13:16.842Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
