@@ -17,10 +17,10 @@ export function getCardTexturePathById(id) {
 
 export class CardPile extends THREE.Mesh {
     static max_visible_cards = 25;
-    static card_thickness = 0.05;
+    static card_thickness = 0.04;
     #count;
 
-    constructor() {
+    constructor(card_count = 100) {
         const cardPileGeo = new THREE.BoxGeometry(1, CardPile.card_thickness * CardPile.max_visible_cards, 1.5);
 
         const mats = [
@@ -33,7 +33,7 @@ export class CardPile extends THREE.Mesh {
         ]
 
         super(cardPileGeo, mats);
-        this.#count = CardPile.max_visible_cards;
+        this.#count = card_count;
         this.#updatePile();
     }
 
@@ -92,6 +92,7 @@ export class Card extends THREE.Mesh {
     }
 
     startSwingLoop() {
+        this.swingTimeline.clear();
         const angle = THREE.MathUtils.degToRad(4);
         this.swingTimeline.fromTo(this.rotation, { z: -angle }, { z: angle, repeat: -1, duration: 1, yoyo: true, ease: Power1.easeInOut } );
     }

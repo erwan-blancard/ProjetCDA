@@ -51,8 +51,8 @@ export function initGame() {
 
     // Interactions
 
-    document.addEventListener( 'pointermove', onPointerMove );
-    document.addEventListener( 'pointerdown', onPointerDown );
+    renderer.domElement.addEventListener( 'pointermove', onPointerMove );
+    renderer.domElement.addEventListener( 'pointerdown', onPointerDown );
 
     window.addEventListener( 'resize', onWindowResize );
 
@@ -64,13 +64,11 @@ export function initGame() {
     // const cube = new THREE.Mesh( geometry, material );
     // scene.add( cube );
 
-    renderer.setAnimationLoop( () => {
-        // cube.rotateY(THREE.MathUtils.degToRad(0.1));
-        renderSceneView();
-    } );
+    renderSceneView();
 }
 
 function renderSceneView() {
+    requestAnimationFrame(renderSceneView);
     renderer.render( scene, camera );
 }
 
@@ -127,7 +125,7 @@ function onPointerDown( event ) {
         
             default:
                 card.stopSwingLoop();
-                card.quaternion.copy(camera.quaternion);
+                card.quaternion.copy(camera.quaternion);    // card face camera
                 break;
         }
     } else {
