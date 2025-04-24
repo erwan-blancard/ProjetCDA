@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "vite src",
-    "build": "vite build src --outDir ../dist",
+    "dev": "vite",
+    "build": "vite build --outDir ../dist",
     "preview": "vite preview"
   },
   "author": "",

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chat!</title>
+
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
+      }
+
+      input[type='text'] {
+        font-size: inherit;
+      }
+
+      #log {
+        width: 30em;
+        height: 20em;
+        overflow: auto;
+        margin: 0.5em 0;
+
+        border: 1px solid black;
+      }
+
+      #status {
+        padding: 0 0.2em;
+      }
+
+      #text {
+        width: 17em;
+        padding: 0.5em;
+      }
+
+      .msg {
+        margin: 0;
+        padding: 0.25em 0.5em;
+      }
+
+      .msg--status {
+        /* a light yellow */
+        background-color: #ffffc9;
+      }
+
+      .msg--message {
+        /* a light blue */
+        background-color: #d2f4ff;
+      }
+
+      .msg--error {
+        background-color: pink;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Chat!</h1>
+
+    <div>
+      <button id="connect">Connect</button>
+      <span>Status:</span>
+      <span id="status">disconnected</span>
+    </div>
+
+    <div id="log"></div>
+
+    <form id="chatform">
+      <input type="text" id="text" autocomplete="off" />
+      <input type="submit" id="send" />
+    </form>
+
+    <div>
+      <button id="trigger-play-card-action">Send Play Card Action</button>
+      <button id="trigger-draw-action">Send Draw Action</button>
+      <button id="send-token-action">Send Token Action</button>
+    </div>
+
+    <script>
+      const $status = document.querySelector('#status')
+      const $connectButton = document.querySelector('#connect')
+      const $playCardButton = document.querySelector('#trigger-play-card-action')
+      const $drawButton = document.querySelector('#trigger-draw-action')
+      const $sendTokenButton = document.querySelector('#send-token-action')
+      const $log = document.querySelector('#log')
+      const $form = document.querySelector('#chatform')
+      const $input = document.querySelector('#text')
+
+      /** @type {WebSocket | null} */
+      var socket = null
+
+      function log(msg, type = 'status') {
+        $log.innerHTML += `<p class="msg msg--${type}">${msg}</p>`
+        $log.scrollTop += 1000
+      }
+
+      function connect() {
+        disconnect()
+
+        const { location } = window
+
+        const proto = location.protocol.startsWith('https') ? 'wss' : 'ws'
+        const wsUri = `${proto}://${location.host}/ws`
+
+        log('Connecting...')
+        socket = new WebSocket(wsUri)
+
+        socket.onopen = () => {
+          log('Connected')
+          updateConnectionStatus()
+        }
+
+        socket.onmessage = ev => {
+          log('Received: ' + ev.data, 'message')
+        }
+
+        socket.onclose = () => {
+          log('Disconnected')
+          socket = null
+          updateConnectionStatus()
+        }
+      }
+
+      function disconnect() {
+        if (socket) {
+          log('Disconnecting...')
+          socket.close()
+          socket = null
+
+          updateConnectionStatus()
+        }
+      }
+
+      function sendMessage(message) {
+        if (socket) {
+          log('Sending: ' + message)
+
+          const action = {
+            "type": "SendChatMessage",
+            "message": message
+          };
+
+          socket.send(JSON.stringify(action))
+        }
+      }
+
+      function updateConnectionStatus() {
+        if (socket) {
+          $status.style.backgroundColor = 'transparent'
+          $status.style.color = 'green'
+          $status.textContent = `connected`
+          $connectButton.innerHTML = 'Disconnect'
+          $input.focus()
+        } else {
+          $status.style.backgroundColor = 'red'
+          $status.style.color = 'white'
+          $status.textContent = 'disconnected'
+          $connectButton.textContent = 'Connect'
+        }
+      }
+
+      $connectButton.addEventListener('click', () => {
+        if (socket) {
+          disconnect()
+        } else {
+          connect()
+        }
+
+        updateConnectionStatus()
+      })
+
+      $playCardButton.addEventListener('click', () => {
+        if (socket) {
+          log('Playing Card...')
+
+          const json_text = {
+            "type": "PlayCard",
+            "card_id": 64,
+          };
+
+          socket.send(JSON.stringify(json_text))
+        }
+
+        updateConnectionStatus()
+      })
+
+      $drawButton.addEventListener('click', () => {
+        if (socket) {
+          log('Drawing Card...')
+
+          const json_text = {
+            "type": "DrawCard",
+          };
+
+          socket.send(JSON.stringify(json_text))
+        }
+
+        updateConnectionStatus()
+      })
+
+      $sendTokenButton.addEventListener('click', () => {
+        if (socket) {
+          log('Authentication...')
+
+          const action = {
+            "type": "Auth",
+            "token": "dummy"
+          }
+
+          socket.send(JSON.stringify(action))
+        }
+
+      })
+
+      $form.addEventListener('submit', ev => {
+        ev.preventDefault()
+
+        const text = $input.value
+
+        sendMessage(text)
+
+        $input.value = ''
+        $input.focus()
+      })
+
+      updateConnectionStatus()
+    </script>
+  </body>
+</html>

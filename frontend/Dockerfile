@@ -10,4 +10,7 @@ COPY . .
 
 EXPOSE 5173
 
-CMD ["npx", "vite", "--host"]
+# CMD ["npx", "vite", "src", "--host", "0.0.0.0"]
+
+# use vite.config.ts
+CMD ["npx", "vite"]
