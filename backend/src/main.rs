@@ -3,21 +3,17 @@ use actix_web::{get, patch, post, HttpMessage, HttpRequest};
 use actix_web::{error, web, App, HttpServer, Responder, HttpResponse};
 use actix_web::middleware::Logger;
 use actix_cors::Cors;
-use database::schema::accounts;
-use diesel::dsl::insert_into;
-use diesel::query_dsl::methods::FilterDsl;
-use diesel::query_dsl::methods::SelectDsl;
-use diesel::{ExpressionMethods, Insertable, QueryDsl};
+use actix_files::Files;
+use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
-use diesel::r2d2;
-use diesel::RunQueryDsl;
-use diesel::SelectableHelper;
-
+use diesel::dsl::insert_into;
+use diesel::query_dsl::methods::{FilterDsl, SelectDsl};
+use diesel::{ExpressionMethods, Insertable, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde_derive::Deserialize;
 
 mod auth;
 
-// declare database as module
+// modules Diesel
 mod database {
     pub mod models;
     pub mod schema;
@@ -27,65 +23,53 @@ mod database {
 use database::models::*;
 use database::actions::{self, NewAccount, AccountLogin};
 
-type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
-
+type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 #[get("/account/friends")]
-async fn get_friends_for_account(req: HttpRequest, pool: web::Data<DbPool>) -> actix_web::Result<impl Responder> {
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-
-    let requests = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn get_friends_for_account(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
+    let friends = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::list_friends_for_account(&mut conn, account_id)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(requests))
+    Ok(HttpResponse::Ok().json(friends))
 }
 
 #[get("/account/requests")]
-async fn get_friend_requests_for_account(req: HttpRequest, pool: web::Data<DbPool>) -> actix_web::Result<impl Responder> {
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-
-    let requests = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn get_friend_requests_for_account(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
+    let reqs = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::list_friend_requests_for_account(&mut conn, account_id)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(requests))
+    Ok(HttpResponse::Ok().json(reqs))
 }
 
 #[get("/account/requests/{username}")]
-async fn get_friend_request_by_username(req: HttpRequest, pool: web::Data<DbPool>, path: web::Path<(String,)>) -> actix_web::Result<impl Responder> {
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-    let (username,) = path.into_inner();
-
-    let requests = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn get_friend_request_by_username(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+    path: web::Path<(String,)>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
+    let username = path.into_inner().0;
+    let req_item = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::get_friend_request_of_account_by_username(&mut conn, account_id, &username)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(requests))
+    Ok(HttpResponse::Ok().json(req_item))
 }
 
 #[derive(Deserialize)]
@@ -94,158 +78,132 @@ struct NewFriendRequestJSON {
 }
 
 #[post("/account/requests")]
-async fn send_friend_request(req: HttpRequest, pool: web::Data<DbPool>, json: web::Json<NewFriendRequestJSON>) -> actix_web::Result<impl Responder> {
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-
-    let requests = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn send_friend_request(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+    json: web::Json<NewFriendRequestJSON>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
+    let sent = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::send_friend_request(&mut conn, account_id, &json.username)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Created().json(requests))
+    Ok(HttpResponse::Created().json(sent))
 }
 
 #[derive(Deserialize)]
 struct FriendRequestResponseJSON {
-    accepted: bool
+    accepted: bool,
 }
 
-
 #[patch("/account/requests/{username}")]
-async fn change_friend_request_status(req: HttpRequest, pool: web::Data<DbPool>, path: web::Path<(String,)>, json: web::Json<FriendRequestResponseJSON>) -> actix_web::Result<impl Responder> {
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-    let (username,) = path.into_inner();
-
-    let request = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn change_friend_request_status(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+    path: web::Path<(String,)>,
+    json: web::Json<FriendRequestResponseJSON>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
+    let username = path.into_inner().0;
+    let updated = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::change_friend_request_status(&mut conn, account_id, &username, json.accepted)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(request))
+    Ok(HttpResponse::Ok().json(updated))
 }
 
-
 #[get("/account/{account_id}/stats")]
-async fn get_other_account_stats(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> actix_web::Result<impl Responder> {
-    let (account_id,) = path.into_inner();
-
+async fn get_other_account_stats(
+    pool: web::Data<DbPool>,
+    path: web::Path<(i32,)>,
+) -> actix_web::Result<impl Responder> {
+    let account_id = path.into_inner().0;
     let stats = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+        let mut conn = pool.get().unwrap();
         actions::get_account_stats(&mut conn, account_id)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
     Ok(HttpResponse::Ok().json(stats))
 }
 
-
 #[get("/account/stats")]
-async fn get_my_account_stats(req: HttpRequest, pool: web::Data<DbPool>) -> actix_web::Result<impl Responder> {
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-
+async fn get_my_account_stats(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
     let stats = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+        let mut conn = pool.get().unwrap();
         actions::get_account_stats(&mut conn, account_id)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
     Ok(HttpResponse::Ok().json(stats))
 }
 
 #[get("/account/{account_id}")]
-async fn get_other_account(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> actix_web::Result<impl Responder> {
-    let (account_id,) = path.into_inner();
-
-    let account = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn get_other_account(
+    pool: web::Data<DbPool>,
+    path: web::Path<(i32,)>,
+) -> actix_web::Result<impl Responder> {
+    let account_id = path.into_inner().0;
+    let acct = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::get_account(&mut conn, account_id)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(account))
+    Ok(HttpResponse::Ok().json(acct))
 }
 
 #[get("/account")]
-async fn get_my_account(req: HttpRequest, pool: web::Data<DbPool>) -> actix_web::Result<impl Responder> {
-    // get account id based on JWT (put in extensions by JwtMiddleware)
-    let account_id: i32 = req.extensions().get::<i32>()
-                             .unwrap()
-                             .clone();
-
-    let account = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn get_my_account(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = *req.extensions().get::<i32>().unwrap();
+    let acct = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::get_account(&mut conn, account_id)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(account))
+    Ok(HttpResponse::Ok().json(acct))
 }
 
 #[post("/register")]
-async fn create_account(pool: web::Data<DbPool>, json: web::Json<NewAccount>) -> actix_web::Result<impl Responder> {
-    let account = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn create_account(
+    pool: web::Data<DbPool>,
+    json: web::Json<NewAccount>,
+) -> actix_web::Result<impl Responder> {
+    let acct = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::create_account(&mut conn, &json.username, &json.email, &json.password)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Created().json(account))
+    Ok(HttpResponse::Created().json(acct))
 }
 
-
 #[post("/login")]
-async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_web::Result<impl Responder> {
-    let account = web::block(move || {
-        // Obtaining a connection from the pool is also a potentially blocking operation.
-        // So, it should be called within the `web::block` closure, as well.
-        let mut conn = pool.get().expect("couldn't get db connection from pool");
-
+async fn login(
+    pool: web::Data<DbPool>,
+    json: web::Json<AccountLogin>,
+) -> actix_web::Result<impl Responder> {
+    let acct = web::block(move || {
+        let mut conn = pool.get().unwrap();
         actions::get_account_for_login(&mut conn, &json.username, &json.password)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
+    let token = auth::create_jwt(acct.id);
 
-    let token = auth::create_jwt(account.id);
-
-    // create a cookie containing the token and send it to the user
     let cookie = Cookie::build("token", token.clone())
-        // FIXME cookie config is permissive
         .secure(true)
         .same_site(SameSite::None)
         .finish();
@@ -253,26 +211,33 @@ async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_
     Ok(HttpResponse::Ok().cookie(cookie).json(token))
 }
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not set !");
-    let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url.clone());
+    // 1) Logger (pour Logger::default())
+    env_logger::init();
+
+    // 2) Pool Diesel
+    let database_url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL env var not set !");
+    let manager = ConnectionManager::<PgConnection>::new(database_url.clone());
     let pool = r2d2::Pool::builder()
         .build(manager)
-        .expect(format!("Unable to connect to database with URL \"{}\" !", database_url).as_str());
+        .expect("Failed to create DB pool");
 
     println!("Connected to database!");
 
     HttpServer::new(move || {
-        let cors = Cors::permissive();         // FIXME configure
+        // CORS _avec_ cookies
+        let cors = Cors::permissive()
+            .supports_credentials();
 
         App::new()
             .wrap(Logger::default())
             .wrap(cors)
+            // 3) pages statiques dans ./static/
+            .service(Files::new("/", "./static").index_file("login.html"))
             .app_data(web::Data::new(pool.clone()))
             .wrap(auth::JwtMiddleware)
-
             // auth
             .service(login)
             .service(create_account)
