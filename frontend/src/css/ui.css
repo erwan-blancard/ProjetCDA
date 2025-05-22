@@ -1,0 +1,100 @@
+#ui {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    /* display: grid; */
+    pointer-events: none;
+}
+
+#ui section {
+    display: flex;
+}
+
+#ui :not(section) {
+    pointer-events: auto;
+}
+
+.connection {
+    position: absolute;
+    flex-direction: column;
+}
+
+.connection > * {
+    margin: 0px;
+    margin-left: 4px;
+}
+
+.chat {
+    position: relative;
+    margin: 8px;
+    display: flex;
+    flex-direction: column;
+    align-self: flex-end;
+}
+
+input[type='text'] {
+    font-size: inherit;
+}
+
+#log {
+    width: 18em;
+    height: 14em;
+    overflow: auto;
+    margin: 0.5em 0;
+
+    /* border: 1px solid black; */
+}
+
+#text {
+    width: 12em;
+    padding: 0.5em;
+}
+
+.msg {
+    margin: 0;
+    padding: 0.25em 0.5em;
+}
+
+.msg--status {
+    /* a light yellow */
+    background-color: #ffffc97F;
+}
+
+.msg--message {
+    /* a light blue */
+    background-color: #d2f4ff7F;
+}
+
+.msg--error {
+    background-color: #ffc0cb7F;
+}
+
+/* PlayerUI */
+
+
+.player-ui * {
+    padding: 0px;
+    margin: 0px;
+}
+
+.player-health-ui,
+.player-cards-ui,
+.player-discard-ui {
+    display: flex;
+    align-items: center;
+}
+
+.player-health-icon::before {
+    content: "❤️ ";
+}
+
+.player-cards-icon::before {
+    content: "🃏 ";
+}
+
+.player-discard-icon::before {
+    content: "🃏 ";
+}
+

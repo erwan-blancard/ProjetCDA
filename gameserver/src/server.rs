@@ -10,17 +10,17 @@ use std::{
 use rand::{rand_core::le, Rng as _};
 use tokio::sync::{mpsc, oneshot};
 
-use crate::{ConnId, Msg, Player, Token};
+use crate::{dto::responses::{GameStateForPlayer, PlayerId, PlayerProfile, ServerResponse}, ConnId, Msg, Player, Token};
 use crate::game::engine::GameEngine;
-use crate::actions::UserAction;
+use crate::dto::actions::UserAction;
 
-/// A command received by the [`GameServer`].
+/// A command received by the [`GameServer`] (sent by a [`GameServerHandle`])
 #[derive(Debug)]
 enum Command {
     Authenticate {
         token: Token,
         conn: ConnId,
-        res_tx: oneshot::Sender<bool>,
+        res_tx: oneshot::Sender<Option<PlayerId>>,
     },
     
     Connect {
@@ -36,6 +36,15 @@ enum Command {
         json_string: Msg,
         conn: ConnId,
         res_tx: oneshot::Sender<()>,
+    },
+
+    SessionInfo {
+        res_tx: oneshot::Sender<Vec<PlayerProfile>>,
+    },
+
+    GameStateForPlayer {
+        conn: ConnId,
+        res_tx: oneshot::Sender<Option<GameStateForPlayer>>,
     },
 
     Message {
@@ -76,7 +85,7 @@ impl GameServer {
     }
 
     /// Send user message to others.
-    async fn send_chat_message(&self, conn: ConnId, msg: impl Into<Msg>) {
+    async fn send_chat_message_to_handlers(&self, conn: ConnId, msg: impl Into<Msg>) {
         let msg = msg.into();
         
         for (conn_id, tx) in &self.sessions {
@@ -96,12 +105,16 @@ impl GameServer {
 
     }
 
+    async fn get_game_state_for_player(&self, conn: ConnId) -> Option<GameStateForPlayer> {
+        None
+    }
+
     /// Register new session and assign unique ID to this session
     async fn connect(&mut self, tx: mpsc::UnboundedSender<Msg>) -> ConnId {
         log::info!("Someone joined");
 
         // notify all users in same room
-        self.send_chat_message(0, "Someone joined").await;
+        self.send_chat_message_to_handlers(0, "Someone joined").await;
 
         // register session with random connection ID
         let id = rand::rng().random::<ConnId>();
@@ -113,7 +126,7 @@ impl GameServer {
 
     /// Unregister connection from room map and broadcast disconnection message.
     async fn disconnect(&mut self, conn_id: ConnId) {
-        
+
         // remove sender
         if self.sessions.remove(&conn_id).is_some() {
             println!("Session {conn_id:?} disconnected");
@@ -142,14 +155,25 @@ impl GameServer {
                     let _ = res_tx.send(status);
                 }
 
+                Command::SessionInfo { res_tx } => {
+                    let players = Vec::new();
+
+                    let _ = res_tx.send(players);
+                }
+
                 Command::Action { json_string, conn, res_tx } => {
                     self.process_player_action(json_string, conn).await;
                     let _ = res_tx.send(());
                 }
 
                 Command::Message { conn, msg, res_tx } => {
-                    self.send_chat_message(conn, msg).await;
+                    self.send_chat_message_to_handlers(conn, msg).await;
                     let _ = res_tx.send(());
+                }
+
+                Command::GameStateForPlayer { conn, res_tx } => {
+                    let game_state: Option<GameStateForPlayer> = self.get_game_state_for_player(conn).await;
+                    let _ = res_tx.send(game_state);
                 }
             }
         }
@@ -181,7 +205,7 @@ impl GameServerHandle {
         res_rx.await.unwrap()
     }
 
-    pub async fn authenticate(&self, token: Token, conn: ConnId) -> bool {
+    pub async fn authenticate(&self, token: Token, conn: ConnId) -> Option<PlayerId> {
         let (res_tx, res_rx) = oneshot::channel();
 
         // unwrap: game server should not have been dropped
@@ -193,7 +217,7 @@ impl GameServerHandle {
         res_rx.await.unwrap()
     }
 
-    /// Broadcast message to current room.
+    /// Broadcast message to users.
     pub async fn send_message(&self, conn: ConnId, msg: impl Into<Msg>) {
         let (res_tx, res_rx) = oneshot::channel();
 
@@ -208,6 +232,24 @@ impl GameServerHandle {
 
         // unwrap: game server does not drop our response channel
         res_rx.await.unwrap();
+    }
+
+    pub async fn get_session_info(&self) -> Vec<PlayerProfile> {
+        let (res_tx, res_rx) = oneshot::channel();
+
+        // unwrap: game server should not have been dropped
+        self.cmd_tx
+            .send(Command::SessionInfo {
+                res_tx,
+            })
+            .unwrap();
+
+        // unwrap: game server does not drop our response channel
+        res_rx.await.unwrap()
+    }
+
+    pub async fn send_game_state_to_player(&self, conn: ConnId) {
+
     }
 
     pub fn disconnect(&self, conn: ConnId) {

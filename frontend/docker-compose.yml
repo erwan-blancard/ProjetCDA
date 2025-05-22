@@ -5,7 +5,7 @@ services:
     container_name: randomi-front
     ports:
       - "5173:5173"
-    env_file: .env
+    env_file: ../.env
     volumes:
       - .:/app
       - /app/node_modules

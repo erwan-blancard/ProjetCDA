@@ -12,7 +12,8 @@
   "description": "",
   "dependencies": {
     "gsap": "^3.12.7",
-    "three": "^0.174.0"
+    "three": "^0.174.0",
+    "three-stdlib": "^2.36.0"
   },
   "devDependencies": {
     "vite": "^6.2.2"

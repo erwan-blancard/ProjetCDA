@@ -9,7 +9,10 @@ use tokio::{
 
 mod handler;
 mod server;
-mod actions;
+mod dto {
+    pub mod actions;
+    pub mod responses;
+}
 pub mod game {
     pub mod engine;
 }
@@ -56,8 +59,6 @@ async fn game_ws(
 async fn main() -> io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    log::info!("starting HTTP server at http://localhost:8080");
-
     let (chat_server, server_tx) = GameServer::new();
 
     let chat_server = spawn(chat_server.run());
@@ -74,7 +75,7 @@ async fn main() -> io::Result<()> {
             .wrap(middleware::Logger::default())
     })
     .workers(2)
-    .bind(("0.0.0.0", 8080))?
+    .bind(("0.0.0.0", 8081))?
     .run();
 
     try_join!(http_server, async move { chat_server.await.unwrap() })?;

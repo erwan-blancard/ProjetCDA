@@ -4,7 +4,7 @@ services:
     container_name: randomi-db
     ports:
       - '5432:5432'
-    env_file: ../.env
+    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -17,7 +17,7 @@ services:
       - randomi-backend
   
   api:
-    build: .
+    build: ./backend
     container_name: randomi-api
     ports:
       - "8080:8080"
@@ -30,6 +30,19 @@ services:
       - randomi-backend
     depends_on:
       - db
+  
+  frontend:
+    build: ./frontend
+    container_name: randomi-front
+    ports:
+      - "5173:5173"
+    env_file: .env
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    
+    depends_on:
+      - api
 
 
 networks:

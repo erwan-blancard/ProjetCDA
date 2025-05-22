@@ -5,7 +5,8 @@ import { clamp, randInt } from 'three/src/math/MathUtils.js';
 
 const textureLoader = new THREE.TextureLoader();
 const cardGeo = new THREE.BoxGeometry(1, 1.5, 0.001);
-const cardCover = textureLoader.load("assets/randomi_verso.jpg");
+export const cardCoverPath = "assets/randomi_verso.jpg";
+const cardCover = textureLoader.load(cardCoverPath);
 cardCover.colorSpace = THREE.SRGBColorSpace;
 
 
@@ -85,9 +86,15 @@ export class Card extends THREE.Mesh {
         super(cardGeo, mats);
     }
 
-    flipCard() {
+    // transition smoothly to next position
+    goto(x, y, z, duration=0.4) {
         const tl = gsap.timeline();
-        tl.to(this.rotation, { y: (this.flipped ? 0 : -Math.PI), duration: 0.5 } );
+        tl.to(this.position, { x, y, z, duration });
+    }
+
+    flipCard(instant=false) {
+        const tl = gsap.timeline();
+        tl.to(this.rotation, { y: (this.flipped ? 0 : -Math.PI), duration: (instant ? 0.0 : 0.5) } );
         this.flipped = !this.flipped;
     }
 
@@ -100,6 +107,44 @@ export class Card extends THREE.Mesh {
     stopSwingLoop() {
         this.swingTimeline.clear();
         this.rotation.z = 0;
+    }
+
+}
+
+
+export class OpponentCard extends Card {
+
+    constructor() {
+        super(cardCoverPath);
+        this.flipCard(true);
+    }
+
+    displayCardAsFront(id) {
+        const image = getCardTexturePathById(id);
+        const tex = textureLoader.load(image);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        
+        const mats = [
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial({map: tex}),
+            new THREE.MeshBasicMaterial({map: cardCover})
+        ]
+        this.material = mats;
+    }
+
+    displayCoverAsFront() {
+        const mats = [
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial(),
+            new THREE.MeshBasicMaterial({map: cardCover}),
+            new THREE.MeshBasicMaterial({map: cardCover})
+        ]
+        this.material = mats;
     }
 
 }

@@ -52,8 +52,11 @@ function register_submit() {
             console.log(`${request.status}: ${request.responseText}`);
 
             // go to index.html
-            if (request.status === 200) {
+            if (request.status === 201) {
+                alert("Account successfully created !");
                 window.location.href = "/login.html";
+            } else {
+                alert("There was an error when creating the account: " + `${request.status}: ${request.responseText}`);
             }
         }
     };

@@ -10,7 +10,8 @@ use futures_util::{
 use serde_json::{from_str, Value};
 use tokio::{sync::mpsc, time::interval};
 
-use crate::{actions::UserAction, game, ConnId, GameServerHandle};
+use crate::{dto::{actions::UserAction, responses::ServerResponse}, game, ConnId, GameServerHandle, Player};
+use crate::dto::responses::PlayerId;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -28,7 +29,7 @@ pub async fn game_ws(
     mut session: actix_ws::Session,
     msg_stream: actix_ws::MessageStream,
 ) {
-    log::info!("connected");
+    log::info!("New session connected");
 
     let mut last_heartbeat = Instant::now();
     let mut interval = interval(HEARTBEAT_INTERVAL);
@@ -45,7 +46,7 @@ pub async fn game_ws(
 
     let mut msg_stream = pin!(msg_stream);
 
-    let mut authenticated = false;
+    let mut player_id: Option<PlayerId> = None;
     let auth_wait_begin = Instant::now();
 
     let close_reason = loop {
@@ -54,7 +55,7 @@ pub async fn game_ws(
         let tick = pin!(interval.tick());
         let msg_rx = pin!(conn_rx.recv());
 
-        if !authenticated && Instant::now().duration_since(auth_wait_begin) > AUTHENTICATION_TIMEOUT {
+        if !player_id.is_some() && Instant::now().duration_since(auth_wait_begin) > AUTHENTICATION_TIMEOUT {
             let desc = String::from("Authentication Timeout reached !");
             log::warn!("{:?}", desc);
             break Some(CloseReason { code: CloseCode::Normal, description: Some(desc) });
@@ -81,7 +82,7 @@ pub async fn game_ws(
                     }
 
                     AggregatedMessage::Text(text) => {
-                        let close_reason = process_received_text(&game_server, &mut session, &text, conn_id, &mut authenticated).await;
+                        let close_reason = process_received_text(&game_server, &mut session, &text, conn_id, &mut player_id).await;
                         // break if process_received_text returned a close reason
                         if close_reason.is_some() {
                             break close_reason;
@@ -105,9 +106,12 @@ pub async fn game_ws(
             // client WebSocket stream ended
             Either::Left((Either::Left((None, _)), _)) => break None,
 
-            // chat messages received from other room participants
+            // chat messages received from other handlers
             Either::Left((Either::Right((Some(chat_msg), _)), _)) => {
-                session.text(chat_msg).await.unwrap();
+                log::info!("chat_msg: {chat_msg:?}");
+                // session.text(serde_json::to_string(&chat_message).unwrap()).await.unwrap();
+                let chat_message = ServerResponse::Message {message: chat_msg};
+                chat_message.send(&mut session).await.unwrap();
             }
 
             // all connection's message senders were dropped
@@ -143,15 +147,17 @@ async fn process_received_text(
     session: &mut actix_ws::Session,
     text: &str,
     conn: ConnId,
-    authenticated: &mut bool
+    player_id: &mut Option<PlayerId>,
 ) -> Option<CloseReason> {
     let json_str = text.trim();
 
     let possible_action: Result<UserAction, _> = from_str(&json_str);
 
-    if !*authenticated {
+    let mut authenticated = player_id.is_some();
+
+    // filter actions if not authenticated
+    if !authenticated {
         match possible_action {
-            // actions allowed when not connected
             Ok(UserAction::Auth {..}) => {},
             Err(_) => {
                 log::warn!("Unable to deserialize JSON data to a player action: {json_str:?}");
@@ -163,6 +169,8 @@ async fn process_received_text(
 
                 game_server.disconnect(conn);
                 
+                // notify handler that we called disconnect
+                // by returning Some(CloseReason())
                 return Some(
                     CloseReason {
                         code: CloseCode::Normal,
@@ -174,9 +182,25 @@ async fn process_received_text(
 
     match possible_action {
         Ok(UserAction::Auth { token }) => {
-            log::info!("Auth Action: token: {token:?}");
-            let ok = game_server.authenticate(token, conn).await;
-            *authenticated = ok;
+            if !authenticated {
+                log::info!("Auth Action: token: {token:?}");
+                let pid = game_server.authenticate(token, conn).await;
+                authenticated = pid.is_some();
+                (ServerResponse::Auth { status: authenticated })
+                    .send(session).await.unwrap();
+
+                *player_id = pid.clone();
+
+                let players = game_server.get_session_info().await;
+
+                // send session info
+                if authenticated {
+                    (ServerResponse::SessionInfo { id: pid.unwrap(), players: players })
+                        .send(session).await.unwrap();
+                }
+            } else  {
+                log::warn!("Received Auth Action but the session is already authenticated !");
+            }
         },
 
         Ok(UserAction::PlayCard { card_id }) => {
