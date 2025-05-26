@@ -42,7 +42,7 @@ export class PlayerObject extends Object3D {
         const cz = this.position.z;
 
         for (let i = 0; i < this.cards.length; i++) {
-            const x = (i*space) + cx - (count*space) / 2;
+            const x = cx + (i*space) - ((count-1)*space) / 2;
             this.cards[i].goto(x, cy, cz, (instant ? 0.0 : 0.4));
         }
     }
@@ -70,11 +70,11 @@ export class Opponent extends PlayerObject {
     /** @type Array<OpponentCard> */
     cards = [];
 
-    constructor(scene) {
+    constructor(scene, card_count=5) {
         super(scene);
         
         // fill deck with 5 cards
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < card_count; i++) {
             this.cards.push(this.#createOpponentCard());
         }
         this.emitCardCountChange();

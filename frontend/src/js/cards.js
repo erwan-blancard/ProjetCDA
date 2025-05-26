@@ -5,9 +5,25 @@ import { clamp, randInt } from 'three/src/math/MathUtils.js';
 
 const textureLoader = new THREE.TextureLoader();
 const cardGeo = new THREE.BoxGeometry(1, 1.5, 0.001);
-export const cardCoverPath = "assets/randomi_verso.jpg";
-const cardCover = textureLoader.load(cardCoverPath);
+export const CARD_COVER_PATH = "assets/randomi_verso.jpg";
+const cardCover = textureLoader.load(CARD_COVER_PATH);
 cardCover.colorSpace = THREE.SRGBColorSpace;
+
+
+export function newCardMat(front, cover=cardCover) {
+    const mats = [
+        new THREE.MeshBasicMaterial(),
+        new THREE.MeshBasicMaterial(),
+        new THREE.MeshBasicMaterial(),
+        new THREE.MeshBasicMaterial(),
+        new THREE.MeshBasicMaterial({map: front}),
+        new THREE.MeshBasicMaterial({map: cover}),
+    ];
+    return mats;
+}
+
+
+export const COVER_FRONTBACK_MAT = newCardMat(cardCover);
 
 
 export function getCardTexturePathById(id) {
@@ -74,19 +90,11 @@ export class Card extends THREE.Mesh {
         const tex = textureLoader.load(image);
         tex.colorSpace = THREE.SRGBColorSpace;
 
-        const mats = [
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial({map: tex}),
-            new THREE.MeshBasicMaterial({map: cardCover})
-        ]
-
-        super(cardGeo, mats);
+        super(cardGeo, newCardMat(tex));
+        this.rotateX(THREE.MathUtils.degToRad(-90));
     }
 
-    // transition smoothly to next position
+    /** transition smoothly to next position */
     goto(x, y, z, duration=0.4) {
         const tl = gsap.timeline();
         tl.to(this.position, { x, y, z, duration });
@@ -115,7 +123,7 @@ export class Card extends THREE.Mesh {
 export class OpponentCard extends Card {
 
     constructor() {
-        super(cardCoverPath);
+        super(CARD_COVER_PATH);
         this.flipCard(true);
     }
 
@@ -124,26 +132,12 @@ export class OpponentCard extends Card {
         const tex = textureLoader.load(image);
         tex.colorSpace = THREE.SRGBColorSpace;
         
-        const mats = [
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial({map: tex}),
-            new THREE.MeshBasicMaterial({map: cardCover})
-        ]
+        const mats = newCardMat(tex);
         this.material = mats;
     }
 
     displayCoverAsFront() {
-        const mats = [
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial(),
-            new THREE.MeshBasicMaterial({map: cardCover}),
-            new THREE.MeshBasicMaterial({map: cardCover})
-        ]
+        const mats = COVER_FRONTBACK_MAT;
         this.material = mats;
     }
 

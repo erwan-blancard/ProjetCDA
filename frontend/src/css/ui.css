@@ -38,18 +38,19 @@ input[type='text'] {
     font-size: inherit;
 }
 
+#text, .msg {
+    font-size: medium;
+}
+
 #log {
-    width: 18em;
-    height: 14em;
+    width: 14em;
+    height: 10em;
     overflow: auto;
     margin: 0.5em 0;
-
-    /* border: 1px solid black; */
 }
 
 #text {
-    width: 12em;
-    padding: 0.5em;
+    width: 80%;
 }
 
 .msg {

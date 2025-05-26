@@ -1,6 +1,9 @@
 import gsap from "gsap";
 
 
+screen.orientation.lock("landscape");
+
+
 function getCookie(name) {
     const match = document.cookie
                   .match(new RegExp("(^| )" + name + "=([^;]+)"));
@@ -25,6 +28,8 @@ if (token == null) {
 }
 
 GAME.initGame();
+
+// chat
 
 const $log = document.querySelector('#log')
 const $form = document.querySelector('#chatform')

@@ -1,6 +1,10 @@
+import { api_url } from "./api";
+import { displayPopup } from "./ui/popup";
 
+export function login_submit() {
+    const button = document.getElementById("form-submit");
+    button.disabled = true;
 
-function login_submit() {
     const username = document.getElementById("username-input").value;
     const password = document.getElementById("password-input").value;
 
@@ -21,19 +25,26 @@ function login_submit() {
                 // console.log(request.getAllResponseHeaders());
                 // console.log(document.cookie);
                 window.location.href = "/index.html";
+            } else {
+                displayPopup(`An error occured when logging in !\n${request.responseText}`, "Error");
             }
+
+            button.disabled = false;
+
         }
     };
 
-    request.open("POST", "http://localhost:8080/login");
+    request.open("POST", api_url("/login"));
     request.setRequestHeader("Content-Type", "application/json");
     request.withCredentials = true;
     request.send(JSON.stringify(payload));
-
 }
 
 
-function register_submit() {
+export function register_submit() {
+    const button = document.getElementById("form-submit");
+    button.disabled = true;
+
     const username = document.getElementById("username-input").value;
     const email = document.getElementById("email-input").value;
     const password = document.getElementById("password-input").value;
@@ -53,23 +64,33 @@ function register_submit() {
 
             // go to index.html
             if (request.status === 201) {
-                alert("Account successfully created !");
-                window.location.href = "/login.html";
+                displayPopup("Account successfully created !", "Account Created", "Go to Login page",
+                    () => {
+                        window.location.href = "/login.html";
+                    });
             } else {
-                alert("There was an error when creating the account: " + `${request.status}: ${request.responseText}`);
+                displayPopup("There was an error when creating the account !\n" + `${request.status}: ${request.responseText}`, "Error");
             }
+
+            button.disabled = false;
         }
     };
 
-    request.open("POST", "http://localhost:8080/register");
+    request.open("POST", api_url("/register"));
     request.setRequestHeader("Content-Type", "application/json");
     request.send(JSON.stringify(payload));
 
 }
 
 
-function logout() {
+export function logout() {
     // clear token and go to login page
     document.cookie = "token=";
     window.location.href = "/login.html";
 }
+
+
+// expose function inline for onclick tag
+window.login_submit = login_submit;
+window.register_submit = register_submit;
+window.logout = logout;

@@ -66,8 +66,10 @@ export function initGame() {
     labelRenderer.domElement.style.pointerEvents = "none";
     document.body.appendChild( labelRenderer.domElement );
 
-    camera.position.set(0, 6, 8);
-    camera.lookAt(new THREE.Vector3(0, 3, 3));
+    // camera.position.set(0, 6, 8);
+    // camera.lookAt(new THREE.Vector3(0, 3, 3));
+    camera.position.set(0, 10, 2);
+    camera.lookAt(new THREE.Vector3(0, 0, 1));
 
     // lights
 
@@ -97,7 +99,6 @@ export function initGame() {
     playerUI.position.set(-4, 0, 0);
 
     const card1 = new Card(getCardTexturePathById(1));
-    card1.position.set(-2, 6, 5);
     scene.add(card1);
     player.cards.push(card1);
 
@@ -105,7 +106,7 @@ export function initGame() {
 
     // test
     for (let i = 0; i < 5; i++) {
-        const op = new Opponent(scene);
+        const op = new Opponent(scene, 3);
         const ui = new PlayerUI(op);
         ui.position.set(-1, 2, 0);
         op.updateCardPositions();
@@ -145,7 +146,7 @@ export function initGame() {
         console.log("Chat message received:", ev.detail.msg);
     })
     serverConnexion.addEventListener("sessioninfo", ev => {
-        onSessionInfoReceived(upd.detail);
+        onSessionInfoReceived(ev.detail);
     })
 }
 
@@ -246,7 +247,7 @@ function updateOpponentPositions() {
         const { cx, cy, cz } = getOpponentPosition(i);
         opponent.position.set(cx, cy, cz);
 
-        opponent.lookAt(new THREE.Vector3(0, 3, 3));
+        // opponent.lookAt(new THREE.Vector3(0, 10, 3));
 
         i++;
     });
@@ -256,11 +257,11 @@ function updateOpponentPositions() {
 
 function getOpponentPosition(index) {
     const opponents_count = opponents.size;
-    const space_between_opponents = 6;
+    const space_between_opponents = 4;
 
-    const cx = space_between_opponents*index + space_between_opponents/2 + 0.5 - (space_between_opponents*opponents_count) / 2;
+    const cx = space_between_opponents*index + space_between_opponents / 2 - (space_between_opponents*opponents_count) / 2;
     const cy = 2;
-    const cz = -5;
+    const cz = -3;
 
     return { cx, cy, cz };
 }

@@ -5,33 +5,37 @@
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <title>RANDOMI GO</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
-    <link rel='stylesheet' type='text/css' media='screen' href='/css/ui.css'>
-    <!-- <script type="importmap">
-        {
-          "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/"
-          }
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/menu.css'>
+    <style>
+        /* remove scrolling */
+        html, body {
+            overflow: hidden;
         }
-      </script> -->
+    </style>
 </head>
 <body>
-  <style> body { margin: 0px; } </style>
-  <script type="module" src="/js/main.js"></script>
-
-  <div id="ui">
-      <section class="connection">
-        <p>Status: <span id="connection-status">Not connected</span></p>
-        <p>Authenticated: <span id="auth-status">Fail</span></p>
+  <script type="module" src="/js/menus/mainmenu.js"></script>
+  <div class="root">
+    <div id="view1" class="view">
+      <section>
+        <div class="styled"><h1>View 1</h1></div>
+        <button class="styled"><span>span</span></button>
+        <button class="styled"><p style="margin: 0px;">p margin 0px</p></button>
+        <button class="styled"><p>p</p></button>
+        <button class="styled">plain</button>
+        <button class="styled" id="button-set-view2"><span>View 2</span></button>
       </section>
-      <section class="chat">
-        <div id="log"></div>
-        <form id="chatform" style="pointer-events: none;">
-          <input type="text" id="text" autocomplete="off" />
-          <input type="submit" id="send" />
-        </form>
+    </div>
+    <div id="view2" class="view">
+      <section>
+        <div class="styled"><h1>View 2</h1></div>
+        <button class="styled" id="button-set-view1"><span>View 1</span></button>
       </section>
+    </div>
   </div>
 </body>
 </html>

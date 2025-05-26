@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>RANDOMI GO</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/ui.css'>
+    <!-- <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/"
+          }
+        }
+      </script> -->
+    <style>
+        /* remove scrolling */
+        html, body {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+  <script type="module" src="/js/main.js"></script>
+
+  <div id="ui">
+      <section class="connection">
+        <p>Status: <span id="connection-status">Not connected</span></p>
+        <p>Authenticated: <span id="auth-status">Fail</span></p>
+      </section>
+      <section class="chat">
+        <div id="log"></div>
+        <form id="chatform" style="pointer-events: none;">
+          <input type="text" id="text" autocomplete="off" />
+          <input type="submit" id="send" />
+        </form>
+      </section>
+  </div>
+</body>
+</html>
