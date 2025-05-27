@@ -56,7 +56,7 @@ pub fn test_random(player: &mut Player, opponent: &mut Player) {
         opponent.order = 1;
     } else {
         println!("Égalité, relancez le dé !");
-        test_random(player, opponent); // récursif avec les mêmes références
+        test_random(player, opponent);
         return;
     }
 
@@ -72,30 +72,45 @@ pub fn get_deck(player: &mut Player, opponent: &mut Player) {
         println!("{}", card.name);
     }
 
-    give_card2(&deck, player, opponent);
+    give_card2(&mut deck, player, opponent);
 }
 
-pub fn give_card2(deck: &[Card], player: &mut Player, opponent: &mut Player) {
-    let player1_cards = &deck[0..5];
-    let player2_cards = &deck[5..10];
+pub fn give_card2(deck: &mut Vec<Card>, player: &mut Player, opponent: &mut Player) {
+    player.current_hand_card = deck[0..5].to_vec();
+    opponent.current_hand_card = deck[5..10].to_vec();
 
-    println!("Joueur 1 : {:?}", player1_cards);
-    println!("Joueur 2 : {:?}", player2_cards);
+    println!("Joueur 1 : {:?}", player.current_hand_card);
+    println!("Joueur 2 : {:?}", opponent.current_hand_card);
     println!("Joueur 1 : Cartes en main 5 Cartes défaussées 0");
     println!("Joueur 2 : Cartes en main 5 Cartes défaussées 0");
 
-    if player.order == 1 {
-        println!("C'est à votre tour de jouer !");
-        player_turn(player1_cards, player2_cards, player, opponent);
-    } else {
-        println!("C'est au tour de l'adversaire de jouer !");
-        opponent_turn(player2_cards, player1_cards, opponent, player);
+    let mut is_player_turn = player.order == 1;
+
+    loop {
+        if is_player_turn {
+            println!("\nTour du joueur !");
+            if player_turn(player, opponent, deck) {
+                break;
+            }
+        } else {
+            println!("\nTour de l’adversaire !");
+            if opponent_turn(opponent, player, deck) {
+                break;
+            }
+        }
+
+        is_player_turn = !is_player_turn;
     }
 }
 
-fn player_turn(player1_cards: &[Card], player2_cards: &[Card], player: &mut Player, opponent: &mut Player) {
+fn player_turn(player: &mut Player, opponent: &mut Player, deck: &mut Vec<Card>) -> bool {
+    let missing = 5 - player.current_hand_card.len();
+    if missing > 0 
+    {
+    draw_cards(player, missing, deck);
+    }
     println!("Sélectionnez la carte à jouer :");
-    for (index, card) in player1_cards.iter().enumerate() {
+    for (index, card) in player.current_hand_card.iter().enumerate() {
         println!(
             "{}. {} - Element: {:?} Nature: {:?} Stars: {:?}",
             index + 1,
@@ -110,31 +125,62 @@ fn player_turn(player1_cards: &[Card], player2_cards: &[Card], player: &mut Play
     std::io::stdin().read_line(&mut choix).expect("Échec de la lecture");
 
     let choix: usize = match choix.trim().parse() {
-        Ok(n) if n >= 1 && n <= player1_cards.len() => n,
+        Ok(n) if n >= 1 && n <= player.current_hand_card.len() => n,
         _ => {
             println!("Choix invalide, veuillez réessayer.");
-            return;
+            return false;
         }
     };
 
-    let selected_card = &player1_cards[choix - 1];
+    let selected_card = player.current_hand_card[choix - 1].clone();
     println!("Vous avez sélectionné : {}", selected_card.name);
 
-    play_card(selected_card, player, opponent, player1_cards, player2_cards);
+    play_card(&selected_card, player, opponent, deck);
+
+    discard_card(&selected_card, player);
+
+    println!(
+        "Cartes en main: {}, Cartes défaussées: {}",
+        player.current_hand_card.len(),
+        player.current_discard_card.len()
+    );
+
+    player.life <= 0 || opponent.life <= 0
 }
 
-fn opponent_turn(player2_cards: &[Card], player1_cards: &[Card], opponent: &mut Player, player: &mut Player) {
+fn opponent_turn(opponent: &mut Player, player: &mut Player, deck: &mut Vec<Card>) -> bool {
+    //verification de la main de l'adversaire
+    let missing = 5usize.saturating_sub(opponent.current_hand_card.len());
+    if missing > 0
+     {
+    draw_cards(opponent, missing, deck);
+    }
     let mut rng = rand::thread_rng();
-    let choix = rng.gen_range(0..player2_cards.len());
-    println!("L'adversaire a choisi la carte numéro : {}", choix + 1);
-
-    let selected_card = &player2_cards[choix];
+    let choix = rng.gen_range(0..opponent.current_hand_card.len());
+    let selected_card = opponent.current_hand_card[choix].clone();
+    
     println!("L'adversaire a sélectionné : {}", selected_card.name);
 
-    play_card(selected_card, opponent, player, player2_cards, player1_cards);
+    play_card(&selected_card, opponent, player, deck);
+
+    discard_card(&selected_card, opponent);
+
+    opponent.life <= 0 || player.life <= 0
 }
 
-fn play_card(card: &Card, player: &mut Player, opponent: &mut Player, player_cards: &[Card], opponent_cards: &[Card]) {
+fn discard_card(card: &Card, player: &mut Player) {
+    if let Some(pos) = player.current_hand_card.iter().position(|c| c.id == card.id) {
+        let removed_card = player.current_hand_card.remove(pos);
+        player.current_discard_card.push(removed_card);
+        println!("Carte défaussée : {}", card.name);
+    } else {
+        println!("Erreur : carte non trouvée dans la main.");
+    }
+
+    thread::sleep(Duration::from_millis(500));
+}
+
+fn play_card(card: &Card, player: &mut Player, opponent: &mut Player, deck: &mut Vec<Card>) {
     thread::sleep(Duration::from_millis(500));
 
     if card.attack > 0 {
@@ -148,6 +194,7 @@ fn play_card(card: &Card, player: &mut Player, opponent: &mut Player, player_car
 
     if card.draw > 0 {
         println!("{} pioche {} carte(s).", player.name, card.draw);
+        draw_cards(player, card.draw as usize, deck);
     }
 
     if card.heal > 0 {
@@ -157,34 +204,24 @@ fn play_card(card: &Card, player: &mut Player, opponent: &mut Player, player_car
 
     println!("Vie de {}: {}", player.name, player.life);
     println!("Vie de {}: {}", opponent.name, opponent.life);
-     if opponent.life <= 0
-     {
-    println!("{} est vaincu ! {} remporte la partie !", opponent.name, player.name);
-    return; // On arrête ici
-    } 
-    else if player.life <= 0 
-    {
+
+    if opponent.life <= 0 {
+        println!("{} est vaincu ! {} remporte la partie !", opponent.name, player.name);
+    } else if player.life <= 0 {
         println!("{} est vaincu ! {} remporte la partie !", player.name, opponent.name);
-        return; // Cas très rare mais bon à prévoir
     }
+
     thread::sleep(Duration::from_millis(500));
-
-    check_order(player_cards, opponent_cards, player, opponent);
-   
-
 }
 
-fn check_order(
-    player_cards: &[Card],
-    opponent_cards: &[Card],
-    player: &mut Player,
-    opponent: &mut Player
-) {
-    if player.order == 1 {
-        println!("C'est au tour de l'adversaire de jouer !");
-        opponent_turn(opponent_cards, player_cards, opponent, player);
-    } else {
-        println!("C'est à votre tour de jouer !");
-        player_turn(opponent_cards, player_cards, opponent, player);
+fn draw_cards(player: &mut Player, count: usize, deck: &mut Vec<Card>) {
+    for _ in 0..count {
+        if let Some(card) = deck.pop() {
+            println!("{} a pioché : {}", player.name, card.name);
+            player.current_hand_card.push(card);
+        } else {
+            println!("Le deck est vide ! Impossible de piocher.");
+            break;
+        }
     }
 }
