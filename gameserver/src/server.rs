@@ -9,8 +9,9 @@ use std::{
 
 use rand::{rand_core::le, Rng as _};
 use tokio::sync::{mpsc, oneshot};
+use uid::IdU64;
 
-use crate::{dto::responses::{GameStateForPlayer, PlayerId, PlayerProfile, ServerResponse}, ConnId, Msg, Player, Token};
+use crate::{api::{self, Account}, dto::responses::{PlayerId, PlayerProfile, ServerResponse, GameStateForPlayer}, ConnId, Msg, Player, Token};
 use crate::game::engine::GameEngine;
 use crate::dto::actions::UserAction;
 
@@ -69,7 +70,7 @@ pub struct GameServer {
 }
 
 impl GameServer {
-    pub fn new() -> (Self, GameServerHandle) {
+    pub fn new(players: Vec<Player>) -> (Self, GameServerHandle) {
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
 
@@ -97,8 +98,20 @@ impl GameServer {
     
     /// Authenticate player through the API (TODO)
     async fn authenticate_player(&self, token: Token) -> Option<Player> {
-        // TODO
-        Some(Player { token, name: String::from("Player") })
+        let account: Option<Account> = api::get_account(&token).await;
+
+        match account {
+            Some(account) => {
+                if !account.suspended {
+                    return Some( Player { token: token, name: account.username } );
+                }
+
+                None
+            },
+            None => None
+        }
+        
+        // Some(Player { token, name: String::from("Player") })
     }
 
     async fn process_player_action(&self, json_string: String, conn_id: ConnId) {
@@ -117,7 +130,7 @@ impl GameServer {
         self.send_chat_message_to_handlers(0, "Someone joined").await;
 
         // register session with random connection ID
-        let id = rand::rng().random::<ConnId>();
+        let id = IdU64::<ConnId>::new().get();
         self.sessions.insert(id, tx);
 
         // send id back
@@ -152,10 +165,12 @@ impl GameServer {
                         self.users.insert(conn, player);
                         status = true;
                     }
+                    // FIXME
                     let _ = res_tx.send(status);
                 }
 
                 Command::SessionInfo { res_tx } => {
+                    // FIXME get from GameEngine
                     let players = Vec::new();
 
                     let _ = res_tx.send(players);

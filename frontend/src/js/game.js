@@ -160,8 +160,6 @@ export function onServerUpdate(upd_data) {
     console.log("Game Update:", upd_data);
 
     try {
-        const opponent_id = opponents[i]["player_id"];
-
         const current_player_turn = upd_data["current_player_turn"];
         const current_player_turn_end = upd_data["current_player_turn_end"];
 

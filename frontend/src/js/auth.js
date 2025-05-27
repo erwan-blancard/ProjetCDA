@@ -21,6 +21,7 @@ export function login_submit() {
             console.log(`${request.status}: ${request.responseText}`);
 
             // go to index.html
+            // cookie with token  should have been updated
             if (request.status === 200) {
                 // console.log(request.getAllResponseHeaders());
                 // console.log(document.cookie);

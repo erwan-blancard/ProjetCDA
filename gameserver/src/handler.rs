@@ -203,8 +203,8 @@ async fn process_received_text(
             }
         },
 
-        Ok(UserAction::PlayCard { card_id }) => {
-            log::info!("Play Card Action: id: {card_id:?}");
+        Ok(UserAction::PlayCard { card_id, targets }) => {
+            log::info!("Play Card Action: id: {card_id:?}, targets: {targets:?}");
         },
 
         Ok(UserAction::DrawCard {  }) => {

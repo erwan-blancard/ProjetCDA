@@ -68,7 +68,7 @@ pub fn create_account(conn: &mut PgConnection, username: &String, email: &String
     })
 }
 
-pub fn get_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<FilteredAccount> {
+pub fn get_account_by_id(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<FilteredAccount> {
     use super::schema::accounts::dsl::*;
 
     let account = accounts.select(FilteredAccount::as_select())

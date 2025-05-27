@@ -12,7 +12,7 @@ const IGNORE_ROUTES: [&str; 2] = ["/login", "/register"];
 
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Claims {
+pub struct Claims {
     sub: String,
     exp: usize,
     user_id: i32,
@@ -31,7 +31,7 @@ pub fn create_jwt(user_id: i32) -> String {
     encode(&header, &claims, &EncodingKey::from_secret(secret.as_ref())).unwrap()
 }
 
-fn validate_jwt(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+pub fn validate_jwt(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let secret = std::env::var("BACKEND_SECRET_KEY").unwrap();
 
     decode::<Claims>(

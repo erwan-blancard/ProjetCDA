@@ -1,3 +1,4 @@
+// these types must match the UserActions in the gameserver
 export const AUTH_ACTION_KEY = "Auth"
 export const PLAY_CARD_ACTION_KEY = "PlayCard"
 export const DRAW_CARD_ACTION_KEY = "DrawCard"
