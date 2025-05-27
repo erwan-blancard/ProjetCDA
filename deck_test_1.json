@@ -1,0 +1,323 @@
+[
+  {
+    "name": "Boule de feu",
+    "element": "Fire",
+    "stars": 2,
+    "nature": "Spell",
+    "effect": "Inflige 4 points de dégâts.",
+    "damage": 4,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Pomme",
+    "element": "Earth",
+    "stars": 2,
+    "nature": "Food",
+    "effect": "Récupérez 6 points.",
+    "damage": 0,
+    "heal": 6,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Pêche",
+    "element": "Water",
+    "stars": 2,
+    "nature": "Food",
+    "effect": "Récupérez 4 points. Piochez 1 carte.",
+    "damage": 0,
+    "heal": 4,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Arbalète",
+    "element": "Air",
+    "stars": 4,
+    "nature": "Weapon",
+    "effect": "Enlevez 9 points de vie à votre adversaire. Piochez 1 carte.",
+    "damage": 9,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Bille de feu",
+    "element": "Fire",
+    "stars": 1,
+    "nature": "Spell",
+    "effect": "Enlevez 1 point de vie à votre adversaire.",
+    "damage": 1,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Bulle",
+    "element": "Water",
+    "stars": 1,
+    "nature": "Spell",
+    "effect": "Lancé un dé. Enlevez le résultat du dé à votre adversaire.",
+    "damage": 0,
+    "heal": 0,
+    "draw": 0,
+    "is_random": true
+  },
+  {
+    "name": "Pioche",
+    "element": "Earth",
+    "stars": 2,
+    "nature": "Weapon",
+    "effect": "Enlevez 6 points de vie à votre adversaire. Piochez 1 carte.",
+    "damage": 6,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Pomme d'amour",
+    "element": "Fire",
+    "stars": 2,
+    "nature": "Food",
+    "effect": "Vous ainsi qu'un autre joueur récupérez 12 points de vie.",
+    "damage": 0,
+    "heal": 12,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Fléchettes",
+    "element": "Air",
+    "stars": 1,
+    "nature": "Weapon",
+    "effect": "Enlevez 3 points de vie à votre adversaire. Piochez 1 carte.",
+    "damage": 3,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Grain de poussière",
+    "element": "Earth",
+    "stars": 1,
+    "nature": "Spell",
+    "effect": "Enlevez 0 point de vie à votre adversaire.",
+    "damage": 3,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Noix de coco",
+    "element": "Water",
+    "stars": 4,
+    "nature": "Food",
+    "effect": "Récupérez 4 points et enlevez 9 points de vie à votre adversaire.",
+    "damage": 9,
+    "heal": 4,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Epuisette",
+    "element": "Water",
+    "stars": 2,
+    "nature": "Weapon",
+    "effect": "Enlevez 2 points à votre adversaire. Piochez 2 carte.",
+    "damage": 2,
+    "heal": 0,
+    "draw": 2,
+    "is_random": false
+  },
+  {
+    "name": "Bouteille d'eau",
+    "element": "Water",
+    "stars": 3,
+    "nature": "Weapon",
+    "effect": "Récupérez 8 points. Enlevez 4 points à votre adversaire. Piochez 2 carte.",
+    "damage": 4,
+    "heal": 8,
+    "draw": 2,
+    "is_random": false
+  },
+  {
+    "name": "Lance de flammes",
+    "element": "Fire",
+    "stars": 5,
+    "nature": "Weapon",
+    "effect": "Enlevez 18 points de vie à votre adversaire.",
+    "damage": 18,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Terrassement",
+    "element": "Earth",
+    "stars": 5,
+    "nature": "Spell",
+    "effect": "Enlevez 15 points de vie à votre adversaire. Piochez 2 cartes.",
+    "damage": 15,
+    "heal": 0,
+    "draw": 2,
+    "is_random": false
+  },
+  {
+    "name": "Vague vampirique",
+    "element": "Water",
+    "stars": 5,
+    "nature": "Spell",
+    "effect": "Enlevez 12 points de vie à votre adversaire. Récupérez 6 points.",
+    "damage": 12,
+    "heal": 6,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Rafale",
+    "element": "Air",
+    "stars": 5,
+    "nature": "Spell",
+    "effect": "Enlevez 14 points de vie à votre adversaire. Piochez 3 cartes.",
+    "damage": 14,
+    "heal": 0,
+    "draw": 3,
+    "is_random": false
+  },
+  {
+    "name": "Boule de boue",
+    "element": "Earth",
+    "stars": 2,
+    "nature": "Spell",
+    "effect": "Enlevez 3 points de vie à votre adversaire. Piochez 1 carte.",
+    "damage": 3,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Cimeterre",
+    "element": "Earth",
+    "stars": 4,
+    "nature": "Weapon",
+    "effect": "Enlevez 11 points de vie à votre adversaire. ",
+    "damage": 11,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Galette",
+    "element": "Earth",
+    "stars": 1,
+    "nature": "Food",
+    "effect": "Récupérez 2 points. Piochez 2 cartes ",
+    "damage": 0,
+    "heal": 2,
+    "draw": 2,
+    "is_random": false
+  },
+  {
+    "name": "Levant",
+    "element": "Air",
+    "stars": 3,
+    "nature": "Spell",
+    "effect": "Enlevez 6 points de vie à votre adversaire. Piochez 1 carte ",
+    "damage": 6,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Tessen",
+    "element": "Air",
+    "stars": 4,
+    "nature": "Weapon",
+    "effect": "Enlevez 9 points de vie à votre adversaire. Piochez 2 cartes ",
+    "damage": 9,
+    "heal": 0,
+    "draw": 2,
+    "is_random": false
+  },
+  {
+    "name": "Kiwi",
+    "element": "Air",
+    "stars": 3,
+    "nature": "Food",
+    "effect": "Récupérez 4 points. Piochez 1 carte ",
+    "damage": 0,
+    "heal": 4,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Feu furieux",
+    "element": "Fire",
+    "stars": 5,
+    "nature": "Spell",
+    "effect": "Enlevez 12 points de vie à votre adversaire. ",
+    "damage": 15,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Fusil",
+    "element": "Air",
+    "stars": 5,
+    "nature": "Food",
+    "effect": "Enlevez 19 points à votre adversaire. Piochez 1 carte." ,
+    "damage": 19,
+    "heal": 0,
+    "draw": 1,
+    "is_random": false
+  },
+  {
+    "name": "Figue",
+    "element": "Fire",
+    "stars": 2,
+    "nature": "Food",
+    "effect": "Récupérez 6 points" ,
+    "damage": 0,
+    "heal": 6,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Baine",
+    "element": "Water",
+    "stars": 4,
+    "nature": "Spell",
+    "effect": "Enlevez 9 points de vie à votre adversaire. " ,
+    "damage": 9,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Foene",
+    "element": "Water",
+    "stars": 5,
+    "nature": "Weapon",
+    "effect": "Enlevez 11 points de vie à votre adversaire. Piochez 2 cartes" ,
+    "damage": 9,
+    "heal": 0,
+    "draw": 0,
+    "is_random": false
+  },
+  {
+    "name": "Noix",
+    "element": "Water",
+    "stars": 1,
+    "nature": "Spell",
+    "effect": "Récupérez 1 point. Piochez 1 carte", 
+    "damage": 0,
+    "heal": 1,
+    "draw": 1,
+    "is_random": false
+  }
+
+
+]
