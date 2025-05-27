@@ -104,10 +104,11 @@ pub fn give_card2(deck: &mut Vec<Card>, player: &mut Player, opponent: &mut Play
 }
 
 fn player_turn(player: &mut Player, opponent: &mut Player, deck: &mut Vec<Card>) -> bool {
-    let missing = 5 - player.current_hand_card.len();
-    if missing > 0 
+    let to_draw = 5usize.saturating_sub(player.current_hand_card.len());
+    if to_draw > 0 
     {
-    draw_cards(player, missing, deck);
+    println!("{} pioche {} carte(s).", player.name, to_draw);
+    draw_cards(player, to_draw, deck);
     }
     println!("Sélectionnez la carte à jouer :");
     for (index, card) in player.current_hand_card.iter().enumerate() {
@@ -150,10 +151,11 @@ fn player_turn(player: &mut Player, opponent: &mut Player, deck: &mut Vec<Card>)
 
 fn opponent_turn(opponent: &mut Player, player: &mut Player, deck: &mut Vec<Card>) -> bool {
     //verification de la main de l'adversaire
-    let missing = 5usize.saturating_sub(opponent.current_hand_card.len());
-    if missing > 0
-     {
-    draw_cards(opponent, missing, deck);
+    let to_draw = 5usize.saturating_sub(opponent.current_hand_card.len());
+    if to_draw > 0 
+    {
+    println!("{} pioche {} carte(s).", opponent.name, to_draw);
+    draw_cards(opponent, to_draw, deck);
     }
     let mut rng = rand::thread_rng();
     let choix = rng.gen_range(0..opponent.current_hand_card.len());
