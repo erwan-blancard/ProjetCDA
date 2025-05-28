@@ -1,3 +1,4 @@
-backend/target
+target
 .env
-frontend/node_modules
+node_modules
+Cargo.lock
