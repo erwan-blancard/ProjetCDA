@@ -4,13 +4,33 @@ use rand::random;
 use rand::thread_rng;
 use rand::prelude::SliceRandom;
 use crate::card::Card;
-//creer un deck
-pub fn create_deck()
-{
-    println!("création d'un deck");
+use std::fs::File;
+use std::io::BufReader;
+use serde_json::Result;
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 
+//recuperation du deck depuis un fichier JSON
+pub fn create_deck_database() -> Vec<Card> {
+    let path = "assets/deck1.json";
+
+    if !Path::new(path).exists() {
+        panic!("Fichier JSON non trouvé à : {}", path);
+    }
+
+    let file = File::open(path).expect("Impossible d’ouvrir le fichier JSON");
+    let reader = BufReader::new(file);
+
+    let deck: Vec<Card> = serde_json::from_reader(reader).expect("Erreur de lecture JSON");
+    println!("Deck chargé depuis {} !", path);
+    for (i, card) in deck.iter().enumerate() {
+        println!("Carte {} : {:?}", i + 1, card);
+    }
+
+    deck
 }
-//faire une methode qui renvoie une liste de carte
+
+
 
 pub fn create_deck_test() -> Vec<Card>
 {
