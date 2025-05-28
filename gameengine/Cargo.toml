@@ -1,0 +1,12 @@
+[package]
+name = "randomi_go"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8"
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_derive = "1.0"
+lazy_static = "1.5.0"
