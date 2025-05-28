@@ -2,7 +2,6 @@ use std::{thread, time::Duration};
 use rand::Rng;
 use uuid::Uuid;
 
-use crate::deck;
 use crate::card::Card;
 use crate::game::Game;
 use crate::player::Player;

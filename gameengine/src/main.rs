@@ -1,9 +1,9 @@
-mod start;
 mod card;
+mod database;
 mod game;
-mod deck;
 mod player;
 mod tuto_mode;
+mod start;
 mod play_info;
 
 

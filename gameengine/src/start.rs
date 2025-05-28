@@ -39,20 +39,4 @@ pub fn call_tuto()
     tuto_mode::test();
     
 }
-pub fn run() 
-{
-    let boule_de_feu = Card::new(
-        String::from("Boule de feu"),
-        Element::Fire,
-        Stars::Two,
-        Kind::Spell,
-        String::from("Inflige 4 points de dégâts."),
-        4,
-        0,
-        0,
-        false,
-    );
-
-    println!("Carte créée : {:?}", boule_de_feu);
-}
 

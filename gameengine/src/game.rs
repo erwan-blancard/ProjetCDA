@@ -1,4 +1,10 @@
+use std::ops::Deref;
+
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+
 use crate::card::{Card};
+use crate::database;
 use crate::player::Player;
 
 
@@ -22,7 +28,7 @@ impl Game {
     pub fn new(players: Vec<Player>) -> Self {
         Self {
             players: players,
-            pile: Vec::new(),
+            pile: database::CARD_DATABASE.clone(),
             current_player_turn: 0,
             turn_order: Order::Forward
         }
@@ -42,6 +48,11 @@ impl Game {
         for _ in 0..amount {
             player.hand_cards.insert(0, pile.remove(0));
         }
+    }
+
+    pub fn shuffle_pile(pile: &mut Vec<Box<dyn Card>>) {
+        let mut rng = thread_rng();
+        pile.shuffle(&mut rng);
     }
 
     pub fn collect_discard_cards(&mut self) {

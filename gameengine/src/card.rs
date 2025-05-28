@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{self, Debug, Display};
 
 use crate::{game::Game, play_info::{PlayAction, PlayInfo}};
 
@@ -7,7 +7,7 @@ use crate::{game::Game, play_info::{PlayAction, PlayInfo}};
 pub type EffectId = String;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum Element {
     Fire,
     Air,
@@ -15,14 +15,14 @@ pub enum Element {
     Water,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum Kind {
     Spell,
     Weapon,
     Food,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum Stars {
     One,
     Two,
@@ -31,6 +31,19 @@ pub enum Stars {
     Five,
 }
 
+impl Display for Stars {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl Display for Element {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+use serde::Deserialize;
 //gestion des id propre à chaque carte
 use uuid::Uuid;
 
@@ -51,6 +64,7 @@ pub struct BasicCard {
 }
 
 impl Card for BasicCard {
+    fn get_name(&self) -> String { String::from(&self.name) }
     fn get_attack(&self) -> u32 { self.attack }
     fn get_heal(&self) -> u32 { self.heal }
     fn get_description(&self) -> String { String::from(&self.desc) }
@@ -58,6 +72,12 @@ impl Card for BasicCard {
     fn get_element(&self) -> Element { self.element }
     fn get_stars(&self) -> Stars { self.stars }
 }
+
+// impl Display for BasicCard {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "{}", self.get_description())
+//     }
+// }
 
 
 //constructeur de la carte
@@ -89,7 +109,7 @@ impl BasicCard {
 }
 
 
-pub trait Card {
+pub trait Card: Sync + Debug +CardClone {
     // basic can_play impl
     fn can_play(&self, player: &Player, targets: &Vec<Player>, game: &Game) -> Result<(), String> {
         self.validate_targets(player, targets, game)
@@ -125,6 +145,7 @@ pub trait Card {
         }
     }
 
+    fn get_name(&self) -> String { String::from("???") }
     fn get_attack(&self) -> u32 { 1 }
     fn get_heal(&self) -> u32 { 0 }
     fn get_description(&self) -> String { String::from("N/A") }
@@ -164,3 +185,24 @@ pub trait Card {
 
 }
 
+
+// Allow Box<dyn Card> clonning
+
+pub trait CardClone {
+    fn clone_box(&self) -> Box<dyn Card>;
+}
+
+impl<T> CardClone for T
+where
+    T: 'static + Card + Clone,
+{
+    fn clone_box(&self) -> Box<dyn Card> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Card> {
+    fn clone(&self) -> Box<dyn Card> {
+        self.clone_box()
+    }
+}
