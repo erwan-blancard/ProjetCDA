@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
+use serde::{Serialize, Deserialize};
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Element {
     Fire,
     Air,
@@ -7,7 +9,7 @@ pub enum Element {
 }
 
 //enum natures
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Nature {
     Spell,
     Weapon,
@@ -15,7 +17,7 @@ pub enum Nature {
 }
 
 //enum étoiles
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Stars {
     One,
     Two,
@@ -27,8 +29,9 @@ pub enum Stars {
 //gestion des id propre à chaque carte
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Card {
+    #[serde(default = "Uuid::new_v4")]
     pub id: Uuid,
     pub name: String,
     pub element: Element,
@@ -40,6 +43,7 @@ pub struct Card {
     pub draw: i32,
     pub dice: bool,
 }
+
 
 //constructeur de la carte
 impl Card {
@@ -77,9 +81,9 @@ mod tests {
     fn test_create_card() {
         let boule_de_feu = Card::new(
             String::from("Boule de feu"),
-            Element::Feu,
-            Stars::Deux,
-            Nature::Sort,
+            Element::Fire,
+            Stars::Two,
+            Nature::Spell,
             String::from("Inflige 4 points de dégâts."),
             4,
             0,

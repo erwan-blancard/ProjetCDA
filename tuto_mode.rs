@@ -6,6 +6,8 @@ use crate::deck;
 use crate::card::Card;
 use crate::player::Player;
 
+use crate::play_info::{PlayInfo, PlayAction, Target, Action};
+
 pub fn test() {
     let mut player = Player {
         id: Uuid::new_v4(),
@@ -60,9 +62,14 @@ pub fn test_random(player: &mut Player, opponent: &mut Player) {
         return;
     }
 
-    get_deck(player, opponent);
+    get_deck_database(player, opponent);
 }
+pub fn get_deck_database(player: &mut Player, opponent: &mut Player) {
+    let mut deck = deck::create_deck_database();
+    deck::shuffle_deck(&mut deck);
 
+    give_card2(&mut deck, player, opponent);
+}
 pub fn get_deck(player: &mut Player, opponent: &mut Player) {
     let mut deck: Vec<Card> = deck::create_deck_test();
     deck::shuffle_deck(&mut deck);
@@ -203,6 +210,16 @@ fn play_card(card: &Card, player: &mut Player, opponent: &mut Player, deck: &mut
         player.life += card.heal;
         println!("{} récupère {} points de vie.", player.name, card.heal);
     }
+    let mut roll = 0;
+    if card.dice == true
+     {
+        roll = rand::thread_rng().gen_range(1..=6);
+        let total_attack = card.attack + roll + player.attack_boost;
+
+        opponent.life -= total_attack;
+        println!("{} inflige {} dégâts à l'adversaire ! ({} + {})", card.name, total_attack, card.attack+ player.attack_boost, roll);
+        
+    }
 
     println!("Vie de {}: {}", player.name, player.life);
     println!("Vie de {}: {}", opponent.name, opponent.life);
@@ -212,6 +229,28 @@ fn play_card(card: &Card, player: &mut Player, opponent: &mut Player, deck: &mut
     } else if player.life <= 0 {
         println!("{} est vaincu ! {} remporte la partie !", player.name, opponent.name);
     }
+    //recuperer information sur le tour de jeu grace aux structs contenue dans la classe play_info
+   
+let action = Action::Attack { amount: card.attack as u32};
+
+let target = Target {
+    player_id: opponent.id,
+    action,
+    effect: card.name.clone(),
+};
+
+let play_action = PlayAction {
+    dice_roll: roll as u8,
+    targets: vec![target],
+    player_dice_id: player.id,
+};
+
+let play_info = PlayInfo {
+    actions: vec![play_action],
+};
+
+println!("Résumé du tour : {:?}", play_info);
+
 
     thread::sleep(Duration::from_millis(500));
 }

@@ -3,6 +3,7 @@ mod card;
 mod deck;
 mod player;
 mod tuto_mode;
+mod play_info;
 
 
 
