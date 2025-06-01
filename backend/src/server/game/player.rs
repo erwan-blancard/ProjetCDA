@@ -1,10 +1,18 @@
-use uuid::Uuid;
-use crate::{card::{Card, EffectId, Element}, game::Game, play_info::{ActionTarget, ActionType, PlayInfo}};
+use super::{card::{Card, EffectId, Element}, game::Game, play_info::{ActionTarget, ActionType}};
 
 const PLAYER_MAX_HEALTH: i32 = 100;
 
+// use uid::Id as IdT;
+
+// #[derive(Copy, Clone, Eq, PartialEq)]
+// struct T(());
+
+// pub type PlayerId = IdT<T>;
+pub type PlayerId = i32;
+
+#[derive(Debug)]
 pub struct Player {
-    pub id: Uuid,
+    pub id: PlayerId,
     pub name: String,
     pub health: i32,
     pub hand_cards: Vec<Box<dyn Card>>,
@@ -13,10 +21,9 @@ pub struct Player {
 }
 
 impl Player {
-    /// Crée un joueur avec un nom donné et des valeurs par défaut
-    pub fn new(name: String) -> Self {
+    pub fn new(id: PlayerId, name: String) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             name,
             health: PLAYER_MAX_HEALTH,
             hand_cards: Vec::new(),

@@ -1,7 +1,7 @@
 import { api_url } from "./api";
 import { displayPopup } from "./ui/popup";
 
-export function login_submit() {
+export async function login_submit() {
     const button = document.getElementById("form-submit");
     button.disabled = true;
 
@@ -13,36 +13,31 @@ export function login_submit() {
         "password": password
     };
 
-    const request = new XMLHttpRequest();
+    try {
+        const response = await fetch(api_url("/login"), {
+            method: "POST",
+            body: JSON.stringify(payload),
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"  // this sets the "token" cookie when response is received
+        });
 
-    request.onreadystatechange = () => {
-        // when response received
-        if (request.readyState === XMLHttpRequest.DONE /* && request.status === 200 */) {
-            console.log(`${request.status}: ${request.responseText}`);
+        if (!response.ok)
+            throw new Error(`Status: ${response.status}, message: ${await response.text()}`);
 
-            // go to index.html
-            // cookie with token  should have been updated
-            if (request.status === 200) {
-                // console.log(request.getAllResponseHeaders());
-                // console.log(document.cookie);
-                window.location.href = "/index.html";
-            } else {
-                displayPopup(`An error occured when logging in !\n${request.responseText}`, "Error");
-            }
+        // go to index.html
+        // cookie with token should have been updated
+        window.location.href = "/index.html";
+    } catch (error) {
+        displayPopup(`An error occured when logging in: ${error.message}`, "Error");
+    }
 
-            button.disabled = false;
-
-        }
-    };
-
-    request.open("POST", api_url("/login"));
-    request.setRequestHeader("Content-Type", "application/json");
-    request.withCredentials = true;
-    request.send(JSON.stringify(payload));
+    button.disabled = false;
 }
 
 
-export function register_submit() {
+export async function register_submit() {
     const button = document.getElementById("form-submit");
     button.disabled = true;
 
@@ -56,31 +51,28 @@ export function register_submit() {
         "password": password
     };
 
-    const request = new XMLHttpRequest();
+    try {
+        const response = await fetch(api_url("/register"), {
+            method: "POST",
+            body: JSON.stringify(payload),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
 
-    request.onreadystatechange = () => {
-        // when response received
-        if (request.readyState === XMLHttpRequest.DONE /* && request.status === 200 */) {
-            console.log(`${request.status}: ${request.responseText}`);
+        if (!response.ok)
+            throw new Error(`Status: ${response.status}, message: ${await response.text()}`);
 
-            // go to index.html
-            if (request.status === 201) {
-                displayPopup("Account successfully created !", "Account Created", "Go to Login page",
+        displayPopup("Account successfully created !", "Account Created", "Go to Login page",
                     () => {
                         window.location.href = "/login.html";
                     });
-            } else {
-                displayPopup("There was an error when creating the account !\n" + `${request.status}: ${request.responseText}`, "Error");
-            }
 
-            button.disabled = false;
-        }
-    };
+    } catch (error) {
+        displayPopup(`There was an error when creating the account: ${error.message}`, "Error");
+    }
 
-    request.open("POST", api_url("/register"));
-    request.setRequestHeader("Content-Type", "application/json");
-    request.send(JSON.stringify(payload));
-
+    button.disabled = false;
 }
 
 

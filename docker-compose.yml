@@ -17,7 +17,11 @@ services:
       - randomi-backend
   
   api:
-    build: ./backend
+    build:
+      context: ./backend
+      additional_contexts:
+        # this context is used to point to the parent assets folder
+        assets: .
     container_name: randomi-api
     ports:
       - "8080:8080"

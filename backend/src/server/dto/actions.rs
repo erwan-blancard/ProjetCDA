@@ -1,6 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 
-use super::responses::PlayerId;
+use crate::server::game::player::PlayerId;
 
 
 /// JSON structures for client messages
@@ -9,8 +9,6 @@ use super::responses::PlayerId;
 // The JSON must contain the key "type" with a string matching the enum variant's name.
 #[serde(tag = "type")]
 pub enum UserAction {
-    /// User sent auth token
-    Auth {token: String},
     /// The user plays a card on targetted opponents
     /// Dice rolls are handled by the server (no actual dice roll, the client only sees the result of the roll)
     PlayCard {card_id: u32, targets: Vec<PlayerId>},

@@ -10,8 +10,9 @@ use futures_util::{
 use serde_json::{from_str, Value};
 use tokio::{sync::mpsc, time::interval};
 
-use crate::{dto::{actions::UserAction, responses::ServerResponse}, game, ConnId, GameServerHandle, Player};
-use crate::dto::responses::PlayerId;
+use crate::server::game::player::PlayerId;
+
+use super::{dto::{actions::UserAction, responses::ServerResponse}, game, server::{ConnId, GameServerHandle}};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -19,15 +20,13 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// How long a connection can last unauthenticated
-const AUTHENTICATION_TIMEOUT: Duration = Duration::from_secs(15);
-
 /// Echo text & binary messages received from the client, respond to ping messages, and monitor
 /// connection health to detect network issues and free up resources.
 pub async fn game_ws(
     game_server: GameServerHandle,
     mut session: actix_ws::Session,
     msg_stream: actix_ws::MessageStream,
+    player_id: i32,
 ) {
     log::info!("New session connected");
 
@@ -36,30 +35,29 @@ pub async fn game_ws(
 
     let (conn_tx, mut conn_rx) = mpsc::unbounded_channel();
 
-    // unwrap: server is not dropped before the HTTP server
-    let conn_id = game_server.connect(conn_tx).await;
+    // connect: if connection with this player_id exists, replace it
+    let conn_id = game_server.connect(player_id, conn_tx).await;
 
     let msg_stream = msg_stream
-        .max_frame_size(128 * 1024)
+        .max_frame_size(128 * 1024)     // ~1Mb
         .aggregate_continuations()
-        .max_continuation_size(2 * 1024 * 1024);
+        .max_continuation_size(2 * 1024 * 1024);    // ~16Mb
 
     let mut msg_stream = pin!(msg_stream);
 
-    let mut player_id: Option<PlayerId> = None;
-    let auth_wait_begin = Instant::now();
+    let player_id: PlayerId = player_id;
+
+    // Send session info
+    ServerResponse::SessionInfo { id: player_id, players: game_server.get_session_info().await }
+        .send(&mut session).await.unwrap();
+
+    // begin loop
 
     let close_reason = loop {
         // most of the futures we process need to be stack-pinned to work with select()
 
         let tick = pin!(interval.tick());
         let msg_rx = pin!(conn_rx.recv());
-
-        if !player_id.is_some() && Instant::now().duration_since(auth_wait_begin) > AUTHENTICATION_TIMEOUT {
-            let desc = String::from("Authentication Timeout reached !");
-            log::warn!("{:?}", desc);
-            break Some(CloseReason { code: CloseCode::Normal, description: Some(desc) });
-        }
 
         // TODO: nested select is pretty gross for readability on the match
         let messages = pin!(select(msg_stream.next(), msg_rx));
@@ -82,7 +80,7 @@ pub async fn game_ws(
                     }
 
                     AggregatedMessage::Text(text) => {
-                        let close_reason = process_received_text(&game_server, &mut session, &text, conn_id, &mut player_id).await;
+                        let close_reason = process_received_text(&game_server, &mut session, &text, conn_id, player_id).await;
                         // break if process_received_text returned a close reason
                         if close_reason.is_some() {
                             break close_reason;
@@ -147,62 +145,13 @@ async fn process_received_text(
     session: &mut actix_ws::Session,
     text: &str,
     conn: ConnId,
-    player_id: &mut Option<PlayerId>,
+    player_id: PlayerId,
 ) -> Option<CloseReason> {
     let json_str = text.trim();
 
     let possible_action: Result<UserAction, _> = from_str(&json_str);
 
-    let mut authenticated = player_id.is_some();
-
-    // filter actions if not authenticated
-    if !authenticated {
-        match possible_action {
-            Ok(UserAction::Auth {..}) => {},
-            Err(_) => {
-                log::warn!("Unable to deserialize JSON data to a player action: {json_str:?}");
-                return None;
-            },
-            // else the session is closed
-            _ => {
-                log::warn!("Received player action but the player is not authenticated ! Closing connection...");
-
-                game_server.disconnect(conn);
-                
-                // notify handler that we called disconnect
-                // by returning Some(CloseReason())
-                return Some(
-                    CloseReason {
-                        code: CloseCode::Normal,
-                        description: Some(String::from("Connection closed because the session was not authenticated !"))
-                    });
-            }
-        }
-    }
-
     match possible_action {
-        Ok(UserAction::Auth { token }) => {
-            if !authenticated {
-                log::info!("Auth Action: token: {token:?}");
-                let pid = game_server.authenticate(token, conn).await;
-                authenticated = pid.is_some();
-                (ServerResponse::Auth { status: authenticated })
-                    .send(session).await.unwrap();
-
-                *player_id = pid.clone();
-
-                let players = game_server.get_session_info().await;
-
-                // send session info
-                if authenticated {
-                    (ServerResponse::SessionInfo { id: pid.unwrap(), players: players })
-                        .send(session).await.unwrap();
-                }
-            } else  {
-                log::warn!("Received Auth Action but the session is already authenticated !");
-            }
-        },
-
         Ok(UserAction::PlayCard { card_id, targets }) => {
             log::info!("Play Card Action: id: {card_id:?}, targets: {targets:?}");
         },

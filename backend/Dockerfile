@@ -5,6 +5,9 @@ WORKDIR /usr/src/backend
 COPY ./src ./src
 COPY ./migrations ./migrations
 
+# grab assets folder from build context "assets"
+COPY --from=assets ./assets/cards.json ./assets/cards.json
+
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./diesel.toml ./diesel.toml
 

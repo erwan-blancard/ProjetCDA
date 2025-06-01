@@ -3,18 +3,15 @@ use serde_derive::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds;
 
+use crate::server::game::card::{CardId, EffectId};
+use crate::server::game::player::PlayerId;
 
-// TEMP
-/// ID assigned to the player for the game engine (index)
-pub type PlayerId = u8;
-pub type CardId = u32;
-pub type EffectId = u32;
 
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlayerProfile {
-    id: PlayerId,
-    name: String
+    pub id: PlayerId,
+    pub name: String
 }
 
 
@@ -70,9 +67,8 @@ pub struct GameStateForPlayer {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum ServerResponse {
-    Auth {status: bool},
     Message {message: String},
-    /// Sent when player is authenticated
+    /// Sent when player connects to WebSocket
     SessionInfo {
         /// which player id is assigned to the client
         id: PlayerId,

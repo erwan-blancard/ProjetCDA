@@ -1,7 +1,7 @@
 use diesel::dsl::insert_into;
 use diesel::PgConnection;
 use diesel::prelude::*;
-use serde_derive::Deserialize;
+use serde_derive::{Serialize, Deserialize};
 
 use crate::database::models::*;
 use crate::database::schema::*;
@@ -36,6 +36,12 @@ pub struct FriendRequest {
 #[diesel(table_name = super::schema::account_stats)]
 pub struct NewEmptyStats {
     pub account_id: i32,
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreateGameInfo {
+    pub players: Vec<i32>,
 }
 
 
@@ -76,6 +82,16 @@ pub fn get_account_by_id(conn: &mut PgConnection, account_id: i32) -> diesel::Qu
         .first::<FilteredAccount>(conn)?;
 
     Ok(account)
+}
+
+pub fn get_accounts_by_id(conn: &mut PgConnection, account_ids: &Vec<i32>) -> diesel::QueryResult<Vec<FilteredAccount>> {
+    use super::schema::accounts::dsl::*;
+
+    let accs = accounts.select(FilteredAccount::as_select())
+        .filter(id.eq_any(account_ids))
+        .load(conn)?;
+
+    Ok(accs)
 }
 
 pub fn get_account_by_username(conn: &mut PgConnection, username: &String) -> diesel::QueryResult<FilteredAccount> {

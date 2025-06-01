@@ -1,22 +1,25 @@
-use std::ops::Deref;
-
 use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::rng;
 
-use crate::card::{Card};
-use crate::database;
-use crate::player::Player;
+use crate::server::dto::responses::PlayerProfile;
+
+use super::card::{Card};
+use super::database;
+use super::player::Player;
 
 
+pub const MAX_PLAYERS: usize = 6;
 const INITIAL_HAND_AMOUNT: usize = 5;
 
 
+#[derive(Debug)]
 pub enum Order {
     Forward,
     Backward
 }
 
 
+#[derive(Debug)]
 pub struct Game {
     players: Vec<Player>,
     pile: Vec<Box<dyn Card>>,
@@ -25,7 +28,11 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(players: Vec<Player>) -> Self {
+    pub fn new(players: &Vec<PlayerProfile>) -> Self {
+        let players = players.iter()
+            .map(|prf| Player::new(prf.id, prf.name.clone()))
+            .collect();
+
         Self {
             players: players,
             pile: database::CARD_DATABASE.clone(),
@@ -51,7 +58,7 @@ impl Game {
     }
 
     pub fn shuffle_pile(pile: &mut Vec<Box<dyn Card>>) {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         pile.shuffle(&mut rng);
     }
 

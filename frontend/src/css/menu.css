@@ -46,6 +46,7 @@ body > * {
 .popup-container {
     width: 60vw;
     height: 60vh;
+    padding: 0.5em;
     background-color: whitesmoke;
     display: flex;
     flex-direction: column;

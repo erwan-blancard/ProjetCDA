@@ -1,9 +1,9 @@
 use std::fmt::{self, Debug, Display};
 
-use crate::{game::Game, play_info::{PlayAction, PlayInfo}};
+use super::{game::Game, play_info::{PlayAction, PlayInfo}};
 
 
-// TODO
+// TODO define effects
 pub type EffectId = String;
 
 
@@ -44,14 +44,22 @@ impl Display for Element {
 }
 
 use serde::Deserialize;
-//gestion des id propre à chaque carte
-use uuid::Uuid;
 
-use crate::player::Player;
+// use uid::Id as IdT;
+
+// #[derive(Copy, Clone, Eq, PartialEq)]
+// struct T(());
+
+// pub type CardId = IdT<T>;
+
+// ids are not unique
+pub type CardId = i32;
+
+use super::player::Player;
 
 #[derive(Debug, Clone)]
 pub struct BasicCard {
-    pub id: Uuid,
+    pub id: CardId,
     pub name: String,
     pub element: Element,
     pub stars: Stars,
@@ -64,6 +72,7 @@ pub struct BasicCard {
 }
 
 impl Card for BasicCard {
+    fn get_id(&self) -> CardId { self.id }
     fn get_name(&self) -> String { String::from(&self.name) }
     fn get_attack(&self) -> u32 { self.attack }
     fn get_heal(&self) -> u32 { self.heal }
@@ -80,9 +89,10 @@ impl Card for BasicCard {
 // }
 
 
-//constructeur de la carte
+// FIXME from CardInfo ?
 impl BasicCard {
     fn new(
+        id: CardId,
         name: String,
         element: Element,
         stars: Stars,
@@ -94,7 +104,7 @@ impl BasicCard {
         dice: bool,
     ) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             name,
             element,
             stars,
@@ -109,7 +119,7 @@ impl BasicCard {
 }
 
 
-pub trait Card: Sync + Debug +CardClone {
+pub trait Card: Sync + Send + Debug + CardClone {
     // basic can_play impl
     fn can_play(&self, player: &Player, targets: &Vec<Player>, game: &Game) -> Result<(), String> {
         self.validate_targets(player, targets, game)
@@ -145,6 +155,7 @@ pub trait Card: Sync + Debug +CardClone {
         }
     }
 
+    fn get_id(&self) -> CardId;
     fn get_name(&self) -> String { String::from("???") }
     fn get_attack(&self) -> u32 { 1 }
     fn get_heal(&self) -> u32 { 0 }

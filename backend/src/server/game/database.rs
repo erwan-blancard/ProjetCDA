@@ -1,16 +1,18 @@
 use std::{fs::File, io::BufReader, path::Path};
+use std::fmt;
 
 use lazy_static::lazy_static;
-use serde::{Deserialize};
-use uuid::Uuid;
+use serde::Deserializer;
+use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
-use crate::card::{BasicCard, Card, Element, Kind, Stars};
+use super::card::{BasicCard, Card, CardId, Element, Kind, Stars};
 
 lazy_static! {
     pub static ref CARD_DATABASE: Vec<Box<dyn Card>> = {
         create_deck_database()
     };
 }
+
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type")]
@@ -33,8 +35,8 @@ struct BasicCardData {
 
 #[derive(Debug, Deserialize)]
 struct CardInfo {
-    #[serde(default = "Uuid::new_v4")]
-    id: Uuid,
+    #[serde(default)]
+    id: CardId,
     name: String,
     element: Element,
     stars: Stars,
@@ -57,9 +59,47 @@ impl CardInfo {
 }
 
 
+struct CardInfoList(Vec<CardInfo>);
+
+impl<'de> Deserialize<'de> for CardInfoList {
+    fn deserialize<D>(deserializer: D) -> Result<CardInfoList, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct CardInfoVisitor;
+
+        impl<'de> Visitor<'de> for CardInfoVisitor {
+            type Value = CardInfoList;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("list of CardInfo")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<CardInfoList, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut card_info_list = Vec::new();
+                let mut idx = 0;
+
+                while let Some(mut p) = seq.next_element::<CardInfo>()? {
+                    p.id = idx;
+                    idx += 1;
+                    card_info_list.push(p);
+                }
+
+                Ok(CardInfoList(card_info_list))
+            }
+        }
+
+        deserializer.deserialize_seq(CardInfoVisitor)
+    }
+}
+
+
 //recuperation du deck depuis un fichier JSON
 pub fn create_deck_database() -> Vec<Box<dyn Card>> {
-    let path = "assets/deck1.json";
+    let path = "assets/cards.json";
 
     if !Path::new(path).exists() {
         panic!("Fichier JSON non trouvé à : {}", path);
@@ -68,11 +108,11 @@ pub fn create_deck_database() -> Vec<Box<dyn Card>> {
     let file = File::open(path).expect("Impossible d’ouvrir le fichier JSON");
     let reader = BufReader::new(file);
 
-    let deck_data: Vec<CardInfo> = serde_json::from_reader(reader).expect("Erreur de lecture JSON");
+    let deck_data: CardInfoList = serde_json::from_reader(reader).expect("Erreur de lecture JSON");
 
     let mut deck: Vec<Box<dyn Card>> = Vec::new();
 
-    for card_info in deck_data.iter() {
+    for card_info in deck_data.0.iter() {
         deck.push(card_info.make_card());
     }
 
