@@ -24,7 +24,7 @@ pub type LobbyPassword = LimitedString<9>;
 /// Filtered struct for Lobby (password is filtered)
 #[derive(Debug, Serialize, Clone)]
 pub struct LobbyInfo {
-    pub users: Vec<i32>,
+    pub users: HashSet<i32>,
     pub users_ready: HashSet<i32>,
     pub password: bool,
     pub ingame: bool
@@ -33,7 +33,7 @@ pub struct LobbyInfo {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Lobby {
-    pub users: Vec<i32>,
+    pub users: HashSet<i32>,
     pub users_ready: HashSet<i32>,
     pub password: Option<LobbyPassword>,
     pub game_id: Option<GameId>
@@ -41,7 +41,7 @@ pub struct Lobby {
 
 impl Lobby {
     pub fn new(password: Option<LobbyPassword>) -> Self {
-        Self { users: Vec::new(), users_ready: HashSet::new(), password, game_id: None }
+        Self { users: HashSet::new(), users_ready: HashSet::new(), password, game_id: None }
     }
 
     pub fn is_private(&self) -> bool {
@@ -78,7 +78,7 @@ pub struct CreateLobbyInfo {
 
 fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
     for (lobby_id, lobby) in lobbies.iter() {
-        if lobby.users.iter().any(|id| *id == account_id) {
+        if lobby.users.get(&account_id).is_some() {
             return Some(lobby_id.clone());
         }
     }
@@ -113,7 +113,7 @@ async fn create_lobby(
     }
 
     let mut lobby = Lobby::new(password);
-    lobby.users.push(account_id);
+    lobby.users.insert(account_id);
     let lobby_id: LobbyId = Uuid::new_v4();
 
     lobbies.insert(lobby_id, lobby.clone());
@@ -259,10 +259,7 @@ async fn join_lobby(
     }
 
     if let Some(lobby) = lobbies.get_mut(&json.lobby_id) {
-        // no password required but provided in req body
-        if !lobby.is_private() && !json.password.is_none() {
-            return Err(ErrorBadRequest("Lobby doesn't require a password"));
-        } else if lobby.is_private() && json.password.is_none() {
+        if lobby.is_private() && json.password.is_none() {
             return Err(ErrorForbidden("Lobby is private !"))
         } else if lobby.is_private() && json.password.is_some() {
             let json_passwd = json.password.clone().unwrap();
@@ -275,7 +272,7 @@ async fn join_lobby(
 
         // join lobby
 
-        lobby.users.push(account_id);
+        lobby.users.insert(account_id);
 
         return Ok(HttpResponse::Ok().json(lobby));
     } else {
@@ -292,7 +289,7 @@ struct LobbyReadyInfo {
 
 // TODO create game server when everyone is ready
 
-#[patch("/lobby/ready")]
+#[patch("/lobby/current/ready")]
 async fn lobby_set_ready(
     req: HttpRequest,
     json: web::Json<LobbyReadyInfo>,
@@ -316,6 +313,38 @@ async fn lobby_set_ready(
             lobby.users_ready.insert(account_id);
             Ok(HttpResponse::Ok().finish())
         } else {
+            lobby.users_ready.remove(&account_id);
+            Ok(HttpResponse::Ok().finish())
+        }
+
+    } else {
+        Err(ErrorNotFound("User is not in a lobby !"))
+    }
+
+}
+
+
+#[post("/lobby/current/leave")]
+async fn leave_current_lobby(
+    req: HttpRequest,
+    lobbies: web::Data<Lobbies>
+) -> actix_web::Result<impl Responder> {
+    let account_id: i32 = req.extensions().get::<i32>()
+                             .unwrap()
+                             .clone();
+    
+    let mut lobbies = lobbies.lock().unwrap();
+
+    let lobby_id = get_lobby_id_for_user(account_id, &lobbies);
+
+    if let Some(lobby_id) = lobby_id {
+
+        let lobby = lobbies.get_mut(&lobby_id).unwrap();
+
+        if lobby.all_users_ready() {
+            Err(ErrorConflict("Can't leave because all users are ready !"))
+        } else {
+            lobby.users.remove(&account_id);
             lobby.users_ready.remove(&account_id);
             Ok(HttpResponse::Ok().finish())
         }

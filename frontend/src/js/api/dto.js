@@ -54,10 +54,36 @@ export class LobbyInfoDTO {
 
 export class LobbyEntryDTO {
     lobby_id;
-    lobby_info;
+    // lobby_info;
+    users;
+    users_ready;
+    /** @type boolean */
+    password;
+    ingame;
 
     constructor(data) {
         this.lobby_id = data.lobby_id;
-        this.lobby_info = new LobbyInfoDTO(data);   // lobby info fields are flattened by api
+        // this.lobby_info = new LobbyInfoDTO(data);   // lobby info fields are flattened by api
+        this.users = data.users;
+        this.users_ready = data.users_ready;
+        this.password = data.password;
+        this.ingame = data.ingame;
+    }
+}
+
+export class LobbyPageListDTO {
+    entries;
+    page;
+    page_count;
+
+    constructor(data) {
+        this.entries = [];
+
+        data.entries.forEach(entry => {
+            this.entries.push(new LobbyEntryDTO(entry));
+        });
+
+        this.page = data.page;
+        this.page_count = data.page_count;
     }
 }

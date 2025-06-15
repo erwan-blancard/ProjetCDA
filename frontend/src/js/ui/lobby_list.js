@@ -1,19 +1,24 @@
+import { get_account } from "../api/account";
 import { LobbyEntryDTO, LobbyInfoDTO } from "../api/dto";
+import { join_lobby, list_lobbies } from "../api/lobby";
+import { displayInput } from "./popup";
 
 const MAX_LOBBY_USERS = 6;
 
 
 export class LobbyEntry extends HTMLElement {
-    /** @type LobbyInfoDTO */
-    lobbyInfo;
+    /** @type LobbyEntryDTO */
+    lobbyEntry;
     userListElement;
     subElement;
     statusElement;
     joinButton;
 
-    constructor(lobbyInfoDTO) {
+    lobbyJoinedCallback = null;
+
+    constructor(lobbyEntryDTO) {
         super();
-        this.lobbyInfo = lobbyInfoDTO;
+        this.lobbyEntry = lobbyEntryDTO;
         this.className = "lobby-entry";
 
         this.userListElement = document.createElement("ul");
@@ -26,7 +31,7 @@ export class LobbyEntry extends HTMLElement {
 
         this.joinButton = document.createElement("button");
         this.joinButton.className = "styled";
-        this.joinButton.onclick = () => { this.join_lobby() };
+        this.joinButton.onclick = () => { this.on_join_clicked() };
 
         const joinButtonSpan = document.createElement("span");
         joinButtonSpan.textContent = "Join";
@@ -38,47 +43,55 @@ export class LobbyEntry extends HTMLElement {
         this.appendChild(this.userListElement);
         this.appendChild(this.subElement);
 
-        this.update(this.lobbyInfo);
+        this.update(this.lobbyEntry);
     }
 
-    join_lobby() {
-        console.log("Join Lobby Action");
+    async on_join_clicked() {
+        if (this.lobbyJoinedCallback != null) {
+
+            this.joinButton.disabled = true;
+            if (this.lobbyEntry.password) {
+                displayInput("Password:", "Entry Lobby Password", "Join", true, async (inputElement) => {
+
+                    const lobby = await join_lobby(this.lobbyEntry.lobby_id, inputElement.value);
+                    if (lobby != null) {
+                        this.lobbyJoinedCallback(lobby);
+                    } else {
+                        this.joinButton.disabled = false;
+                    }
+
+                });
+            } else {
+                const lobby = await join_lobby(this.lobbyEntry.lobby_id);
+                if (lobby != null) {
+                    this.lobbyJoinedCallback(lobby);
+                } else {
+                    this.joinButton.disabled = false;
+                }
+            }
+        }
     }
 
-    update(lobbyInfoDTO) {
-        this.lobbyInfo = lobbyInfoDTO;
+    update(lobbyEntryDTO) {
+        this.lobbyEntry = lobbyEntryDTO;
         
         // clear users
         for (let i = 0; i < this.userListElement.children.length; i++) {
             this.userListElement.removeChild(this.userListElement.children[i]);
         }
-        // this.userListElement.children.forEach(child => {
-        //     this.userListElement.removeChild(child);
-        // });
 
-        lobbyInfoDTO.users.forEach(user => {
+        lobbyEntryDTO.users.forEach(async (user_id) => {
             const userElement = document.createElement("li");
-            userElement.textContent = user;
+            const accountDTO = await get_account(user_id);
+            userElement.textContent = accountDTO.username;
             this.userListElement.appendChild(userElement);
         });
 
-        let status = `${lobbyInfoDTO.users.length}/${MAX_LOBBY_USERS}`;
+        let status = `${lobbyEntryDTO.users.length}/${MAX_LOBBY_USERS}`;
         this.statusElement.textContent = status;
 
-        this.joinButton.disabled = lobbyInfoDTO.users.length >= MAX_LOBBY_USERS;
-        this.statusElement.className = (lobbyInfoDTO.password ? "locked" : "");
-    }
-}
-
-
-// wraps LobbyEntry
-export class LobbyListEntry extends HTMLElement {
-    lobbyEntry;
-
-    constructor(lobbyEntry) {
-        super();
-        this.lobbyEntry = lobbyEntry;
-        this.appendChild(lobbyEntry);
+        this.joinButton.disabled = lobbyEntryDTO.users.length >= MAX_LOBBY_USERS;
+        this.statusElement.className = (lobbyEntryDTO.password ? "locked" : "");
     }
 }
 
@@ -94,6 +107,8 @@ export class LobbyList extends HTMLElement {
     #currentPage = 0;
     #pageCount = 1;
     #busy = false;
+
+    lobbyJoinedCallback = null;
 
     constructor() {
         super();
@@ -130,8 +145,8 @@ export class LobbyList extends HTMLElement {
 
     #updateControls() {
         this.#prevPageButton.disabled = this.#currentPage-1 < 0;
-        this.#nextPageButton.disabled = this.#currentPage+1 == this.#pageCount;
-        this.#pageLabel.textContent = `${this.#currentPage+1}/${this.#pageCount}`;
+        this.#nextPageButton.disabled = this.#currentPage+1 >= this.#pageCount;
+        this.#pageLabel.textContent = `${(this.#pageCount > 0 ? this.#currentPage+1 : 0)}/${this.#pageCount}`;
     }
 
     #updateView() {
@@ -159,18 +174,20 @@ export class LobbyList extends HTMLElement {
         
         this.#updateView();
     }
-
-    push(lobbyDTO) {
-        const lobby_entry = new LobbyEntry(lobbyDTO);
-        const lobby_list_entry = new LobbyListEntry(lobby_entry);
-        this.#lobbyListEntries.push(lobby_list_entry);
-        this.#lobbyListElement.appendChild(lobby_list_entry);
+    
+    /** push lobby entry object and creates the necessary HTML elements
+    to display it on the list */
+    push(lobbyEntryDTO) {
+        const lobby_entry = new LobbyEntry(lobbyEntryDTO);
+        lobby_entry.lobbyJoinedCallback = this.lobbyJoinedCallback;
+        this.#lobbyListEntries.push(lobby_entry);
+        this.#lobbyListElement.appendChild(lobby_entry);
         
         this.#updateView();
     }
 
-    remove_entry(lobbyDTO) {
-        const index = this.indexOf(lobbyDTO);
+    remove_entry(lobbyEntryDTO) {
+        const index = this.indexOf(lobbyEntryDTO);
 
         if (index != -1) {
             const entry = this.#lobbyListEntries.splice(index, 1)[0];
@@ -186,17 +203,9 @@ export class LobbyList extends HTMLElement {
         this.#updateView();
     }
 
-    get_lobby_dto(index) {
-        return this.#lobbyListEntries.at(index).lobbyEntry.lobby;
-    }
-
-    get_lobby_entry(index) {
-        return this.#lobbyListEntries.at(index).lobbyEntry;
-    }
-
-    indexOf(lobbyDTO) {
+    indexOf(lobbyEntryDTO) {
         for (let i = 0; i < this.#lobbyListEntries.length; i++) {
-            if (this.#lobbyListEntries.at(i).lobbyEntry.lobby == lobbyDTO) {
+            if (this.#lobbyListEntries.at(i).lobby == lobbyEntryDTO) {
                 return i;
             }
         }
@@ -204,12 +213,24 @@ export class LobbyList extends HTMLElement {
         return -1;
     }
 
-    refreshPage() {
+    async refreshPage() {
         this.#busy = true;
+        this.clear();
+        this.#updateControls();
 
-        
+        const lobbies_info = await list_lobbies(this.#currentPage);
+
+        if (lobbies_info) {
+            this.#pageCount = lobbies_info.page_count;
+            // this.#currentPage = lobbies_info.page;
+            
+            lobbies_info.entries.forEach(lobby_entry => {
+                this.push(lobby_entry);
+            });
+        }
 
         this.#busy = false;
+        this.#updateControls();
     }
 
     prevPage() {
@@ -217,8 +238,6 @@ export class LobbyList extends HTMLElement {
             this.#currentPage -= 1;
 
             this.refreshPage();
-
-            this.#updateControls();
         }
     }
 
@@ -227,8 +246,6 @@ export class LobbyList extends HTMLElement {
             this.#currentPage += 1;
 
             this.refreshPage();
-
-            this.#updateControls();
         }
     }
 
@@ -237,5 +254,4 @@ export class LobbyList extends HTMLElement {
 
 // register elements
 customElements.define("lobby-entry", LobbyEntry);
-customElements.define("lobby-list-entry", LobbyListEntry);
 customElements.define("lobby-list", LobbyList);

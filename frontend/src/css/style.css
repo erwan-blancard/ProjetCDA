@@ -18,6 +18,15 @@ html, body, canvas {
     outline: none;
 }
 
+input[type=checkbox] {
+    min-width: 1.2em;
+    min-height: 1.2em;
+}
+
+label:disabled {
+    color: gray;
+}
+
 /* disable mouse input for disabled buttons */
 button:disabled, input[type=submit]:disabled {
     pointer-events: none;
@@ -42,6 +51,10 @@ button:disabled, input[type=submit]:disabled {
 .styled > * {
     margin: 0.5em;
     transform: skew(-6deg) rotate(1deg);
+}
+
+.styled > .styled {
+    transform: skew(6deg) rotate(0deg);
 }
 
 button.styled {
@@ -98,16 +111,12 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 .styled:has(h3) { padding-left: 1em; padding-right: 1em; margin-bottom: 0.5em; }
 
 .hlayout {
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: row;
     /* justify-content: space-evenly; */
 }
 
 .vlayout {
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: column;
     /* justify-content: space-evenly; */
@@ -120,6 +129,11 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 
 .hlayout.space-evenly, .vlayout.space-evenly {
     justify-content: space-evenly;
+}
+
+.stretch {
+    width: 100%;
+    height: 100%;
 }
 
 
@@ -171,7 +185,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0em 1em 0em 1em;
+    /* padding: 0em 1em 0em 1em; */
 }
 
 .lobby-list {
@@ -220,9 +234,26 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     background-color: #f6f6f6;
 }
 
+.lock[type=checkbox] {
+    appearance: none;
+    -webkit-appearance: none; /* Safari */
+    font-size: xx-large;
+}
+
+.lock[type=checkbox]:checked::before {
+    content: "🔒";
+}
+
+.lock[type=checkbox]:not(:checked)::before {
+    content: "🔓";
+}
 
 .locked::after {
     content: "🔒";
+}
+
+.unlocked::after {
+    content: "🔓";
 }
 
 
@@ -279,12 +310,27 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
+/* TOUCHSCREEN */
+@media (pointer: coarse) {
+    .lobby-entry button { visibility: visible; }    /* always visible */
+    
+}
+
+
 /* MOBILE VIEW */
 @media all and ((max-width: 480px) or (max-height: 480px)) {
     body {
         font-size: medium;
     }
 
+    input[type=checkbox] {
+        min-width: initial;
+        min-height: initial;
+    }
+}
+
+/* MOBILE VIEW (width only) */
+@media all and (max-width: 480px) {
     .lobby-entry {
         font-size: x-small;
     }
