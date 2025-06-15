@@ -21,20 +21,22 @@ pub enum Order {
 
 #[derive(Debug)]
 pub struct Game {
-    players: Vec<Player>,
-    pile: Vec<Box<dyn Card>>,
-    current_player_turn: usize,
-    turn_order: Order
+    pub players: Vec<Player>,
+    pub player_profiles: Vec<PlayerProfile>,
+    pub pile: Vec<Box<dyn Card>>,
+    pub current_player_turn: usize,
+    pub turn_order: Order
 }
 
 impl Game {
-    pub fn new(players: &Vec<PlayerProfile>) -> Self {
-        let players = players.iter()
+    pub fn new(player_profiles: &Vec<PlayerProfile>) -> Self {
+        let players = player_profiles.iter()
             .map(|prf| Player::new(prf.id, prf.name.clone()))
             .collect();
 
         Self {
             players: players,
+            player_profiles: player_profiles.clone(),
             pile: database::CARD_DATABASE.clone(),
             current_player_turn: 0,
             turn_order: Order::Forward

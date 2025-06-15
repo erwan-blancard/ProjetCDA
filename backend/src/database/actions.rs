@@ -39,12 +39,6 @@ pub struct NewEmptyStats {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CreateGameInfo {
-    pub players: Vec<i32>,
-}
-
-
 pub fn create_account(conn: &mut PgConnection, username: &String, email: &String, password: &String) -> diesel::QueryResult<FilteredAccount> {
     use super::schema::accounts::dsl::{accounts, id};
     use super::schema::account_stats::dsl::account_stats;

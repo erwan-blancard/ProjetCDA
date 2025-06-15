@@ -1,5 +1,4 @@
 
-
 export function displayPopup(message, title, buttonText="Ok", onclose=null) {
     const frame = document.createElement("div");
     frame.className = "popup-frame";
@@ -34,4 +33,27 @@ export function displayPopup(message, title, buttonText="Ok", onclose=null) {
     frame.appendChild(container);
 
     document.body.appendChild(frame);
+
+    return frame;
+}
+
+
+// Simpler popup with only a message and no button
+export function displayMessage(message) {
+    const frame = document.createElement("div");
+    frame.className = "msg-frame";
+
+    const container = document.createElement("section");
+    container.className = "msg-container";
+
+    const messageElement= document.createElement("p");
+    messageElement.textContent = message;
+
+    container.appendChild(messageElement);
+
+    frame.appendChild(container);
+
+    document.body.appendChild(frame);
+
+    return frame;
 }

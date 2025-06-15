@@ -8,7 +8,7 @@ use crate::server::game::player::PlayerId;
 
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerProfile {
     pub id: PlayerId,
     pub name: String

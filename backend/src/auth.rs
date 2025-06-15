@@ -1,5 +1,5 @@
 use actix_service::forward_ready;
-use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, body::EitherBody, Error, HttpMessage, HttpResponse, error::ErrorUnauthorized};
+use actix_web::{body::EitherBody, dev::{Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, http::Method, Error, HttpMessage, HttpResponse};
 use diesel::expression::is_aggregate::No;
 use futures::future::{ok, Ready};
 use futures::future::LocalBoxFuture;
@@ -82,6 +82,17 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
+
+        // allow if method is OPTIONS
+        if *req.method() == Method::OPTIONS {
+            let fut = self.service.call(req);
+
+            return Box::pin(async move {
+                let res = fut.await?;
+                Ok(res)
+            });
+        }
+
         // if the path is in IGNORE_ROUTES then automatically passes
         for ignore_route in IGNORE_ROUTES.iter() {
             if req.path().starts_with(ignore_route) {
@@ -123,46 +134,6 @@ where
             }
         }
 
-        // if let Some(token_value) = req.headers().get("Authorization") {
-        //     if let Ok(token_str) = token_value.to_str() {
-        //         if let Ok(claims) = validate_jwt(token_str.trim_start_matches("Bearer ")) {
-        //             // insert user_id in request extensions for later use in handlers
-        //             req.extensions_mut().insert(claims.user_id);
-
-        //             // let fut = self.service.call(req);
-        //             // return Box::pin(async move {
-        //             //     let res = fut.await?;
-        //             //     Ok(res)
-        //             // });
-        //             // return Box::pin(self.service.call(req));
-
-        //             // let res = self.service.call(req);
-
-        //             // return Box::pin(async move {
-        //             //     // forwarded responses map to "left" body
-        //             //     res.await.map(ServiceResponse::map_into_left_body)
-        //             // });
-        //             let fut = self.service.call(req);
-
-        //             return Box::pin(async move {
-        //                 let res = fut.await?;
-        //                 Ok(res)
-        //             });
-        //         }
-        //     }
-        // }
-
-        // let http_res = HttpResponse::Unauthorized().json("Unauthorized");
-        // let (http_req, _) = req.into_parts();
-        // let res = Self::Response::new(http_req, http_res);
-
-        // let res = HttpResponse::Unauthorized()
-        //     .content_type("application/json")
-        //     .json("Unauthorized")
-        //     // constructed responses map to "right" body
-        //     .map_into_right_body();
-        // let (req, _pl) = req.into_parts();
-        // return Box::pin(async move { Ok(ServiceResponse::new(req, res)) });
         return Box::pin(async move { Err(ErrorUnauthorized("Invalid token")) });
     }
 }

@@ -1,4 +1,4 @@
-import { PlayerObject, Player, Opponent } from "../player";
+import { PlayerObject, Player, Opponent } from "../game/player";
 import { CSS2DObject } from 'three-stdlib'
 
 

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { Card, CardPile, getCardTexturePathById, OpponentCard } from './cards';
-import { ServerConnexion } from './server/server_connection';
+import { ServerConnexion } from '../server/server_connection';
 import { Opponent, Player } from './player';
-import { PlayerUI } from './ui/player_ui';
+import { PlayerUI } from '../ui/player_ui';
 import { CSS2DRenderer } from 'three-stdlib';
 import { degToRad } from 'three/src/math/MathUtils';
 
@@ -136,14 +136,11 @@ export function initGame() {
     serverConnexion.addEventListener("connectionchange", ev => {
         console.log("Connection changed, status:", ev.detail.status);
     })
-    serverConnexion.addEventListener("authchange", ev => {
-        console.log("Auth status:", ev.detail.status);
-    })
     serverConnexion.addEventListener("gameupdate", upd => {
         onServerUpdate(upd.detail);
     })
     serverConnexion.addEventListener("chatmessage", ev => {
-        console.log("Chat message received:", ev.detail.msg);
+        console.log("Chat message received:", ev.detail.message);
     })
     serverConnexion.addEventListener("sessioninfo", ev => {
         onSessionInfoReceived(ev.detail);
@@ -151,8 +148,8 @@ export function initGame() {
 }
 
 
-export function connectToServer(wsUri, token) {
-    serverConnexion.connect(wsUri, token);
+export function connectToServer(wsUrl) {
+    serverConnexion.connect(wsUrl);
 }
 
 

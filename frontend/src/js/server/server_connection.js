@@ -1,10 +1,8 @@
 // these types must match the UserActions in the gameserver
-export const AUTH_ACTION_KEY = "Auth"
 export const PLAY_CARD_ACTION_KEY = "PlayCard"
 export const DRAW_CARD_ACTION_KEY = "DrawCard"
 export const SEND_CHAT_MESSAGE_ACTION_KEY = "SendChatMessage"
 
-export const AUTH_RESP_KEY = "Auth"
 export const CHAT_MESSAGE_RESP_KEY = "Message"
 export const GAME_STATUS_RESP_KEY = "GameStatus"
 export const SESSION_INFO_RESP_KEY = "SessionInfo"
@@ -13,7 +11,6 @@ export const SESSION_INFO_RESP_KEY = "SessionInfo"
 export class ServerConnexion extends EventTarget {
     /** @type {WebSocket | null} */
     #socket = null
-    #authenticated = false
     /**
      * @typedef {{
      *  id: any
@@ -35,8 +32,8 @@ export class ServerConnexion extends EventTarget {
         super();
     }
 
-    connect(wsUri, token) {
-        this.#socket = new WebSocket(wsUri);
+    connect(wsUrl) {
+        this.#socket = new WebSocket(wsUrl);
 
         this.#socket.onerror = ev => {
             console.log("WebSocket error:", ev);
@@ -45,7 +42,6 @@ export class ServerConnexion extends EventTarget {
         // send token when opened
         this.#socket.onopen = () => {
             this.#emitConnectionChangeEvent();
-            this.#send_auth_action(token);
         }
 
         this.onclose = () => {
@@ -71,12 +67,8 @@ export class ServerConnexion extends EventTarget {
         return this.#socket != null;
     }
 
-    is_authenticated() {
-        return this.#authenticated;
-    }
-
     send_chat_message(message) {
-        if (this.is_connected() && this.is_authenticated()) {
+        if (this.is_connected()) {
             this.#send_message_action(message);
         }
     }
@@ -88,11 +80,6 @@ export class ServerConnexion extends EventTarget {
         
         const resp_type = json_data["type"];
         switch (resp_type) {
-            case AUTH_RESP_KEY:
-                this.#authenticated = json_data["status"] == true;
-                this.#emitAuthStatusChange();
-                break;
-        
             case CHAT_MESSAGE_RESP_KEY:
                 this.#emitNewChatMessageEvent(json_data["message"]);
                 break;
@@ -132,12 +119,6 @@ export class ServerConnexion extends EventTarget {
         }))
     }
 
-    #emitAuthStatusChange() {
-        this.dispatchEvent(new CustomEvent("authchange", { detail:
-            { status: this.#authenticated }
-        }))
-    }
-
     #emitSessionInfo() {
         this.dispatchEvent(new CustomEvent("sessioninfo", { detail:
             this.#session_info
@@ -145,14 +126,6 @@ export class ServerConnexion extends EventTarget {
     }
 
     // actions
-
-    #send_auth_action(token) {
-        const action = {
-            "type": AUTH_ACTION_KEY,
-            "token": token
-        };
-        this.#socket.send(JSON.stringify(action));
-    }
 
     #send_message_action(message) {
         const action = {

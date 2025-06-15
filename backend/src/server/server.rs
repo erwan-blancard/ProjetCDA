@@ -57,6 +57,10 @@ enum Command {
         conn: ConnId,
         res_tx: oneshot::Sender<()>,
     },
+
+    Kill {
+        res_tx: oneshot::Sender<()>,
+    }
 }
 
 
@@ -148,7 +152,7 @@ impl GameServer {
             match cmd {
                 Command::Connect { player_id, conn_tx, res_tx } => {
                     let conn_id = self.connect(player_id, conn_tx).await;
-                    let _ = res_tx.send(conn_id);
+                    res_tx.send(conn_id);
                 }
 
                 Command::Disconnect { conn } => {
@@ -157,24 +161,29 @@ impl GameServer {
 
                 Command::SessionInfo { res_tx } => {
                     // FIXME get from GameEngine
-                    let players = Vec::new();
+                    let players = self.game.player_profiles.clone();
 
-                    let _ = res_tx.send(players);
+                    res_tx.send(players);
                 }
 
                 Command::Action { json_string, conn, res_tx } => {
                     self.process_player_action(json_string, conn).await;
-                    let _ = res_tx.send(());
+                    res_tx.send(());
                 }
 
                 Command::Message { conn, msg, res_tx } => {
                     self.send_chat_message_to_handlers(conn, msg).await;
-                    let _ = res_tx.send(());
+                    res_tx.send(());
                 }
 
                 Command::GameStateForPlayer { conn, res_tx } => {
                     let game_state: Option<GameStateForPlayer> = self.get_game_state_for_player(conn).await;
-                    let _ = res_tx.send(game_state);
+                    res_tx.send(game_state);
+                }
+
+                Command::Kill { res_tx } => {
+                    self.sessions.clear();
+                    res_tx.send(());
                 }
             }
         }
@@ -248,5 +257,11 @@ impl GameServerHandle {
 
     pub fn is_closed(&self) -> bool {
         self.cmd_tx.is_closed()
+    }
+
+    pub async fn kill_server(&self) {
+        let (res_tx, res_rx) = oneshot::channel();
+        self.cmd_tx.send(Command::Kill { res_tx }).unwrap();
+        res_rx.await.unwrap();
     }
 }

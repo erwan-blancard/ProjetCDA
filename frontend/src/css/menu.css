@@ -54,6 +54,28 @@ body > * {
     justify-content: space-evenly;
 }
 
+.msg-frame {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1000;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.msg-container {
+    padding: 0.7em 2.4em 0.7em 2.4em;
+    background-color: whitesmoke;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
 /* MOBILE VIEW */
 @media all and (max-device-width: 480px) {
 

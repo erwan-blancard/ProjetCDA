@@ -1,5 +1,5 @@
-import { api_url } from "./api";
-import { displayPopup } from "./ui/popup";
+import { api_url } from "../utils";
+import { displayPopup } from "../ui/popup";
 
 export async function login_submit() {
     const button = document.getElementById("form-submit");

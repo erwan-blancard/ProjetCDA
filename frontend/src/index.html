@@ -22,20 +22,52 @@
 <body>
   <script type="module" src="/js/menus/mainmenu.js"></script>
   <div class="root">
-    <div id="view1" class="view">
+    <div id="main" class="view">
+      <div class="vlayout center">
+        <div class="styled"><h1>Main</h1></div>
+
+        <div class="hlayout center">
+          <button class="styled" id="to-create-lobby"><span>
+            <h1>Create Lobby</h1>
+          </span></button>
+          <button class="styled" id="to-join-lobby"><span>
+            <h1>Join Lobby</h1>
+          </span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-lobby" class="view">
       <section>
-        <div class="styled"><h1>View 1</h1></div>
-        <button class="styled"><span>span</span></button>
-        <button class="styled"><p style="margin: 0px;">p margin 0px</p></button>
-        <button class="styled"><p>p</p></button>
-        <button class="styled">plain</button>
-        <button class="styled" id="button-set-view2"><span>View 2</span></button>
+        <div class="styled"><h1>Create Lobby</h1></div>
+        <button class="styled" id="create-lobby-back-button"><span>Back</span></button>
       </section>
     </div>
-    <div id="view2" class="view">
+
+    <div id="select-lobby" class="view">
+      <section class="vlayout">
+        <div class="styled"><h2>Select Lobby</h2></div>
+        <!-- <div id="lobby-list"></div> -->
+        <lobby-list id="lobby-list" style="height: 40vh; margin-bottom: 24px;"></lobby-list>
+        <div class="hlayout" style="position: absolute;">
+          <button class="styled" id="test-add-lobby"><span>Add</span></button>
+          <button class="styled" id="test-remove-lobby"><span>Remove</span></button>
+          <button class="styled" id="test-clear-list"><span>Clear</span></button>
+        </div>
+        <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
+      </section>
+    </div>
+
+    <div id="current-lobby" class="view">
       <section>
-        <div class="styled"><h1>View 2</h1></div>
-        <button class="styled" id="button-set-view1"><span>View 1</span></button>
+        <div class="styled"><h1>Lobby</h1></div>
+
+        <div id="lobby"></div>
+        
+        <div class="hlayout center">
+          <button class="styled" id="current-lobby-ready-button"><span>Ready !</span></button>
+          <button class="styled" id="current-lobby-leave-button"><span>Leave</span></button>
+        </div>
       </section>
     </div>
   </div>
