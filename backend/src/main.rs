@@ -60,6 +60,7 @@ use tokio::task::{spawn_local, JoinHandle};
 use uuid::Uuid;
 
 use crate::routes::game::{Lobbies, Lobby, LobbyId};
+use crate::routes::sse::Broadcaster;
 
 // use uid::Id as IdT;
 
@@ -146,6 +147,8 @@ async fn main() -> std::io::Result<()> {
         purge_server_handlers_periodic(handlers_to_purge, Duration::from_secs(120)).await;
     });
 
+    let broadcaster = Broadcaster::create();
+
     HttpServer::new(move || {
         // FIXME configure
         let cors = Cors::default()
@@ -161,6 +164,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(lobbies.clone()))
             .app_data(web::Data::new(server_handlers.clone()))
             .app_data(web::Data::new(api_url.clone()))
+            .app_data(web::Data::from(Arc::clone(&broadcaster)))
             .wrap(cors)
             .wrap(auth::JwtMiddleware)
             .wrap(NormalizePath::trim())    // normalizes paths (no trailing "/")

@@ -2,6 +2,7 @@ use actix_web::{error, web, HttpRequest, HttpMessage, HttpResponse, Responder};
 use actix_web::{get, patch, post};
 use serde_derive::Deserialize;
 
+use crate::routes::sse::Broadcaster;
 use crate::{database::actions, DbPool};
 
 
@@ -69,12 +70,17 @@ struct NewFriendRequestJSON {
 }
 
 #[post("/account/requests")]
-async fn send_friend_request(req: HttpRequest, pool: web::Data<DbPool>, json: web::Json<NewFriendRequestJSON>) -> actix_web::Result<impl Responder> {
+async fn send_friend_request(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+    json: web::Json<NewFriendRequestJSON>,
+    broadcaster: web::Data<Broadcaster>
+) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
                              .clone();
 
-    let requests = web::block(move || {
+    let request = web::block(move || {
         // Obtaining a connection from the pool is also a potentially blocking operation.
         // So, it should be called within the `web::block` closure, as well.
         let mut conn = pool.get().expect("couldn't get db connection from pool");
@@ -84,7 +90,9 @@ async fn send_friend_request(req: HttpRequest, pool: web::Data<DbPool>, json: we
     .await?
     .map_err(error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Created().json(requests))
+    broadcaster.notify_friend_request_update(&request).await;
+
+    Ok(HttpResponse::Created().json(request))
 }
 
 #[derive(Deserialize)]
@@ -94,7 +102,13 @@ struct FriendRequestResponseJSON {
 
 
 #[patch("/account/requests/{username}")]
-async fn change_friend_request_status(req: HttpRequest, pool: web::Data<DbPool>, path: web::Path<(String,)>, json: web::Json<FriendRequestResponseJSON>) -> actix_web::Result<impl Responder> {
+async fn change_friend_request_status(
+    req: HttpRequest,
+    pool: web::Data<DbPool>,
+    path: web::Path<(String,)>,
+    json: web::Json<FriendRequestResponseJSON>,
+    broadcaster: web::Data<Broadcaster>
+) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
                              .clone();
@@ -109,6 +123,8 @@ async fn change_friend_request_status(req: HttpRequest, pool: web::Data<DbPool>,
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
+
+    broadcaster.notify_friend_request_update(&request).await;
 
     Ok(HttpResponse::Ok().json(request))
 }

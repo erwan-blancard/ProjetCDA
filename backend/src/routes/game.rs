@@ -2,13 +2,14 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound};
-use actix_web::{delete, error, patch, web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use actix_web::{delete, error, patch, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, post};
 use tokio::spawn;
 use uuid::Uuid;
 use serde_derive::{Serialize, Deserialize};
 
 use crate::dto::GameSessionInfo;
+use crate::routes::sse::Broadcaster;
 use crate::server::dto::responses::PlayerProfile;
 use crate::server::game::game::MAX_PLAYERS;
 use crate::server::server::GameServer;
@@ -64,7 +65,8 @@ impl Lobby {
     }
 }
 
-pub type Lobbies = Arc<Mutex<HashMap<LobbyId, Lobby>>>;
+pub type LobbiesInner = HashMap<LobbyId, Lobby>;
+pub type Lobbies = Arc<Mutex<LobbiesInner>>;
 
 
 const LOBBY_PAGE_SIZE: usize = 20;
@@ -84,6 +86,38 @@ fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> 
     }
 
     None
+}
+
+async fn create_game_session(
+    lobby: &mut Lobby,
+    game_handlers: web::Data<GameHandlers>,
+    pool: web::Data<DbPool>
+) -> Result<GameId, Error> {
+    let user_ids: Vec<i32> = lobby.users
+        .iter().cloned().collect();
+
+    let players = web::block(move || {
+        let mut conn = pool.get().expect("couldn't get db connection from pool");
+
+        actions::get_accounts_by_id(&mut conn, &user_ids)
+    })
+    .await?
+    .map_err(error::ErrorInternalServerError)?;
+
+    let players: Vec<PlayerProfile> = players.iter()
+        .map(|acc| PlayerProfile { id: acc.id, name: acc.username.clone() })
+        .collect();
+
+    let mut game_handlers = game_handlers.lock().unwrap();
+
+    // create server proccess
+    let (game_server, handle) = GameServer::new(players);
+    let proccess = spawn(game_server.run());
+    
+    let game_id: GameId = Uuid::new_v4();
+    game_handlers.insert(game_id, (proccess, handle));
+
+    Ok(game_id)
 }
 
 
@@ -247,7 +281,8 @@ struct LobbyJoinInfo {
 async fn join_lobby(
     req: HttpRequest,
     json: web::Json<LobbyJoinInfo>,
-    lobbies: web::Data<Lobbies>
+    lobbies: web::Data<Lobbies>,
+    brodcaster: web::Data<Broadcaster>
 ) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
@@ -274,6 +309,8 @@ async fn join_lobby(
 
         lobby.users.insert(account_id);
 
+        brodcaster.notify_lobby_user_list_update(&lobby, account_id).await;
+
         return Ok(HttpResponse::Ok().json(lobby));
     } else {
         Err(ErrorNotFound("Lobby doesn't exist !"))
@@ -293,7 +330,10 @@ struct LobbyReadyInfo {
 async fn lobby_set_ready(
     req: HttpRequest,
     json: web::Json<LobbyReadyInfo>,
-    lobbies: web::Data<Lobbies>
+    lobbies: web::Data<Lobbies>,
+    broadcaster: web::Data<Broadcaster>,
+    pool: web::Data<DbPool>,
+    game_handlers: web::Data<GameHandlers>
 ) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
@@ -308,14 +348,26 @@ async fn lobby_set_ready(
         let lobby = lobbies.get_mut(&lobby_id).unwrap();
 
         if lobby.all_users_ready() {
-            Err(ErrorConflict("Can't update because all users are ready !"))
-        } else if json.ready {
-            lobby.users_ready.insert(account_id);
-            Ok(HttpResponse::Ok().finish())
-        } else {
-            lobby.users_ready.remove(&account_id);
-            Ok(HttpResponse::Ok().finish())
+            return Err(ErrorConflict("Can't update because all users are ready !"));
         }
+
+        if json.ready { lobby.users_ready.insert(account_id); }
+        else { lobby.users_ready.remove(&account_id); }
+
+        broadcaster.notify_lobby_user_ready(lobby, account_id, false).await;
+
+        if lobby.all_users_ready() {
+            // create game
+            
+            match create_game_session(lobby, game_handlers, pool).await {
+                Ok(game_id) => { lobby.game_id = Some(game_id); },
+                Err(_) => { return Err(error::ErrorInternalServerError("Could not create game session")); }
+            }
+
+            broadcaster.notify_lobby_game_started(lobby).await;
+        }
+
+        Ok(HttpResponse::Ok().finish())
 
     } else {
         Err(ErrorNotFound("User is not in a lobby !"))
@@ -327,7 +379,8 @@ async fn lobby_set_ready(
 #[post("/lobby/current/leave")]
 async fn leave_current_lobby(
     req: HttpRequest,
-    lobbies: web::Data<Lobbies>
+    lobbies: web::Data<Lobbies>,
+    broadcaster: web::Data<Broadcaster>
 ) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
@@ -346,6 +399,15 @@ async fn leave_current_lobby(
         } else {
             lobby.users.remove(&account_id);
             lobby.users_ready.remove(&account_id);
+
+            if lobby.users.is_empty() {
+                // remove lobby
+                lobbies.remove(&lobby_id);
+
+            } else {
+                broadcaster.notify_lobby_user_list_update(&lobby, account_id).await;
+            }
+
             Ok(HttpResponse::Ok().finish())
         }
 
