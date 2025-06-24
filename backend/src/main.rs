@@ -53,7 +53,7 @@ mod server {
     }
 }
 
-type ApiUrl = Url;
+// type ApiUrl = Url;
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 use tokio::task::{spawn_local, JoinHandle};
@@ -128,7 +128,7 @@ async fn connect_to_ws(
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let api_url: ApiUrl = ApiUrl::parse(&std::env::var("BACKEND_URL").unwrap_or(String::new())).expect("BACKEND_URL is not valid !");
+    // let api_url: ApiUrl = ApiUrl::parse(&std::env::var("BACKEND_URL").unwrap_or(String::new())).expect("BACKEND_URL is not valid !");
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not set !");
     let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url.clone());
@@ -163,7 +163,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(lobbies.clone()))
             .app_data(web::Data::new(server_handlers.clone()))
-            .app_data(web::Data::new(api_url.clone()))
+            // .app_data(web::Data::new(api_url.clone()))
             .app_data(web::Data::from(Arc::clone(&broadcaster)))
             .wrap(cors)
             .wrap(auth::JwtMiddleware)

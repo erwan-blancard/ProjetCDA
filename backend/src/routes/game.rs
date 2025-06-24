@@ -52,7 +52,7 @@ impl Lobby {
     pub fn all_users_ready(&self) -> bool {
         self.users.iter()
             .map(|id| self.users_ready.get(id).is_some())
-            .any(|is_some| is_some)
+            .all(|is_some| is_some)
     }
 
     pub fn info(&self) -> LobbyInfo {
@@ -79,7 +79,11 @@ pub struct CreateLobbyInfo {
 
 
 fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
+    println!("acc id: {}", account_id);
     for (lobby_id, lobby) in lobbies.iter() {
+        for user_id in lobby.users.iter() {
+            println!("id {}", user_id);
+        }
         if lobby.users.get(&account_id).is_some() {
             return Some(lobby_id.clone());
         }
@@ -347,7 +351,7 @@ async fn lobby_set_ready(
 
         let lobby = lobbies.get_mut(&lobby_id).unwrap();
 
-        if lobby.all_users_ready() {
+        if lobby.all_users_ready() && lobby.users.len() > 1 {
             return Err(ErrorConflict("Can't update because all users are ready !"));
         }
 
@@ -356,7 +360,7 @@ async fn lobby_set_ready(
 
         broadcaster.notify_lobby_user_ready(lobby, account_id, false).await;
 
-        if lobby.all_users_ready() {
+        if lobby.all_users_ready() && lobby.users.len() > 1 {
             // create game
             
             match create_game_session(lobby, game_handlers, pool).await {
@@ -535,6 +539,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(get_current_lobby)
         .service(get_lobby_info)
         .service(join_lobby)
+        .service(leave_current_lobby)
 
         .service(get_game_session_info)
         .service(get_current_game_session_info)

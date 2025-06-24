@@ -12,6 +12,7 @@
 
     <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/menu.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/lobby.css'>
     <style>
         /* remove scrolling */
         html, body {
@@ -20,8 +21,18 @@
     </style>
 </head>
 <body>
-  <script type="module" src="/js/menus/mainmenu.js"></script>
+  <script type="module" src="/js/menus/main-menu.js"></script>
+  <script>
+    function showSidepanel() {
+      document.getElementById('friends-panel').style.width = '30%';
+    }
+    function hideSidepanel() {
+      document.getElementById('friends-panel').style.width = '0px';
+    }
+  </script>
   <div class="root">
+    <a href="javascript:void(0)" onclick="showSidepanel()">☰</a>
+
     <div id="main" class="view">
       <div class="vlayout stretch center">
         <div class="styled"><h1>Main</h1></div>
@@ -43,7 +54,7 @@
         <section class="styled vlayout" style="padding: 1.5em;">
           <div>
             <label for="lobby-password-input">Password:</label>
-            <input id="lobby-password-input" type="text"/>
+            <input id="lobby-password-input" type="password"/>
             <input id="lobby-private-check" class="lock" type="checkbox"/>
           </div>
           <button class="styled" id="create-lobby-validate-button"><span>Create</span></button>
@@ -64,13 +75,15 @@
       <section>
         <div class="styled"><h1>Lobby</h1></div>
 
-        <div id="lobby"></div>
-        
-        <div class="hlayout center">
-          <button class="styled" id="current-lobby-ready-button"><span>Ready !</span></button>
-          <button class="styled" id="current-lobby-leave-button"><span>Leave</span></button>
-        </div>
+        <lobby-view id="lobby"></lobby-view>
       </section>
+    </div>
+
+    <!-- panels -->
+
+    <div id="friends-panel" class="sidepanel">
+      <a href="javascript:void(0)" class="close-panel" onclick="hideSidepanel()">×</a>
+      
     </div>
   </div>
 </body>

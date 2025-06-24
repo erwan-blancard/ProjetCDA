@@ -76,7 +76,7 @@ export class LobbyEntry extends HTMLElement {
         this.lobbyEntry = lobbyEntryDTO;
         
         // clear users
-        for (let i = 0; i < this.userListElement.children.length; i++) {
+        for (let i = this.userListElement.children.length-1; i >= 0; i--) {
             this.userListElement.removeChild(this.userListElement.children[i]);
         }
 
