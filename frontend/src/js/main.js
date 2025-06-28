@@ -4,7 +4,7 @@ import { login_guard, ws_url } from "./utils";
 import * as THREE from 'three';
 import * as GAME from './game/game';
 import { get_current_game_info } from "./api/account";
-import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, SessionInfoResponse } from "./server/dto";
+import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from "./server/dto";
 import { GameSessionInfoDTO } from "./api/dto";
 import { CARD_DATABASE } from "./game/database";
 import { randInt } from "three/src/math/MathUtils";
@@ -59,6 +59,10 @@ if (game_info != null) {
         GAME.onDrawCardEvent(new DrawCardResponse({"player_id": 1, "card_id": -1}));
     }
 
+    document.getElementById("test-set-card-pos").onclick = () => {
+        GAME.PLAYER.cards[0].position.y += 2;
+    }
+
     document.getElementById("simulate-game-update").onclick = () => {
         GAME.onServerUpdate(new GameStatusResponse({
             "current_player_turn": 0,
@@ -83,6 +87,94 @@ if (game_info != null) {
             "cards_in_pile": 15
         }));
     }
+
+    document.getElementById("simulate-play-card").onclick = () => {
+        GAME.onPlayCardEvent(new PlayCardResponse({
+            "player_id": 0,
+            "card_id": 1,
+            "hand_index": 0,
+            "actions": [
+                {
+                    "dice_roll": 0,
+                    "player_dice_id": -1,
+                    "targets": [{
+                        "player_id": 1,
+                        "action": {
+                            "type": "Attack",
+                            "amount": 6
+                        },
+                        "effect": "invalid"
+                    }]
+                },
+            ]
+        }));
+    };
+
+    document.getElementById("simulate-play-card-opponent").onclick = () => {
+        GAME.onPlayCardEvent(new PlayCardResponse({
+            "player_id": 1,
+            "card_id": 1,
+            "hand_index": 0,
+            "actions": [
+                {
+                    "dice_roll": 0,
+                    "player_dice_id": -1,
+                    "targets": [{
+                        "player_id": 0,
+                        "action": {
+                            "type": "Attack",
+                            "amount": 6
+                        },
+                        "effect": "invalid"
+                    }]
+                },
+            ]
+        }));
+    };
+
+    document.getElementById("simulate-play-card-dice").onclick = () => {
+        GAME.onPlayCardEvent(new PlayCardResponse({
+            "player_id": 0,
+            "card_id": 1,
+            "hand_index": 0,
+            "actions": [
+                {
+                    "dice_roll": 5,
+                    "player_dice_id": 0,
+                    "targets": [{
+                        "player_id": 1,
+                        "action": {
+                            "type": "Attack",
+                            "amount": 6
+                        },
+                        "effect": "invalid"
+                    }]
+                },
+            ]
+        }));
+    };
+
+    document.getElementById("simulate-play-card-dice-opponent").onclick = () => {
+        GAME.onPlayCardEvent(new PlayCardResponse({
+            "player_id": 1,
+            "card_id": 1,
+            "hand_index": 0,
+            "actions": [
+                {
+                    "dice_roll": 2,
+                    "player_dice_id": 1,
+                    "targets": [{
+                        "player_id": 0,
+                        "action": {
+                            "type": "Attack",
+                            "amount": 6
+                        },
+                        "effect": "invalid"
+                    }]
+                },
+            ]
+        }));
+    };
 
     // chat
 

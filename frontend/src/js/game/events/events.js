@@ -1,6 +1,7 @@
-import { Card } from "../cards";
+import { Card, OpponentCard } from "../cards";
 import { Opponent, Player, PlayerObject } from "../player";
 import { EventMgr } from "./event_mgr";
+import * as THREE from 'three';
 import * as GAME from "../game";
 
 
@@ -28,18 +29,17 @@ export class GameEvent {
     execute() {
         // if timeout < 0, it's up to run() to call notifyMgr() when done
         if (this.timeout >= 0)
-            setTimeout(() => { this.notifyMgr(); }, this.timeout);
+            setTimeout(() => { this.onTimeout(); }, this.timeout);
         this.#started = Date.now();
         this.run();
     }
 
     // tells the EventMgr to execute next event in queue
-    notifyMgr() { this.mgr.executeNext(); }
+    onTimeout() { this.mgr.executeNext(); }
 
 }
 
 
-// convenient class
 export class PlayerEvent extends GameEvent {
     /** @type {PlayerObject | Player | Opponent} */
     player;
@@ -47,6 +47,16 @@ export class PlayerEvent extends GameEvent {
     constructor(player) {
         super();
         this.player = player;
+    }
+}
+
+export class CardEvent extends GameEvent {
+    /** @type {Card} */
+    card;
+
+    constructor(card) {
+        super();
+        this.card = card;
     }
 }
 
@@ -115,3 +125,53 @@ export class DrawCardEvent extends PlayerEvent {
     }
 
 }
+
+
+// event to move card towards the center of the playing field
+export class PutCardForward extends CardEvent {
+
+    run() {
+        if (this.card != null) {
+            if (this.card instanceof OpponentCard)
+                this.card.flipCard();
+
+            const pos = this.card.position;
+            let new_pos = new THREE.Vector3(pos.x, pos.y, pos.z);
+            new_pos.z += (this.card instanceof OpponentCard ? 2 : -2);
+            new_pos.y += 0.5;
+            this.card.goto(new_pos.x, new_pos.y, new_pos.z, this.timeout / 1000.0);
+        }
+    }
+}
+
+export class PutCardDown extends CardEvent {
+    
+    constructor(card, is_fake=false) {
+        super(card);
+        this.is_fake = is_fake;
+    }
+
+    run() {
+        if (this.card != null) {
+            if (this.card instanceof OpponentCard)
+                this.card.flipCard();
+
+            const pos = this.card.position;
+            let new_pos = new THREE.Vector3(pos.x, pos.y, pos.z);
+            new_pos.z -= (this.card instanceof OpponentCard ? 2 : -2);
+            new_pos.y -= 0.5;
+            this.card.goto(new_pos.x, new_pos.y, new_pos.z, this.timeout / 1000.0);
+        }
+    }
+
+    onTimeout() {
+        // reset cover for opponent cards
+        if (this.card instanceof OpponentCard)
+            this.card.displayCoverAsFront();
+        if (this.is_fake)
+            this.card.removeFromParent();
+        super.onTimeout();
+    }
+
+}
+

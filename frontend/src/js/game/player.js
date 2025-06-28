@@ -34,6 +34,13 @@ export class PlayerObject extends Object3D {
     }
 
     updateCardPositions(instant=false) {
+        for (let i = 0; i < this.cards.length; i++) {
+            const { x, y, z } = this.getCardPositionByHandIndex(i);
+            this.cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+        }
+    }
+
+    getCardPositionByHandIndex(i) {
         const space = 1.05;
         const count = this.cards.length;
         // TODO may be used to offset deck pos and player pos
@@ -41,10 +48,9 @@ export class PlayerObject extends Object3D {
         const cy = this.position.y;
         const cz = this.position.z;
 
-        for (let i = 0; i < this.cards.length; i++) {
-            const x = cx + (i*space) - ((count-1)*space) / 2;
-            this.cards[i].goto(x, cy, cz, (instant ? 0.0 : 0.4));
-        }
+        const x = cx + (i*space) - ((count-1)*space) / 2;
+
+        return { x: x, y: cy, z: cz };
     }
 
     updateDiscardCardPositions(instant=false) {
@@ -126,6 +132,10 @@ export class PlayerObject extends Object3D {
         this.emitDiscardCountChange();
     }
 
+    isCardInHand(card_id, hand_index) {
+        return hand_index >= 0 && hand_index < this.cards.length && this.cards[hand_index].card_id == card_id;
+    }
+
     emitHealthChange() {
         this.dispatchEvent({type: "healthchange"});
     }
@@ -173,6 +183,11 @@ export class Opponent extends PlayerObject {
         const card = new OpponentCard();
         this.add(card);
         return card;
+    }
+
+    isCardInHand(_card_id, hand_index) {
+        // card_id is ignored for opponents
+        return hand_index >= 0 && hand_index < this.cards.length;
     }
 
     setCardCount(count) {

@@ -24,11 +24,13 @@ export class SessionInfoResponse {
 }
 
 export class PlayCardResponse {
+    /** @type {Array<PlayActionDTO>} */
+    actions;
     constructor(data) {
         this.player_id = data.player_id;
         this.card_id = data.card_id;
         this.hand_index = data.hand_index;
-        this.actions = data.actions;
+        this.actions = data.actions.map((action_data) => { return new PlayActionDTO(action_data); });
     }
 }
 
@@ -44,3 +46,46 @@ export class ChangeTurnResponse {
         this.player_id = data.player_id;
     }
 }
+
+
+// PlayInfo DTOs
+
+export class PlayActionDTO {
+    /** @type {Array<ActionTargetDTO>} */
+    targets;
+    constructor(data) {
+        this.dice_roll = data.dice_roll;
+        this.player_dice_id = data.player_dice_id;
+        this.targets = data.targets.map(target_data => { return new ActionTargetDTO(target_data); });
+    }
+}
+
+export class ActionTargetDTO {
+    /** @type {ActionTypeDTO} */
+    action;
+    constructor(data) {
+        this.player_id = data.player_id;
+        this.action = new ActionTypeDTO(data.action);
+        this.effect = data.effect;
+    }
+}
+
+export class ActionTypeDTO {
+    static ATTACK = "Attack";
+    static HEAL = "Heal";
+
+    constructor(data) {
+        this.type = data.type;
+        switch (data.type) {
+            case ActionTypeDTO.ATTACK:
+                this.amount = data.amount;
+                break;
+            case ActionTypeDTO.HEAL:
+                this.amount = data.amount;
+                break;
+            default:
+                break;
+        }
+    }
+}
+

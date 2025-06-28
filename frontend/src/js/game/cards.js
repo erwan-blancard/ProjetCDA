@@ -92,11 +92,7 @@ export class Card extends THREE.Mesh {
 
         super(cardGeo, newCardMat(tex));
         this.card_id = card_id;
-        if (card_id >= 0) {
-            this.info = CARD_DATABASE.get(this.card_id);
-        } else {
-            this.info = null;
-        }
+        this.info = CARD_DATABASE.get(this.card_id);
         this.rotateX(THREE.MathUtils.degToRad(-90));
     }
 
@@ -108,7 +104,7 @@ export class Card extends THREE.Mesh {
 
     flipCard(instant=false) {
         const tl = gsap.timeline();
-        tl.to(this.rotation, { y: (this.flipped ? 0 : -Math.PI), duration: (instant ? 0.0 : 0.5) } );
+        tl.to(this.rotation, { y: (this.flipped ? 0 : -Math.PI), duration: (instant ? 0.0 : 0.25) } );
         this.flipped = !this.flipped;
     }
 

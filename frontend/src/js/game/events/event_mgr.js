@@ -18,6 +18,16 @@ export class EventMgr {
         }
     }
 
+    pushEvents(events) {
+        events.forEach(event => {
+            event.mgr = this;
+            this.#queue.push(event);
+        });
+        if (!this.#waiting_for_events) {
+            this.executeNext();
+        }
+    }
+
     emptyQueue() {
         this.#queue.length = 0;
     }

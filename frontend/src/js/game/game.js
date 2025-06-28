@@ -6,9 +6,9 @@ import { PlayerUI } from '../ui/player_ui';
 import { CSS2DRenderer } from 'three-stdlib';
 import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
-import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
+import { ActionTypeDTO, ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { DrawCardEvent } from './events/events';
+import { DamagePlayerEvent, DrawCardEvent, HealPlayerEvent, PutCardDown, PutCardForward, ThrowDiceEvent } from './events/events';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -112,23 +112,7 @@ export function initGame() {
 
     const card1 = new Card(0);
     scene.add(card1);
-    PLAYER.cards.push(card1);
-
-    PLAYER.updateCardPositions();
-
-    // // test
-    // for (let i = 0; i < 5; i++) {
-    //     const op = new Opponent(scene, 3);
-    //     const ui = new PlayerUI(op);
-    //     ui.position.set(-1, 2, 0);
-    //     op.updateCardPositions();
-    //     OPPONENTS.set(i, op);
-    // }
-
-    // // test
-    // setOpponentCardCount(3, 1);
-
-    // updateOpponentPositions();
+    PLAYER.addCard(card1);
 
     // Interactions
 
@@ -258,7 +242,64 @@ export function onSessionInfoReceived(info) {
 
 /** @param {PlayCardResponse} data  */
 export function onPlayCardEvent(data) {
-    // TODO
+    const events = [];
+
+    const player = getPlayerById(data.player_id);
+    const card_id = data.card_id;
+    const hand_index = data.hand_index;
+
+    let card;
+    let is_card_fake = false;
+
+    // get card from player hand or create it if it doesn't exist or doesn't match (desync?)
+    if (player.isCardInHand(card_id, hand_index)) {
+        card = player.cards[hand_index];
+    } else {
+        is_card_fake = true;
+        if (player instanceof Opponent)
+            card = new OpponentCard();
+        else
+            card = new Card(card_id);
+        scene.add(card);
+        const { x, y, z } = player.getCardPositionByHandIndex(hand_index);
+        console.log(x, y, z);
+        card.position.x = x;
+        card.position.y = y;
+        card.position.z = z;
+    }
+
+    // change display of OpponentCard to match the expected card's look
+    // will be reset by PutCardDown event
+    if (card instanceof OpponentCard)
+        card.displayCardAsFront(card_id);
+
+    events.push(new PutCardForward(card));
+
+    data.actions.forEach(action => {
+        if (action.dice_roll > 0) {
+            events.push(new ThrowDiceEvent(getPlayerById(action.player_dice_id), action.dice_roll));
+        }
+
+        action.targets.forEach(target => {
+            const targetedPlayer = getPlayerById(target.player_id);
+
+            switch (target.action.type) {
+                case ActionTypeDTO.ATTACK:
+                    events.push(new DamagePlayerEvent(targetedPlayer, target.action.amount));
+                    break;
+                case ActionTypeDTO.HEAL:
+                    events.push(new HealPlayerEvent(targetedPlayer, target.action.amount));
+                    break;
+                default:
+                    console.log(`No event defined for \"${target.action.type}\"`);
+                    break;
+            }
+        });
+    });
+
+    events.push(new PutCardDown(card, is_card_fake));
+
+    eventMgr.pushEvents(events);
 }
 
 /** @param {DrawCardResponse} data  */
