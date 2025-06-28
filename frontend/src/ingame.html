@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
     
     <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/ui.css'>
     <!-- <script type="importmap">
         {
@@ -34,9 +35,27 @@
       <section class="connection">
         <p>Status: <span id="connection-status">Not connected</span></p>
       </section>
+
+      <!-- test -->
+      <section class="clickable" style="position: absolute; top: 20px;">
+        <button id="simulate-current-turn">Simulate Recv Current Turn</button>
+        <button id="simulate-opponent-turn">Simulate Recv Opponent Turn</button>
+        <button id="simulate-draw-card">Simulate Draw Card</button>
+        <button id="simulate-draw-card-opponent">Simulate Draw Card Opponent</button>
+      </section>
+      <section class="clickable" style="position: absolute; top: 40px;">
+        <button id="simulate-game-update">Simulate Game Update</button>
+      </section>
+      <section class="clickable" style="position: absolute; top: 60px;">
+        <button id="simulate-play-card">Simulate Play Card</button>
+        <button id="simulate-play-card-opponent">Simulate Play Card Opponent</button>
+        <button id="simulate-play-card-dice">Simulate Play Card With Dice</button>
+        <button id="simulate-play-card-dice-opponent">Simulate Play Card With Dice Opponent</button>
+      </section>
+
       <section class="chat">
         <div id="log"></div>
-        <form id="chatform" style="pointer-events: none;">
+        <form id="chatform">
           <input type="text" id="text" autocomplete="off" />
           <input type="submit" id="send" />
         </form>

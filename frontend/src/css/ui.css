@@ -12,7 +12,7 @@
     display: flex;
 }
 
-#ui :not(section) {
+#ui .clickable {
     pointer-events: auto;
 }
 
@@ -32,6 +32,11 @@
     display: flex;
     flex-direction: column;
     align-self: flex-end;
+    pointer-events: none;
+}
+
+#chatform {
+    pointer-events: all;
 }
 
 input[type='text'] {
@@ -97,5 +102,39 @@ input[type='text'] {
 
 .player-discard-icon::before {
     content: "🃏 ";
+}
+
+
+/* Card Tooltip */
+
+
+.card-tooltip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2px;
+    margin: 1em 0.2em 1em 0.2em;
+    border: solid 4px whitesmoke;
+    border-radius: 12px;
+    background-color: #404060;
+}
+
+.card-tooltip-name {
+    min-width: 2em;
+    margin: 4px;
+    padding: 2px;
+    color: white;
+}
+
+.card-tooltip-desc {
+    min-width: 6em;
+    max-width: 12em;
+    min-height: 3em;
+    margin: 8px;
+    padding: 4px;
+    background-color: whitesmoke;
+    border: solid 4px #000000;
+    border-radius: 12px;
 }
 

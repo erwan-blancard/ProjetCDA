@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds;
 
 use crate::server::game::card::{CardId, EffectId};
+use crate::server::game::play_info::PlayAction;
 use crate::server::game::player::PlayerId;
 
 
@@ -95,7 +96,7 @@ pub enum ServerResponse {
         card_id: CardId,
         /// Index of card in player's hand
         hand_index: u32,
-        targets: Vec<CardActionTarget>,
+        actions: Vec<PlayAction>,
     },
 
     /// a card was drawn by a player

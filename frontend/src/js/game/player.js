@@ -11,7 +11,7 @@ export class PlayerObject extends Object3D {
     /** @type Array<Card> */
     cards = [];
     /** @type Array<Card> */
-    discard_cards;
+    discard_cards = [];
 
     /** @type THREE.Scene */
     scene;
@@ -47,6 +47,85 @@ export class PlayerObject extends Object3D {
         }
     }
 
+    updateDiscardCardPositions(instant=false) {
+        // TODO
+    }
+
+    /** @param {Array<number>} card_ids  */
+    updateHandCards(card_ids) {
+        const new_card_ids = [];
+        const not_seen_cards = [];
+
+        this.cards.forEach(card => {
+            not_seen_cards.push(card);
+        });
+
+        for (let i = 0; i < card_ids.length; i++) {
+            const id = card_ids[i];
+            const found = not_seen_cards.findIndex((card, _i, _o) => {
+                return card.card_id == id;
+            });
+
+            if (found != -1) {
+                not_seen_cards.splice(found, 1);
+            } else {
+                new_card_ids.push(id);
+            }
+        }
+        
+        // remove cards
+        not_seen_cards.forEach(card => {
+            this.cards.splice(this.cards.indexOf(card), 1)[0].removeFromParent();
+        });
+
+        new_card_ids.forEach(id => {
+            const card = new Card(id);
+            this.scene.add(card);
+            this.cards.push(card);
+        });
+        
+
+        this.updateCardPositions();
+        this.emitCardCountChange();
+    }
+
+    /** @param {Array<number>} card_ids  */
+    updateDiscardCards(card_ids) {
+        const new_card_ids = [];
+        const not_seen_cards = [];
+
+        this.discard_cards.forEach(card => {
+            not_seen_cards.push(card);
+        });
+
+        for (let i = 0; i < card_ids.length; i++) {
+            const id = card_ids[i];
+            const found = not_seen_cards.findIndex((card, _i, _o) => {
+                return card.card_id == id;
+            });
+
+            if (found != -1) {
+                not_seen_cards.splice(found, 1);
+            } else {
+                new_card_ids.push(id);
+            }
+        }
+        
+        // remove cards
+        not_seen_cards.forEach(card => {
+            this.discard_cards.splice(this.discard_cards.indexOf(card), 1)[0].removeFromParent();
+        });
+
+        new_card_ids.forEach(id => {
+            const card = new Card(id);
+            this.scene.add(card);
+            this.discard_cards.push(card);
+        });
+
+        this.updateDiscardCardPositions();
+        this.emitDiscardCountChange();
+    }
+
     emitHealthChange() {
         this.dispatchEvent({type: "healthchange"});
     }
@@ -62,6 +141,15 @@ export class PlayerObject extends Object3D {
 
 
 export class Player extends PlayerObject {
+
+    /** @param {Card} card  */
+    addCard(card) {
+        if (card.card_id != -1) {
+            this.cards.push(card);
+            this.emitCardCountChange();
+            this.updateCardPositions();
+        }
+    }
 
 }
 
