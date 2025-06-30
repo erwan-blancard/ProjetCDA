@@ -8,7 +8,7 @@ import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { DamagePlayerEvent, DrawCardEvent, HealPlayerEvent, PutCardDown, PutCardForward, ThrowDiceEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardDown, PutCardForward, ThrowDiceEvent } from './events/events';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -167,27 +167,7 @@ export function connectToServer(wsUrl) {
 export function onServerUpdate(data) {
     console.log("Game Update:", data);
 
-    try {
-        PLAYER.health = data.health;
-        PLAYER.updateHandCards(data.cards);
-        PLAYER.updateDiscardCards(data.discard_cards);
-
-        // update opponents
-        data.opponents.forEach(opponent_data => {
-            const opponent = OPPONENTS.get(opponent_data.player_id);
-            if (opponent != null) {
-                opponent.health = opponent_data.health;
-                opponent.setCardCount(opponent_data.card_count);
-                opponent.updateDiscardCards(opponent_data.discard_cards);
-            }
-        });
-
-        cardPile.count = data.cards_in_pile;
-
-        updateCurrentPlayerTurn(getPlayerById(data.current_player_turn), data.current_player_turn_end);
-    } catch (e) {
-        console.log("Exception when handling game update data:", e);
-    }
+    eventMgr.pushEvent(new GameUpdateEvent(data));
 }
 
 
@@ -268,12 +248,7 @@ export function onPlayCardEvent(data) {
         card.position.z = z;
     }
 
-    // change display of OpponentCard to match the expected card's look
-    // will be reset by PutCardDown event
-    if (card instanceof OpponentCard)
-        card.displayCardAsFront(card_id);
-
-    events.push(new PutCardForward(card));
+    events.push(new PutCardForward(card, card_id));
 
     data.actions.forEach(action => {
         if (action.dice_roll > 0) {
@@ -313,7 +288,8 @@ export function onDrawCardEvent(data) {
 
 /** @param {ChangeTurnResponse} data  */
 export function onChangeTurnEvent(data) {
-    updateCurrentPlayerTurn(getPlayerById(data.player_id));
+    // updateCurrentPlayerTurn(getPlayerById(data.player_id));
+    eventMgr.pushEvent(new ChangeTurnEvent(getPlayerById(data.player_id)));
 }
 
 
@@ -344,18 +320,26 @@ export function updateOpponentPositions() {
 
 export function getOpponentPosition(index) {
     const opponents_count = OPPONENTS.size;
-    const space_between_opponents = 4;
+    const space_between_opponents = 6;
 
     const cx = space_between_opponents*index + space_between_opponents / 2 - (space_between_opponents*opponents_count) / 2;
     const cy = 0.2;
-    const cz = -2.5;
+    const cz = -4;
 
     return { cx, cy, cz };
 }
 
 
-/** @param {Player|null} who */
+/**
+ * Used by ChangeTurnEvent to update the scene when changing player turn
+ * @param {Player|null} who
+ */
 export function updateCurrentPlayerTurn(who, turn_end=0) {
+
+    PLAYER.clearSelection();
+    OPPONENTS.values().forEach(opponent => {
+        opponent.clearSelection();
+    });
 
     if (who == PLAYER && current_player_turn != PLAYER) {
         
@@ -378,11 +362,26 @@ export function getPlayerById(player_id) {
 }
 
 
+export function getIdByPlayer(player) {
+    if (player == PLAYER)
+        return session_info.id;
+    else {
+        for (const [id, opp] of OPPONENTS.entries()) {
+            if (opp === player)
+                return id;
+        }
+        return undefined;
+    }
+}
+
+
 
 function renderSceneView() {
     requestAnimationFrame(renderSceneView);
     renderer.render( scene, camera );
     labelRenderer.render( scene, camera );
+    if (eventMgr)
+        document.getElementById("event-counter").textContent = eventMgr.queueCount;
 }
 
 function onWindowResize() {
@@ -393,9 +392,10 @@ function onWindowResize() {
     labelRenderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+
 function onPointerMove( event ) {
 
-    if (current_player_turn == PLAYER) {
+    if (current_player_turn == PLAYER && !eventMgr.isWaitingForEvents()) {
 
         pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 
@@ -424,7 +424,7 @@ function onPointerMove( event ) {
 
 function onPointerDown( event ) {
 
-    if (current_player_turn == PLAYER) {
+    if (current_player_turn == PLAYER && !eventMgr.isWaitingForEvents()) {
 
         pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 
@@ -437,10 +437,7 @@ function onPointerDown( event ) {
             const card = intersects[ 0 ].object;
 
             if (event.button == 0) {
-                
-                serverConnexion.send_play_card_action(card.card_id);
-                updateCurrentPlayerTurn(null);
-
+                PLAYER.toggleCardSelection(PLAYER.cards.indexOf(card));
             }
 
         } else {
@@ -448,9 +445,28 @@ function onPointerDown( event ) {
 
             if (pile_intersects.length > 0) {
                 
+                // updateCurrentPlayerTurn(null);
+                eventMgr.pushEvent(new ChangeTurnEvent(null));
                 serverConnexion.send_draw_card_action();
-                updateCurrentPlayerTurn(null);
                 
+            } else if (PLAYER.selected_card != null) {  // choose target, TODO handle multiple targets
+
+                const opponents = [];
+                OPPONENTS.values().forEach(opponent => {
+                    if (opponent.health > 0)
+                        opponents.push(opponent);
+                });
+
+                const opponent_intersects = raycaster.intersectObjects(opponents, false);
+
+                if (opponent_intersects.length > 0) {
+                    const opponent = opponent_intersects[0];
+                    const play_card_id = PLAYER.selected_card.card_id;
+
+                    eventMgr.pushEvent(new ChangeTurnEvent(null));
+                    serverConnexion.send_play_card_action(play_card_id, [getIdByPlayer(opponent)]);
+                }
+
             }
         }
 

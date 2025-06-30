@@ -140,10 +140,11 @@ export class ServerConnexion extends EventTarget {
         this.#socket.send(JSON.stringify(action));
     }
 
-    send_play_card_action(card_id) {
+    send_play_card_action(card_id, targets) {
         const action = {
             "type": PLAY_CARD_ACTION_KEY,
-            "card_id": card_id
+            "card_id": card_id,
+            "targets": targets
         };
         this.#socket.send(JSON.stringify(action));
     }

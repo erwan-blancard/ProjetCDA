@@ -3,6 +3,7 @@ import { Opponent, Player, PlayerObject } from "../player";
 import { EventMgr } from "./event_mgr";
 import * as THREE from 'three';
 import * as GAME from "../game";
+import { GameStatusResponse } from "../../server/dto";
 
 
 export class GameEvent {
@@ -130,10 +131,19 @@ export class DrawCardEvent extends PlayerEvent {
 // event to move card towards the center of the playing field
 export class PutCardForward extends CardEvent {
 
+    constructor(card, display_card_id=-1) {
+        super(card);
+        this.display_card_id = display_card_id;
+    }
+
     run() {
         if (this.card != null) {
-            if (this.card instanceof OpponentCard)
+            if (this.card instanceof OpponentCard) {
+                // change display of OpponentCard to match the expected card's look
+                // will be reset by PutCardDown event
+                this.card.displayCardAsFront(this.display_card_id);
                 this.card.flipCard();
+            }
 
             const pos = this.card.position;
             let new_pos = new THREE.Vector3(pos.x, pos.y, pos.z);
@@ -171,6 +181,60 @@ export class PutCardDown extends CardEvent {
         if (this.is_fake)
             this.card.removeFromParent();
         super.onTimeout();
+    }
+
+}
+
+
+export class ChangeTurnEvent extends PlayerEvent {
+
+    constructor(player) {
+        super(player);
+        this.timeout = 150;
+    }
+
+    run() { GAME.updateCurrentPlayerTurn(this.player); }
+
+}
+
+
+/**
+ * Event for GameStatus updates
+ */
+export class GameUpdateEvent extends GameEvent {
+    /** @param {GameStatusResponse} upd_data  */
+    upd_data;
+
+    constructor(data) {
+        super();
+        this.upd_data = data;
+        // this.timeout = 0;
+    }
+
+    run() {
+        const data = this.upd_data;
+
+        try {
+            GAME.PLAYER.health = data.health;
+            GAME.PLAYER.updateHandCards(data.cards);
+            GAME.PLAYER.updateDiscardCards(data.discard_cards);
+
+            // update opponents
+            data.opponents.forEach(opponent_data => {
+                const opponent = GAME.OPPONENTS.get(opponent_data.player_id);
+                if (opponent != null) {
+                    opponent.health = opponent_data.health;
+                    opponent.setCardCount(opponent_data.card_count);
+                    opponent.updateDiscardCards(opponent_data.discard_cards);
+                }
+            });
+
+            GAME.cardPile.count = data.cards_in_pile;
+
+            GAME.updateCurrentPlayerTurn(GAME.getPlayerById(data.current_player_turn), data.current_player_turn_end);
+        } catch (e) {
+            console.log("Exception when handling game update data:", e);
+        }
     }
 
 }

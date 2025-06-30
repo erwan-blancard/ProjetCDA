@@ -113,17 +113,17 @@ input[type='text'] {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 2px;
+    gap: 0.1em;
     margin: 1em 0.2em 1em 0.2em;
-    border: solid 4px whitesmoke;
-    border-radius: 12px;
+    border: solid 0.2em whitesmoke;
+    border-radius: 0.4em;
     background-color: #404060;
 }
 
 .card-tooltip-name {
     min-width: 2em;
-    margin: 4px;
-    padding: 2px;
+    margin: 0.2em;
+    padding: 0.1em;
     color: white;
 }
 
@@ -131,10 +131,18 @@ input[type='text'] {
     min-width: 6em;
     max-width: 12em;
     min-height: 3em;
-    margin: 8px;
-    padding: 4px;
+    margin: 0.3em;
+    padding: 0.2em;
     background-color: whitesmoke;
-    border: solid 4px #000000;
-    border-radius: 12px;
+    border: solid 0.2em #000000;
+    border-radius: 0.4em;
+}
+
+
+/* MOBILE VIEW */
+@media (max-device-width: 720px) and (orientation: landscape) {
+    body {
+        font-size: smaller;
+    }
 }
 

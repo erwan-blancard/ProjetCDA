@@ -28,9 +28,9 @@ export class EventMgr {
         }
     }
 
-    emptyQueue() {
-        this.#queue.length = 0;
-    }
+    emptyQueue() { this.#queue.length = 0; }
+    isWaitingForEvents() { return this.#waiting_for_events; }
+    get queueCount() { return this.#queue.length; }
 
     executeNext() {
         if (this.#queue.length > 0) {

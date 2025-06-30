@@ -104,7 +104,7 @@ export class Card extends THREE.Mesh {
 
     flipCard(instant=false) {
         const tl = gsap.timeline();
-        tl.to(this.rotation, { y: (this.flipped ? 0 : -Math.PI), duration: (instant ? 0.0 : 0.25) } );
+        tl.to(this.rotation, { y: (this.flipped ? 0 : -Math.PI), duration: (instant ? 0.0 : 0.15) } );
         this.flipped = !this.flipped;
     }
 

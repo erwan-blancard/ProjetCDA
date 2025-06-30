@@ -1,23 +1,27 @@
-import { Object3D } from "three";
+import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from "three";
 import { Card, OpponentCard } from "./cards";
 
 
 // common attributes and methods for Player and Opponent
-export class PlayerObject extends Object3D {
+// extends Mesh to give the PlayerObject a shape and use Raycaster to check if under mouse
+export class PlayerObject extends Mesh {
     /** @type {string | null} */
     name;
-    /** @type number */
+    /** @type {number} */
     _health = 100;
-    /** @type Array<Card> */
+    /** @type {Array<Card>} */
     cards = [];
-    /** @type Array<Card> */
+    /** @type {Array<Card>} */
     discard_cards = [];
-
-    /** @type THREE.Scene */
+    /** @type {Card | null} */
+    selected_card;
+    /** @type {THREE.Scene} */
     scene;
 
     constructor(scene) {
-        super();
+        const box = new BoxGeometry(6, 0.1, 3);
+        const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.2, transparent: true } );
+        super(box, mat);
 
         this.scene = scene;
         this.scene.add(this);
@@ -59,12 +63,9 @@ export class PlayerObject extends Object3D {
 
     /** @param {Array<number>} card_ids  */
     updateHandCards(card_ids) {
-        const new_card_ids = [];
-        const not_seen_cards = [];
+        this.clearSelection();
 
-        this.cards.forEach(card => {
-            not_seen_cards.push(card);
-        });
+        const new_cards_arr = [];
 
         for (let i = 0; i < card_ids.length; i++) {
             const id = card_ids[i];
@@ -73,36 +74,32 @@ export class PlayerObject extends Object3D {
             });
 
             if (found != -1) {
-                not_seen_cards.splice(found, 1);
+                const found_card = this.cards.splice(found, 1)[0];
+                new_cards_arr.push(found_card);
             } else {
-                new_card_ids.push(id);
+                const card = new Card(id);
+                this.scene.add(card);
+                new_cards_arr.push(card);
             }
         }
         
         // remove cards
-        not_seen_cards.forEach(card => {
-            this.cards.splice(this.cards.indexOf(card), 1)[0].removeFromParent();
-        });
-
-        new_card_ids.forEach(id => {
-            const card = new Card(id);
-            this.scene.add(card);
+        for (let i = this.cards.length - 1; i >= 0; i--) {
+            this.cards.splice(i, 1)[0].removeFromParent();
+        }
+        
+        // push cards in our list
+        new_cards_arr.forEach(card => {
             this.cards.push(card);
         });
         
-
         this.updateCardPositions();
         this.emitCardCountChange();
     }
 
     /** @param {Array<number>} card_ids  */
     updateDiscardCards(card_ids) {
-        const new_card_ids = [];
-        const not_seen_cards = [];
-
-        this.discard_cards.forEach(card => {
-            not_seen_cards.push(card);
-        });
+        const new_cards_arr = [];
 
         for (let i = 0; i < card_ids.length; i++) {
             const id = card_ids[i];
@@ -111,20 +108,22 @@ export class PlayerObject extends Object3D {
             });
 
             if (found != -1) {
-                not_seen_cards.splice(found, 1);
+                const found_card = this.discard_cards.splice(found, 1)[0];
+                new_cards_arr.push(found_card);
             } else {
-                new_card_ids.push(id);
+                const card = new Card(id);
+                this.scene.add(card);
+                new_cards_arr.push(card);
             }
         }
         
         // remove cards
-        not_seen_cards.forEach(card => {
-            this.discard_cards.splice(this.discard_cards.indexOf(card), 1)[0].removeFromParent();
-        });
-
-        new_card_ids.forEach(id => {
-            const card = new Card(id);
-            this.scene.add(card);
+        for (let i = this.discard_cards.length - 1; i >= 0; i--) {
+            this.cards.splice(i, 1)[0].removeFromParent();
+        }
+        
+        // push cards in our list
+        new_cards_arr.forEach(card => {
             this.discard_cards.push(card);
         });
 
@@ -134,6 +133,33 @@ export class PlayerObject extends Object3D {
 
     isCardInHand(card_id, hand_index) {
         return hand_index >= 0 && hand_index < this.cards.length && this.cards[hand_index].card_id == card_id;
+    }
+
+    toggleCardSelection(index) {
+        const card = this.cards[index];
+        if (this.selected_card == card)
+            this.selected_card = null;
+        else
+            this.selected_card = card;
+
+        this.updateCardSelection();
+    }
+
+    clearSelection() {
+        this.selected_card = null;
+        this.updateCardSelection();
+    }
+    
+    updateCardSelection() {
+        for (let i = 0; i < this.cards.length; i++) {
+            const card = this.cards[i];
+            let { x, y, z } = this.getCardPositionByHandIndex(i);
+
+            if (card == this.selected_card)
+                z -= 0.5;
+
+            card.goto(x, y, z, 0.15);
+        }
     }
 
     emitHealthChange() {
@@ -181,7 +207,7 @@ export class Opponent extends PlayerObject {
     // create an OpponentCard object and add it to the scene
     #createOpponentCard() {
         const card = new OpponentCard();
-        this.add(card);
+        this.scene.add(card);
         return card;
     }
 
