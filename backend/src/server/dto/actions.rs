@@ -2,18 +2,29 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::server::game::player::PlayerId;
 
+/// Liste des actions possibles à exécuter côté serveur
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum Action {
+    Damage { to: PlayerId, amount: i32 },
+    Heal { to: PlayerId, amount: i32 },
+    Draw { player: PlayerId, count: u8 },
+}
 
-/// JSON structures for client messages
-#[derive(Serialize, Deserialize, Debug)]
-// Tells serde to try to deserialyze the user's JSON action to any of the following structures.
-// The JSON must contain the key "type" with a string matching the enum variant's name.
+/// Structure des messages que le client peut envoyer au serveur
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub enum UserAction {
-    /// The user plays a card on targetted opponents
-    /// Dice rolls are handled by the server (no actual dice roll, the client only sees the result of the roll)
-    PlayCard {card_id: u32, targets: Vec<PlayerId>},
-    /// The user wants to draw a card
-    DrawCard {},
-    SendChatMessage {message: String,},
+    /// Le joueur joue une carte, et demande que le serveur exécute une série d’actions
+    PlayCard {
+        card_id: u32,
+        actions: Vec<Action>,
+    },
 
+    /// Le joueur tire une carte (volontairement)
+    DrawCard {},
+
+    /// Le joueur envoie un message texte aux autres
+    SendChatMessage {
+        message: String,
+    },
 }

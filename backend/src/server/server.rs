@@ -176,6 +176,26 @@ impl GameServer {
                     res_tx.send(());
                 }
 
+                Command::PlayCard { player_id, card_id, targets, res_tx } => {
+                    // applique la logique de jeu ici
+                    let mut info = PlayInfo::new();
+                    let mut action = PlayAction::new();
+                    action.dice_roll = 4;
+                    action.player_dice_id = player_id;
+
+                    for target_id in targets {
+                        action.targets.push(ActionTarget {
+                            player_id: target_id,
+                            action: ActionType::Attack { amount: 5 },
+                            effect: "sismic_wave".to_string(),
+                        });
+                    }
+
+                    info.actions.push(action);
+                    let _ = res_tx.send(info);
+                }
+
+
                 Command::GameStateForPlayer { conn, res_tx } => {
                     let game_state: Option<GameStateForPlayer> = self.get_game_state_for_player(conn).await;
                     res_tx.send(game_state);
@@ -264,4 +284,24 @@ impl GameServerHandle {
         self.cmd_tx.send(Command::Kill { res_tx }).unwrap();
         res_rx.await.unwrap();
     }
+
+    pub async fn play_card(
+    &self,
+    player_id: PlayerId,
+    card_id: u32,
+    targets: Vec<PlayerId>
+) -> PlayInfo {
+    let (res_tx, res_rx) = oneshot::channel();
+
+    self.cmd_tx.send(Command::PlayCard {
+        player_id,
+        card_id,
+        targets,
+        res_tx,
+    }).unwrap();
+
+    res_rx.await.unwrap()
+}
+
+
 }

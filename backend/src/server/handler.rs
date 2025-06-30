@@ -152,13 +152,18 @@ async fn process_received_text(
     let possible_action: Result<UserAction, _> = from_str(&json_str);
 
     match possible_action {
-        Ok(UserAction::PlayCard { card_id, targets }) => {
-            log::info!("Play Card Action: id: {card_id:?}, targets: {targets:?}");
-        },
+       Ok(UserAction::PlayCard { card_id, actions }) => {
+    log::info!("Play Card Action: id: {card_id:?}, actions: {actions:?}");
 
-        Ok(UserAction::DrawCard {  }) => {
-            log::info!("Draw Card Action");
-        },
+    // Appel à la logique serveur
+    let play_info = game_server
+        .play_card(player_id, card_id, actions)
+        .await;
+
+    // Envoi au client
+    let response = ServerResponse::PlayInfo { info: play_info };
+    response.send(session).await.unwrap();
+},
 
         Ok(UserAction::SendChatMessage { message }) => {
             log::info!("Send Chat Message Action: message: {message:?}");
