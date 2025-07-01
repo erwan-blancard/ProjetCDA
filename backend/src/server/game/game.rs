@@ -1,7 +1,13 @@
+use std::error::Error;
+
+use diesel::expression::is_aggregate::No;
 use rand::seq::SliceRandom;
 use rand::rng;
 
 use crate::server::dto::responses::PlayerProfile;
+use crate::server::game::card::CardId;
+use crate::server::game::play_info::PlayInfo;
+use crate::server::game::player::PlayerId;
 
 use super::card::{Card};
 use super::database;
@@ -18,6 +24,13 @@ pub enum Order {
     Backward
 }
 
+#[derive(Debug)]
+pub enum GameState {
+    PreGame,
+    InGame,
+    EndGame
+}
+
 
 #[derive(Debug)]
 pub struct Game {
@@ -25,7 +38,8 @@ pub struct Game {
     pub player_profiles: Vec<PlayerProfile>,
     pub pile: Vec<Box<dyn Card>>,
     pub current_player_turn: usize,
-    pub turn_order: Order
+    pub turn_order: Order,
+    pub state: GameState
 }
 
 impl Game {
@@ -39,7 +53,8 @@ impl Game {
             player_profiles: player_profiles.clone(),
             pile: database::CARD_DATABASE.clone(),
             current_player_turn: 0,
-            turn_order: Order::Forward
+            turn_order: Order::Forward,
+            state: GameState::PreGame,
         }
     }
 
@@ -51,11 +66,13 @@ impl Game {
         for player in self.players.iter_mut() {
             Self::give_from_pile(pile, player, INITIAL_HAND_AMOUNT);
         }
+
+        self.state = GameState::InGame;
     }
 
     pub fn give_from_pile(pile: &mut Vec<Box<dyn Card>>, player: &mut Player, amount: usize) {
         for _ in 0..amount {
-            player.hand_cards.insert(0, pile.remove(0));
+            player.hand_cards.push(pile.remove(0));
         }
     }
 
@@ -71,8 +88,8 @@ impl Game {
         }
     }
 
-    pub fn current_player(&mut self) -> &mut Player {
-        self.players.get_mut(self.current_player_turn).unwrap()
+    pub fn current_player_id(&self) -> PlayerId {
+        self.players.get(self.current_player_turn).unwrap().id
     }
 
     pub fn next_player_index(&self) -> usize {
@@ -92,6 +109,48 @@ impl Game {
                 }
             }
         }
+    }
+
+    pub fn play_card(&mut self, player_id: PlayerId, card_index: usize, targets: Vec<PlayerId>) -> Result<PlayInfo, String> {
+        if self.current_player_id() != player_id {
+            return Err("Not player's current turn".to_string());
+        }
+
+        let player_index = self.players
+            .iter()
+            .position(|p| p.id == player_id)
+            .ok_or_else(|| "Player not found".to_string())?;
+
+        let mut target_indices = Vec::with_capacity(targets.len());
+        for id in targets {
+            let idx = self.players
+                .iter()
+                .position(|p| p.id == id && id != player_id)
+                .ok_or_else(|| "Invalid target ID".to_string())?;
+            target_indices.push(idx);
+        }
+
+        let card = self.players[player_index].hand_cards.get(card_index)
+            .ok_or_else(|| "Card not in hand".to_string())?;
+
+        card.play(player_index, target_indices, &mut self.players)
+
+    }
+
+    // there should always be at least 1 card in pile when called
+    pub fn draw_card(&mut self, player_id: PlayerId) -> Result<CardId, String> {
+        let player_index = self.players
+            .iter()
+            .position(|p| p.id == player_id)
+            .ok_or_else(|| "Player not found".to_string())?;
+
+        if self.pile.len() == 0 {
+            return Err("Pile is empty".to_string());
+        }
+        
+        Self::give_from_pile(&mut self.pile, &mut self.players[player_index], 1);
+
+        Ok(self.players[player_index].hand_cards[0].get_id())
     }
 }
 

@@ -152,8 +152,8 @@ async fn process_received_text(
     let possible_action: Result<UserAction, _> = from_str(&json_str);
 
     match possible_action {
-        Ok(UserAction::PlayCard { card_id, targets }) => {
-            log::info!("Play Card Action: id: {card_id:?}, targets: {targets:?}");
+        Ok(UserAction::PlayCard { card_index, targets }) => {
+            log::info!("Play Card Action: index: {card_index:?}, targets: {targets:?}");
         },
 
         Ok(UserAction::DrawCard {  }) => {

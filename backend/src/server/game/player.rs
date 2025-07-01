@@ -20,6 +20,11 @@ pub struct Player {
     pub casted_cards: Vec<Box<dyn Card>>,
 }
 
+impl PartialEq for Player {
+    fn eq(&self, other: &Self) -> bool { self == other }
+    fn ne(&self, other: &Self) -> bool { self != other }
+}
+
 impl Player {
     pub fn new(id: PlayerId, name: String) -> Self {
         Self {
@@ -32,11 +37,7 @@ impl Player {
         }
     }
 
-    // pub fn play_card(&self, card: &impl Card, targets: &mut Vec<Player>, game: &mut Game) -> Result<PlayInfo, String> {
-    //     card.play(self, targets, game)
-    // }
-
-    pub fn damage(&mut self, amount: u32, element: Element, effect: EffectId, game: &Game) -> ActionTarget {
+    pub fn damage(&mut self, amount: u32, element: Element, effect: EffectId) -> ActionTarget {
         // TODO check buffs
         // TODO check element
         let mut effective_damage = amount;
@@ -50,7 +51,7 @@ impl Player {
         ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage }, effect }   // FIXME effect
     }
 
-    pub fn heal(&mut self, amount: u32, effect: EffectId, game: &Game) -> ActionTarget {
+    pub fn heal(&mut self, amount: u32, effect: EffectId) -> ActionTarget {
         // TODO check buffs
         let effective_heal = amount;
         if self.health + i32::try_from(effective_heal).unwrap() > PLAYER_MAX_HEALTH {

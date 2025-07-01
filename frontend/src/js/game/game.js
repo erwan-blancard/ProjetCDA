@@ -461,10 +461,10 @@ function onPointerDown( event ) {
 
                 if (opponent_intersects.length > 0) {
                     const opponent = opponent_intersects[0];
-                    const play_card_id = PLAYER.selected_card.card_id;
+                    const card_index = PLAYER.indexOf(PLAYER.selected_card);
 
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
-                    serverConnexion.send_play_card_action(play_card_id, [getIdByPlayer(opponent)]);
+                    serverConnexion.send_play_card_action(card_index, [getIdByPlayer(opponent)]);
                 }
 
             }

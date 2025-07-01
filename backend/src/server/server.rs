@@ -11,7 +11,7 @@ use rand::{rand_core::le, Rng as _};
 use tokio::sync::{mpsc, oneshot};
 use uid::IdU64;
 
-use crate::database::models::Account;
+use crate::{database::models::Account, server::game::{card::CardId, play_info::PlayInfo}};
 
 use super::{dto::responses::{GameStateForPlayer, PlayerProfile}, game::{game::Game, player::{Player, PlayerId}}};
 use super::dto::actions::UserAction;
@@ -37,12 +37,6 @@ enum Command {
         conn: ConnId,
     },
 
-    Action {
-        json_string: Msg,
-        conn: ConnId,
-        res_tx: oneshot::Sender<()>,
-    },
-
     SessionInfo {
         res_tx: oneshot::Sender<Vec<PlayerProfile>>,
     },
@@ -50,6 +44,18 @@ enum Command {
     GameStateForPlayer {
         conn: ConnId,
         res_tx: oneshot::Sender<Option<GameStateForPlayer>>,
+    },
+
+    PlayCard {
+        player_id: PlayerId,
+        card_index: usize,
+        targets: Vec<PlayerId>,
+        res_tx: oneshot::Sender<Result<PlayInfo, String>>,
+    },
+
+    DrawCard {
+        player_id: PlayerId,
+        res_tx: oneshot::Sender<Result<CardId, String>>,
     },
 
     Message {
@@ -109,10 +115,6 @@ impl GameServer {
         }
     }
 
-    async fn process_player_action(&self, json_string: String, conn_id: ConnId) {
-
-    }
-
     async fn get_game_state_for_player(&self, conn: ConnId) -> Option<GameStateForPlayer> {
         None
     }
@@ -123,7 +125,7 @@ impl GameServer {
 
         // stop connection associated with this player id (if any)
         if let Some(conn_id) = self.users.get(&player_id) {
-            self.disconnect(*conn_id);
+            self.disconnect(*conn_id).await;
         }
 
         // notify all users in same session
@@ -152,7 +154,7 @@ impl GameServer {
             match cmd {
                 Command::Connect { player_id, conn_tx, res_tx } => {
                     let conn_id = self.connect(player_id, conn_tx).await;
-                    res_tx.send(conn_id);
+                    let _ = res_tx.send(conn_id);
                 }
 
                 Command::Disconnect { conn } => {
@@ -163,27 +165,32 @@ impl GameServer {
                     // FIXME get from GameEngine
                     let players = self.game.player_profiles.clone();
 
-                    res_tx.send(players);
+                    let _ = res_tx.send(players);
                 }
 
-                Command::Action { json_string, conn, res_tx } => {
-                    self.process_player_action(json_string, conn).await;
-                    res_tx.send(());
+                Command::PlayCard { player_id, card_index, targets, res_tx } => {
+                    let result = self.game.play_card(player_id, card_index, targets);
+                    let _ = res_tx.send(result);
+                }
+
+                Command::DrawCard { player_id, res_tx } => {
+                    let result = self.game.draw_card(player_id);
+                    let _ = res_tx.send(result);
                 }
 
                 Command::Message { conn, msg, res_tx } => {
                     self.send_chat_message_to_handlers(conn, msg).await;
-                    res_tx.send(());
+                    let _ = res_tx.send(());
                 }
 
                 Command::GameStateForPlayer { conn, res_tx } => {
                     let game_state: Option<GameStateForPlayer> = self.get_game_state_for_player(conn).await;
-                    res_tx.send(game_state);
+                    let _ = res_tx.send(game_state);
                 }
 
                 Command::Kill { res_tx } => {
                     self.sessions.clear();
-                    res_tx.send(());
+                    let _ = res_tx.send(());
                 }
             }
         }

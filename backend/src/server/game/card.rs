@@ -1,5 +1,7 @@
 use std::fmt::{self, Debug, Display};
 
+use crate::server::game::player::PlayerId;
+
 use super::{game::Game, play_info::{PlayAction, PlayInfo}};
 
 
@@ -120,29 +122,43 @@ impl BasicCard {
 
 
 pub trait Card: Sync + Send + Debug + CardClone {
+
     // basic can_play impl
-    fn can_play(&self, player: &Player, targets: &Vec<Player>, game: &Game) -> Result<(), String> {
-        self.validate_targets(player, targets, game)
+    fn can_play(&self, player: &Player, targets: &Vec<Player>) -> Result<(), String> {
+        self.validate_targets(player, targets)
     }
 
     // basic play impl
-    fn play(&self, player: &Player, targets: &mut Vec<Player>, game: &mut Game) -> Result<PlayInfo, String> {
-        match self.can_play(player, &targets, game) {
+    fn play(&self, player_index: usize, target_indices: Vec<usize>, players: &mut Vec<Player>) -> Result<PlayInfo, String> {
+        match self.can_play(&players[0], &players) {
             Ok(_) => {
                 let mut info: PlayInfo = PlayInfo::new();
                 let mut play_action: PlayAction = PlayAction::new();
                 
+                // split_at_mut() is needed to prevent warnings about mutable borrows
+                let (left, right) = players.split_at_mut(player_index);
+
+                let target = {
+                    if target_indices[0] < player_index {
+                        &mut left[target_indices[0]]
+                    } else if target_indices[0] > player_index {
+                        &mut right[target_indices[0] - player_index]
+                    } else {
+                        panic!("Target is player !")
+                    }
+                };
+                
                 match self.get_kind() {
                     Kind::Weapon => {
-                        let action_target = targets[0].damage(self.get_attack(), self.get_element(), self.get_damage_effect(), game);
+                        let action_target = target.damage(self.get_attack(), self.get_element(), self.get_damage_effect());
                         play_action.targets.insert(0, action_target);
                     },
                     Kind::Spell => {
-                        let action_target = targets[0].damage(self.get_attack(), self.get_element(), self.get_damage_effect(), game);
+                        let action_target = target.damage(self.get_attack(), self.get_element(), self.get_damage_effect());
                         play_action.targets.insert(0, action_target);
                     },
                     Kind::Food => {
-                        let action_target = targets[0].heal(self.get_heal(), self.get_heal_effect(), game);
+                        let action_target = right[0].heal(self.get_heal(), self.get_heal_effect());
                         play_action.targets.insert(0, action_target);
                     }
                 }
@@ -154,6 +170,36 @@ pub trait Card: Sync + Send + Debug + CardClone {
             Err(msg) => { Err(msg) }
         }
     }
+
+    // basic play impl
+    // fn play(&self, player: &mut Player, targets: &Vec<&mut Player>) -> Result<PlayInfo, String> {
+    //     match self.can_play(player, targets) {
+    //         Ok(_) => {
+    //             let mut info: PlayInfo = PlayInfo::new();
+    //             let mut play_action: PlayAction = PlayAction::new();
+                
+    //             match self.get_kind() {
+    //                 Kind::Weapon => {
+    //                     let action_target = targets[0].damage(self.get_attack(), self.get_element(), self.get_damage_effect());
+    //                     play_action.targets.insert(0, action_target);
+    //                 },
+    //                 Kind::Spell => {
+    //                     let action_target = targets[0].damage(self.get_attack(), self.get_element(), self.get_damage_effect());
+    //                     play_action.targets.insert(0, action_target);
+    //                 },
+    //                 Kind::Food => {
+    //                     let action_target = targets[0].heal(self.get_heal(), self.get_heal_effect());
+    //                     play_action.targets.insert(0, action_target);
+    //                 }
+    //             }
+
+    //             info.actions.insert(0, play_action);
+
+    //             Ok(info)
+    //         }
+    //         Err(msg) => { Err(msg) }
+    //     }
+    // }
 
     fn get_id(&self) -> CardId;
     fn get_name(&self) -> String { String::from("???") }
@@ -185,7 +231,7 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn get_heal_effect(&self) -> EffectId { EffectId::from("heal_regular") }
 
     // basic validate_targets impl (only check if target count is equal to targets len)
-    fn validate_targets(&self, player: &Player, targets: &Vec<Player>, game: &Game) -> Result<(), String> {
+    fn validate_targets(&self, player: &Player, targets: &Vec<Player>) -> Result<(), String> {
         if targets.len() == usize::try_from(self.get_target_count()).unwrap() {
             Ok(())
         } else {
