@@ -1,5 +1,10 @@
 import gsap from "gsap";
 
+if (typeof screen === "undefined") {
+  globalThis.screen = { orientation: { lock: () => {} } };
+} else if (typeof screen.orientation === "undefined") {
+  screen.orientation = { lock: () => {} };
+}
 
 screen.orientation.lock("landscape");
 
@@ -69,3 +74,8 @@ $form.addEventListener('submit', ev => {
 })
 
 GAME.connectToServer(wsUri, token);
+
+// Exemple de fonction à tester
+export function addition(a, b) {
+    return a + b;
+}

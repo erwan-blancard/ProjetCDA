@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+actix-ws = "0.3.0"
+actix-web-lab = "0.23.0"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "2.2.0", features = ["postgres", "r2d2", "chrono"] }
 r2d2 = "0.8.10"
@@ -18,3 +20,15 @@ jsonwebtoken = "8.1"
 actix-service = "2.0.3"
 futures = "0.3.31"
 actix-cors = "0.7.1"
+tokio = { version = "1.45.1", features = ["full"] }
+lazy_static = "1.5.0"
+reqwest = { version = "0.12.15", features = ["json"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+rand = "0.9.1"
+futures-util = { version = "0.3", default-features = false }
+
+log = "0.4.27"
+env_logger = "0.11.8"
+uid = "0.1.8"
+tokio-stream = "0.1.17"
+parking_lot = "0.12.4"

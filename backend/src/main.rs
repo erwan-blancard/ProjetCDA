@@ -293,3 +293,11 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn addition() {
+        assert_eq!(2 + 2, 4);
+    }
+}

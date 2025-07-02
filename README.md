@@ -129,3 +129,19 @@ docker compose up
 
 
 # Semaine 4
+
+
+# Semaine 5
+
+
+
+# Semaine 6
+
+Lancer les tests du frontend en local: 
+    -npm install
+    -npm run test
+        -accepter d'installer la dépendance "jsdom"
+    -retaper: npm run test
+
+Lancer les tests du backend en local: 
+    -cargo test

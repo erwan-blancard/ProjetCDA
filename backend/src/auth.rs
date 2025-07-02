@@ -166,3 +166,13 @@ where
         return Box::pin(async move { Err(ErrorUnauthorized("Invalid token")) });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_create_jwt() {
+        let token = create_jwt(1);
+        assert!(token.len() > 0);
+    }
+}

@@ -185,3 +185,20 @@ pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32
         )
         .load(conn)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use diesel::Connection;
+    use diesel::pg::PgConnection;
+
+    #[test]
+    fn test_create_account() {
+        let conn = PgConnection::establish(":memory:").unwrap();
+        let username = String::from("testuser");
+        let email = String::from("test@example.com");
+        let password = String::from("password");
+        let result = create_account(&mut conn, &username, &email, &password);
+        assert!(result.is_ok());
+    }
+}
