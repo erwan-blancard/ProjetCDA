@@ -1,5 +1,5 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from "three";
-import { Card, OpponentCard } from "./cards";
+import { Card, CardPile, OpponentCard } from "./cards";
 
 
 // common attributes and methods for Player and Opponent
@@ -37,14 +37,14 @@ export class PlayerObject extends Mesh {
         this.emitHealthChange();
     }
 
-    updateCardPositions(instant=false) {
+    updateHandCardPositions(instant=false) {
         for (let i = 0; i < this.cards.length; i++) {
-            const { x, y, z } = this.getCardPositionByHandIndex(i);
+            const { x, y, z } = this.getHandCardPositionByIndex(i);
             this.cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
         }
     }
 
-    getCardPositionByHandIndex(i) {
+    getHandCardPositionByIndex(i) {
         const space = 1.05;
         const count = this.cards.length;
         // TODO may be used to offset deck pos and player pos
@@ -56,9 +56,19 @@ export class PlayerObject extends Mesh {
 
         return { x: x, y: cy, z: cz };
     }
+    
+    getDiscardCardPositionByIndex(i) {
+        const x = this.position.x - 4;
+        const y = 0.2 + (i * 0.015);
+        const z = this.position.z - 1.5;
+        return { x: x, y: y, z: z };
+    }
 
     updateDiscardCardPositions(instant=false) {
-        // TODO
+        for (let i = 0; i < this.discard_cards.length; i++) {
+            const { x, y, z } = this.getDiscardCardPositionByIndex(i);
+            this.discard_cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+        }
     }
 
     /** @param {Array<number>} card_ids  */
@@ -69,7 +79,7 @@ export class PlayerObject extends Mesh {
 
         for (let i = 0; i < card_ids.length; i++) {
             const id = card_ids[i];
-            const found = not_seen_cards.findIndex((card, _i, _o) => {
+            const found = this.cards.findIndex((card, _i, _o) => {
                 return card.card_id == id;
             });
 
@@ -93,7 +103,7 @@ export class PlayerObject extends Mesh {
             this.cards.push(card);
         });
         
-        this.updateCardPositions();
+        this.updateHandCardPositions();
         this.emitCardCountChange();
     }
 
@@ -103,7 +113,7 @@ export class PlayerObject extends Mesh {
 
         for (let i = 0; i < card_ids.length; i++) {
             const id = card_ids[i];
-            const found = not_seen_cards.findIndex((card, _i, _o) => {
+            const found = this.discard_cards.findIndex((card, _i, _o) => {
                 return card.card_id == id;
             });
 
@@ -153,7 +163,7 @@ export class PlayerObject extends Mesh {
     updateCardSelection() {
         for (let i = 0; i < this.cards.length; i++) {
             const card = this.cards[i];
-            let { x, y, z } = this.getCardPositionByHandIndex(i);
+            let { x, y, z } = this.getHandCardPositionByIndex(i);
 
             if (card == this.selected_card)
                 z -= 0.5;
@@ -183,7 +193,7 @@ export class Player extends PlayerObject {
         if (card.card_id != -1) {
             this.cards.push(card);
             this.emitCardCountChange();
-            this.updateCardPositions();
+            this.updateHandCardPositions();
         }
     }
 
@@ -233,8 +243,28 @@ export class Opponent extends PlayerObject {
             this.cards.length = count;  // resize the array
         }
 
-        this.updateCardPositions();
+        this.updateHandCardPositions();
         this.emitCardCountChange();
+    }
+
+    getHandCardPositionByIndex(i) {
+        const space = 1.05;
+        const count = this.cards.length;
+        // TODO may be used to offset deck pos and player pos
+        const cx = this.position.x;
+        const cy = this.position.y;
+        const cz = this.position.z;
+
+        const x = cx + ((count-1-i)*space) - ((count-1)*space) / 2;
+
+        return { x: x, y: cy, z: cz };
+    }
+    
+    getDiscardCardPositionByIndex(i) {
+        const x = this.position.x - 4;
+        const y = 0.2 + (i * 0.015);
+        const z = this.position.z + 1.5;    // inverted from player
+        return { x: x, y: y, z: z };
     }
 
 }

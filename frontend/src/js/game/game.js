@@ -3,12 +3,12 @@ import { Card, CardPile, getCardTexturePathById, OpponentCard } from './cards';
 import { ServerConnexion } from '../server/server_connection';
 import { Opponent, Player } from './player';
 import { PlayerUI } from '../ui/player_ui';
-import { CSS2DRenderer } from 'three-stdlib';
+import { CSS2DRenderer, OrbitControls } from 'three-stdlib';
 import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardDown, PutCardForward, ThrowDiceEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent } from './events/events';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -69,6 +69,9 @@ export function initGame() {
     // renderer.setPixelRatio( 2.0 );
     renderer.setPixelRatio( window.devicePixelRatio );
     document.body.appendChild( renderer.domElement );
+
+    // debug
+    // const controls = new OrbitControls( camera, renderer.domElement );
 
     labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize( window.innerWidth, window.innerHeight );
@@ -216,7 +219,7 @@ export function onSessionInfoReceived(info) {
     updateOpponentPositions();
 
     OPPONENTS.forEach(opponent => {
-        opponent.updateCardPositions();
+        opponent.updateHandCardPositions();
     });
 }
 
@@ -241,7 +244,7 @@ export function onPlayCardEvent(data) {
         else
             card = new Card(card_id);
         scene.add(card);
-        const { x, y, z } = player.getCardPositionByHandIndex(hand_index);
+        const { x, y, z } = player.getHandCardPositionByIndex(hand_index);
         console.log(x, y, z);
         card.position.x = x;
         card.position.y = y;
@@ -272,7 +275,7 @@ export function onPlayCardEvent(data) {
         });
     });
 
-    events.push(new PutCardDown(card, is_card_fake));
+    events.push(new PutCardInPile(player, card, is_card_fake));
 
     eventMgr.pushEvents(events);
 }
@@ -363,11 +366,11 @@ export function getPlayerById(player_id) {
 
 
 export function getIdByPlayer(player) {
-    if (player == PLAYER)
+    if (player == PLAYER) {
         return session_info.id;
-    else {
+    } else {
         for (const [id, opp] of OPPONENTS.entries()) {
-            if (opp === player)
+            if (opp == player)
                 return id;
         }
         return undefined;
@@ -460,8 +463,8 @@ function onPointerDown( event ) {
                 const opponent_intersects = raycaster.intersectObjects(opponents, false);
 
                 if (opponent_intersects.length > 0) {
-                    const opponent = opponent_intersects[0];
-                    const card_index = PLAYER.indexOf(PLAYER.selected_card);
+                    const opponent = opponent_intersects[0].object;
+                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
 
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [getIdByPlayer(opponent)]);

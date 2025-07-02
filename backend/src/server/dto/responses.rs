@@ -2,6 +2,8 @@ use actix_ws::{Session, Closed};
 use serde_derive::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds;
+use tokio::sync::mpsc::error::SendError;
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::server::game::card::{CardId, EffectId};
 use crate::server::game::play_info::PlayAction;
@@ -16,12 +18,12 @@ pub struct PlayerProfile {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OpponentState {
-    player_id: PlayerId,
-    health: u32,
-    card_count: u32,
-    discard_cards: Vec<CardId>,
+    pub player_id: PlayerId,
+    pub health: u32,
+    pub card_count: u32,
+    pub discard_cards: Vec<CardId>,
 }
 
 
@@ -53,14 +55,28 @@ pub enum CardActionType {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GameStateForPlayer {
-    current_player_turn: PlayerId,
+    pub current_player_turn: PlayerId,
     #[serde(with = "ts_seconds")]   // needed to serialize a DateTime with serde
-    current_player_turn_end: DateTime<Utc>,
-    health: u32,
-    cards: Vec<CardId>,
-    discard_cards: Vec<CardId>,
-    opponents: Vec<OpponentState>,
-    cards_in_pile: u32
+    pub current_player_turn_end: DateTime<Utc>,
+    pub health: u32,
+    pub cards: Vec<CardId>,
+    pub discard_cards: Vec<CardId>,
+    pub opponents: Vec<OpponentState>,
+    pub cards_in_pile: u32
+}
+
+impl GameStateForPlayer {
+    pub fn to_server_response(&self) -> ServerResponse {
+        ServerResponse::GameStatus {
+            current_player_turn: self.current_player_turn,
+            current_player_turn_end: self.current_player_turn_end,
+            health: self.health,
+            cards: self.cards.clone(),
+            discard_cards: self.discard_cards.clone(),
+            opponents: self.opponents.clone(),
+            cards_in_pile: self.cards_in_pile
+        }
+    }
 }
 
 
@@ -116,5 +132,9 @@ impl ServerResponse {
     /// send as text through the Session
     pub async fn send(&self, session: &mut Session) -> Result<(), Closed> {
         session.text(serde_json::to_string(&self).unwrap()).await
+    }
+
+    pub fn send_unbounded(&self, tx: &UnboundedSender<String>) -> Result<(), SendError<String>> {
+        tx.send(serde_json::to_string(&self).unwrap())
     }
 }

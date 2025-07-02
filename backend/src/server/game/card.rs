@@ -124,13 +124,15 @@ impl BasicCard {
 pub trait Card: Sync + Send + Debug + CardClone {
 
     // basic can_play impl
-    fn can_play(&self, player: &Player, targets: &Vec<Player>) -> Result<(), String> {
+    fn can_play(&self, player: &Player, targets: &Vec<&Player>) -> Result<(), String> {
         self.validate_targets(player, targets)
     }
 
     // basic play impl
+    // only 1 target
     fn play(&self, player_index: usize, target_indices: Vec<usize>, players: &mut Vec<Player>) -> Result<PlayInfo, String> {
-        match self.can_play(&players[0], &players) {
+        let targets = target_indices.iter().map(|i| &players[*i]).collect();
+        match self.can_play(&players[player_index], &targets) {
             Ok(_) => {
                 let mut info: PlayInfo = PlayInfo::new();
                 let mut play_action: PlayAction = PlayAction::new();
@@ -171,36 +173,6 @@ pub trait Card: Sync + Send + Debug + CardClone {
         }
     }
 
-    // basic play impl
-    // fn play(&self, player: &mut Player, targets: &Vec<&mut Player>) -> Result<PlayInfo, String> {
-    //     match self.can_play(player, targets) {
-    //         Ok(_) => {
-    //             let mut info: PlayInfo = PlayInfo::new();
-    //             let mut play_action: PlayAction = PlayAction::new();
-                
-    //             match self.get_kind() {
-    //                 Kind::Weapon => {
-    //                     let action_target = targets[0].damage(self.get_attack(), self.get_element(), self.get_damage_effect());
-    //                     play_action.targets.insert(0, action_target);
-    //                 },
-    //                 Kind::Spell => {
-    //                     let action_target = targets[0].damage(self.get_attack(), self.get_element(), self.get_damage_effect());
-    //                     play_action.targets.insert(0, action_target);
-    //                 },
-    //                 Kind::Food => {
-    //                     let action_target = targets[0].heal(self.get_heal(), self.get_heal_effect());
-    //                     play_action.targets.insert(0, action_target);
-    //                 }
-    //             }
-
-    //             info.actions.insert(0, play_action);
-
-    //             Ok(info)
-    //         }
-    //         Err(msg) => { Err(msg) }
-    //     }
-    // }
-
     fn get_id(&self) -> CardId;
     fn get_name(&self) -> String { String::from("???") }
     fn get_attack(&self) -> u32 { 1 }
@@ -209,7 +181,7 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn get_kind(&self) -> Kind { Kind::Weapon }
     fn get_element(&self) -> Element { Element::Fire }
     fn get_stars(&self) -> Stars { Stars::One }
-    fn get_target_count(&self) -> u32 { 1 }
+    fn get_target_count(&self) -> usize { 1 }
 
     fn get_damage_effect(&self) -> EffectId {
         match self.get_element() {
@@ -231,8 +203,9 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn get_heal_effect(&self) -> EffectId { EffectId::from("heal_regular") }
 
     // basic validate_targets impl (only check if target count is equal to targets len)
-    fn validate_targets(&self, player: &Player, targets: &Vec<Player>) -> Result<(), String> {
-        if targets.len() == usize::try_from(self.get_target_count()).unwrap() {
+    fn validate_targets(&self, player: &Player, targets: &Vec<&Player>) -> Result<(), String> {
+        println!("Validate targets: check {:?} == {:?}", targets.len(), self.get_target_count());
+        if targets.len() == self.get_target_count() {
             Ok(())
         } else {
             Err(String::from("Invalid target count"))

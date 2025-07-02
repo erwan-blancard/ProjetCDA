@@ -1,12 +1,13 @@
 use std::error::Error;
 
+use chrono::Utc;
 use diesel::expression::is_aggregate::No;
 use rand::seq::SliceRandom;
 use rand::rng;
 
-use crate::server::dto::responses::PlayerProfile;
-use crate::server::game::card::CardId;
-use crate::server::game::play_info::PlayInfo;
+use crate::server::dto::responses::{GameStateForPlayer, OpponentState, PlayerProfile};
+use crate::server::game::card::{CardId, Kind};
+use crate::server::game::play_info::{PlayAction, PlayInfo};
 use crate::server::game::player::PlayerId;
 
 use super::card::{Card};
@@ -16,6 +17,7 @@ use super::player::Player;
 
 pub const MAX_PLAYERS: usize = 6;
 const INITIAL_HAND_AMOUNT: usize = 5;
+const DRAW_CARD_LIMIT: usize = 5;   // can't draw if player has more than / or this amount of cards
 
 
 #[derive(Debug)]
@@ -102,7 +104,7 @@ impl Game {
                 }
             },
             Order::Backward => {
-                if self.current_player_turn - 1 < 0 {
+                if self.current_player_turn as i32 - 1 < 0 {
                     self.players.len() - 1
                 } else {
                     self.current_player_turn - 1
@@ -121,20 +123,32 @@ impl Game {
             .position(|p| p.id == player_id)
             .ok_or_else(|| "Player not found".to_string())?;
 
+        let len = targets.len();
+        println!("Targets: {}", len);
+
         let mut target_indices = Vec::with_capacity(targets.len());
         for id in targets {
             let idx = self.players
                 .iter()
                 .position(|p| p.id == id && id != player_id)
                 .ok_or_else(|| "Invalid target ID".to_string())?;
+            println!("Pushing index: {}", idx);
             target_indices.push(idx);
         }
 
         let card = self.players[player_index].hand_cards.get(card_index)
-            .ok_or_else(|| "Card not in hand".to_string())?;
+            .ok_or_else(|| "Card not in hand".to_string())?.clone();
 
-        card.play(player_index, target_indices, &mut self.players)
-
+        // play the card and return play info
+        match card.play(player_index, target_indices, &mut self.players) {
+            Ok(play_info) => {
+                // remove card from hand and put it in discard pile
+                let card = self.players[player_index].hand_cards.remove(card_index);
+                self.players[player_index].discard_cards.push(card);
+                Ok(play_info)
+            },
+            Err(msg) => { Err(msg) }
+        }
     }
 
     // there should always be at least 1 card in pile when called
@@ -144,6 +158,11 @@ impl Game {
             .position(|p| p.id == player_id)
             .ok_or_else(|| "Player not found".to_string())?;
 
+        if self.players[player_index].hand_cards.len() >= DRAW_CARD_LIMIT {
+            return Err("Player can't draw more cards".to_string());
+        }
+
+        // this should not happen
         if self.pile.len() == 0 {
             return Err("Pile is empty".to_string());
         }
@@ -151,6 +170,41 @@ impl Game {
         Self::give_from_pile(&mut self.pile, &mut self.players[player_index], 1);
 
         Ok(self.players[player_index].hand_cards[0].get_id())
+    }
+
+    pub fn status_for_player(&self, player_id: PlayerId) -> Result<GameStateForPlayer, String> {
+        let player_index = self.players
+            .iter()
+            .position(|p| p.id == player_id)
+            .ok_or_else(|| "Player not found".to_string())?;
+
+        let player = &self.players[player_index];
+
+        let opp_states = self.players.iter()
+            .filter(|player| player.id != player_id)
+            .map(|opp| OpponentState {
+                player_id: opp.id,
+                health: player.health as u32,
+                card_count: opp.hand_cards.len() as u32,
+                discard_cards: opp.discard_cards.iter()
+                    .map(|card| card.get_id())
+                    .collect()
+            })
+            .collect();
+
+        Ok(GameStateForPlayer {
+            current_player_turn: self.current_player_id(),
+            current_player_turn_end: Utc::now(),
+            health: player.health as u32,
+            cards: player.hand_cards.iter()
+                .map(|card| card.get_id())
+                .collect(),
+            discard_cards: player.discard_cards.iter()
+                .map(|card| card.get_id())
+                .collect(),
+            opponents: opp_states,
+            cards_in_pile: self.pile.len() as u32
+        })
     }
 }
 

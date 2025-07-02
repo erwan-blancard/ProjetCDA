@@ -140,7 +140,6 @@ export class PutCardForward extends CardEvent {
         if (this.card != null) {
             if (this.card instanceof OpponentCard) {
                 // change display of OpponentCard to match the expected card's look
-                // will be reset by PutCardDown event
                 this.card.displayCardAsFront(this.display_card_id);
                 this.card.flipCard();
             }
@@ -154,35 +153,30 @@ export class PutCardForward extends CardEvent {
     }
 }
 
-export class PutCardDown extends CardEvent {
+export class PutCardInPile extends GameEvent {
     
-    constructor(card, is_fake=false) {
-        super(card);
+    constructor(player, card, is_fake=false) {
+        super();
+        this.timeout = 400;
+        this.player = player;
+        this.card = card;
         this.is_fake = is_fake;
     }
 
     run() {
         if (this.card != null) {
-            if (this.card instanceof OpponentCard)
-                this.card.flipCard();
-
-            const pos = this.card.position;
-            let new_pos = new THREE.Vector3(pos.x, pos.y, pos.z);
-            new_pos.z -= (this.card instanceof OpponentCard ? 2 : -2);
-            new_pos.y -= 0.5;
-            this.card.goto(new_pos.x, new_pos.y, new_pos.z, this.timeout / 1000.0);
+            // transfer card to discard pile
+            this.player.discard_cards.push(this.card);
+            // remove card from hand if it's not fake
+            if (!this.is_fake) {
+                this.player.cards.splice(this.player.cards.indexOf(this.card), 1);
+            }
+            this.player.updateHandCardPositions();
+            this.player.emitCardCountChange();
+            this.player.updateDiscardCardPositions();
+            this.player.emitDiscardCountChange();
         }
     }
-
-    onTimeout() {
-        // reset cover for opponent cards
-        if (this.card instanceof OpponentCard)
-            this.card.displayCoverAsFront();
-        if (this.is_fake)
-            this.card.removeFromParent();
-        super.onTimeout();
-    }
-
 }
 
 

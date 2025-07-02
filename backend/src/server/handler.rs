@@ -8,7 +8,7 @@ use futures_util::{
     future::{Either, select},
 };
 use serde_json::{from_str, Value};
-use tokio::{sync::mpsc, time::interval};
+use tokio::{sync::mpsc::{self, UnboundedReceiver}, time::interval};
 
 use crate::server::game::player::PlayerId;
 
@@ -104,12 +104,21 @@ pub async fn game_ws(
             // client WebSocket stream ended
             Either::Left((Either::Left((None, _)), _)) => break None,
 
-            // chat messages received from other handlers
-            Either::Left((Either::Right((Some(chat_msg), _)), _)) => {
-                log::info!("chat_msg: {chat_msg:?}");
-                // session.text(serde_json::to_string(&chat_message).unwrap()).await.unwrap();
-                let chat_message = ServerResponse::Message {message: chat_msg};
-                chat_message.send(&mut session).await.unwrap();
+            // messages received from other handlers or server
+            // send ServerResponse back to the client
+            Either::Left((Either::Right((Some(json_msg), _)), _)) => {
+                let possible_response: Result<ServerResponse, _> = from_str(&json_msg);
+                match possible_response {
+                    Ok(resp) => {
+                        println!("Sending response (player_id: {}): {:?}", player_id, resp);
+                        resp.send(&mut session).await.unwrap();
+                    }
+                    Err(_) => { panic!("Invalid ServerResponse received !") }
+                }
+                // log::info!("chat_msg: {chat_msg:?}");
+                // // session.text(serde_json::to_string(&chat_message).unwrap()).await.unwrap();
+                // let chat_message = ServerResponse::Message {message: chat_msg};
+                // chat_message.send(&mut session).await.unwrap();
             }
 
             // all connection's message senders were dropped
@@ -142,7 +151,7 @@ pub async fn game_ws(
 /// Process received user data
 async fn process_received_text(
     game_server: &GameServerHandle,
-    session: &mut actix_ws::Session,
+    _session: &mut actix_ws::Session,
     text: &str,
     conn: ConnId,
     player_id: PlayerId,
@@ -154,22 +163,22 @@ async fn process_received_text(
     match possible_action {
         Ok(UserAction::PlayCard { card_index, targets }) => {
             log::info!("Play Card Action: index: {card_index:?}, targets: {targets:?}");
+            let _ = game_server.send_play_card_action(player_id, card_index, targets).await;
         },
 
         Ok(UserAction::DrawCard {  }) => {
             log::info!("Draw Card Action");
+            let _ = game_server.send_draw_card_action(player_id).await;
         },
 
         Ok(UserAction::SendChatMessage { message }) => {
             log::info!("Send Chat Message Action: message: {message:?}");
-            
             game_server.send_message(conn, message).await;
         },
 
         Err(_) => {
             log::warn!("Unable to deserialize JSON data to a player action: {json_str:?}");
         }
-        
     }
 
     return None;

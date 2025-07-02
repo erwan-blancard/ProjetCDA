@@ -18,21 +18,21 @@ window.GAME = GAME;
 screen.orientation.lock("landscape");
 
 
-// const account = await login_guard();
+const account = await login_guard();
 
-// const game_info = await get_current_game_info();
+const game_info = await get_current_game_info();
 
-const game_info = new GameSessionInfoDTO({"game_id": 0, "players": [
-    {"id": 0, "name": "Player 1"},
-    {"id": 1, "name": "Player 2"},
-    {"id": 2, "name": "Player 3"}
-]});
+// const game_info = new GameSessionInfoDTO({"game_id": 0, "players": [
+//     {"id": 0, "name": "Player 1"},
+//     {"id": 1, "name": "Player 2"},
+//     {"id": 2, "name": "Player 3"}
+// ]});
 
-const session_info = new SessionInfoResponse({"id": 0, "players": [
-    {"id": 0, "name": "Player 1"},
-    {"id": 1, "name": "Player 2"},
-    {"id": 2, "name": "Player 3"}
-]});
+// const session_info = new SessionInfoResponse({"id": 0, "players": [
+//     {"id": 0, "name": "Player 1"},
+//     {"id": 1, "name": "Player 2"},
+//     {"id": 2, "name": "Player 3"}
+// ]});
 
 if (game_info != null) {
     const wsUrl = ws_url(game_info.game_id);
@@ -210,8 +210,8 @@ if (game_info != null) {
         $input.focus()
     })
 
-    // GAME.connectToServer(wsUrl);
-    GAME.onSessionInfoReceived(session_info);
+    GAME.connectToServer(wsUrl);
+    // GAME.onSessionInfoReceived(session_info);
 } else {
     window.location.href = "/index.html";
 }

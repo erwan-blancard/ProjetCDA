@@ -7,11 +7,13 @@ use std::{
     },
 };
 
+use chrono::{DateTime, Utc};
 use rand::{rand_core::le, Rng as _};
+use serde_json::to_string;
 use tokio::sync::{mpsc, oneshot};
 use uid::IdU64;
 
-use crate::{database::models::Account, server::game::{card::CardId, play_info::PlayInfo}};
+use crate::{database::models::Account, server::{dto::responses::ServerResponse, game::{card::CardId, game::GameState, play_info::PlayInfo}}};
 
 use super::{dto::responses::{GameStateForPlayer, PlayerProfile}, game::{game::Game, player::{Player, PlayerId}}};
 use super::dto::actions::UserAction;
@@ -41,9 +43,10 @@ enum Command {
         res_tx: oneshot::Sender<Vec<PlayerProfile>>,
     },
 
+    /// send game state to client
     GameStateForPlayer {
-        conn: ConnId,
-        res_tx: oneshot::Sender<Option<GameStateForPlayer>>,
+        player_id: PlayerId,
+        res_tx: oneshot::Sender<()>,
     },
 
     PlayCard {
@@ -107,16 +110,42 @@ impl GameServer {
     /// Send user message to others.
     async fn send_chat_message_to_handlers(&self, conn: ConnId, msg: impl Into<Msg>) {
         let msg = msg.into();
-        
+        let msg = ServerResponse::Message { message: msg };
+
         for (conn_id, tx) in &self.sessions {
             if conn_id != &conn {
-                let _ = tx.send(msg.clone());
+                let _ = msg.send_unbounded(tx);
             }
         }
     }
 
-    async fn get_game_state_for_player(&self, conn: ConnId) -> Option<GameStateForPlayer> {
-        None
+    async fn notify_game_started(&self) {
+        for (player_id, conn_id) in self.users.clone() {
+            let tx = self.sessions.get(&conn_id).unwrap();
+            let status = self.game.status_for_player(player_id).unwrap();
+
+            let _ = status.to_server_response().send_unbounded(tx);
+        }
+    }
+
+    async fn send_game_state(&self, player_id: PlayerId) {
+        let state = self.game.status_for_player(player_id).unwrap();
+        let conn_id = self.users.get(&player_id).unwrap();
+        let _ = state.to_server_response().send_unbounded(self.sessions.get(&conn_id).unwrap());
+    }
+
+    async fn advance_turn(&mut self) {
+        self.game.current_player_turn = self.game.next_player_index();
+        self.notify_change_turn().await;
+    }
+
+    async fn notify_change_turn(&self) {
+        let resp = ServerResponse::ChangeTurn { player_id: self.game.current_player_id() };
+        for (_, conn_id) in self.users.clone() {
+            let tx = self.sessions.get(&conn_id).unwrap();
+
+            let _ = resp.send_unbounded(tx);
+        }
     }
 
     /// Register new session and assign unique ID to this session
@@ -134,6 +163,7 @@ impl GameServer {
         // register session with random connection ID
         let id = IdU64::<ConnId>::new().get();
         self.sessions.insert(id, tx);
+        self.users.insert(player_id, id);
 
         // send id back
         id
@@ -155,6 +185,21 @@ impl GameServer {
                 Command::Connect { player_id, conn_tx, res_tx } => {
                     let conn_id = self.connect(player_id, conn_tx).await;
                     let _ = res_tx.send(conn_id);
+
+                    match self.game.state {
+                        // not yet started
+                        GameState::PreGame => {
+                            self.game.begin();
+                            self.notify_game_started().await;
+                        }
+                        GameState::InGame => {
+                            self.send_game_state(player_id).await;
+                        }
+                        // finished
+                        GameState::EndGame => {
+                            self.disconnect(conn_id).await;
+                        }
+                    }
                 }
 
                 Command::Disconnect { conn } => {
@@ -162,20 +207,65 @@ impl GameServer {
                 }
 
                 Command::SessionInfo { res_tx } => {
-                    // FIXME get from GameEngine
                     let players = self.game.player_profiles.clone();
-
                     let _ = res_tx.send(players);
                 }
 
                 Command::PlayCard { player_id, card_index, targets, res_tx } => {
-                    let result = self.game.play_card(player_id, card_index, targets);
-                    let _ = res_tx.send(result);
+                    // get card id before it is removed from hand
+                    let card_id = self.game.players
+                        .iter()
+                        .find(|p| p.id == player_id)
+                        .and_then(|p| p.hand_cards.get(card_index))
+                        .map(|c| c.get_id());
+
+                    let result = self.game.play_card(player_id, card_index, targets.clone());
+                    let ok = result.is_ok();
+                    let _ = res_tx.send(result.clone());
+
+                    if ok {
+                        let play_info = result.unwrap();
+                        for (&_, &conn_id) in &self.users {
+                            if let Some(tx) = self.sessions.get(&conn_id) {
+                                let resp = ServerResponse::PlayCard {
+                                    player_id,
+                                    card_id: card_id.unwrap_or(-1),
+                                    hand_index: card_index as u32,
+                                    actions: play_info.actions.clone(),
+                                };
+                                let _ = resp.send_unbounded(tx);
+                            }
+                        }
+                        self.advance_turn().await;
+                    } else {
+                        // send game state to player when error
+                        println!("Error playing card: {:?}", result.clone().err().unwrap());
+                        self.send_game_state(player_id).await;
+                    }
                 }
 
                 Command::DrawCard { player_id, res_tx } => {
                     let result = self.game.draw_card(player_id);
-                    let _ = res_tx.send(result);
+                    let ok = result.is_ok();
+                    let card_id = result.clone().unwrap_or(-1);
+                    let _ = res_tx.send(result.clone());
+
+                    if ok {
+                        for (&pid, &conn_id) in &self.users {
+                            if let Some(tx) = self.sessions.get(&conn_id) {
+                                let resp = ServerResponse::DrawCard {
+                                    player_id,
+                                    card_id: if pid == player_id { card_id } else { -1 },
+                                };
+                                let _ = resp.send_unbounded(tx);
+                            }
+                        }
+                        self.advance_turn().await;
+                    } else {
+                        // send game state to player when error
+                        println!("Error drawing card: {:?}", result.clone().err().unwrap());
+                        self.send_game_state(player_id).await;
+                    }
                 }
 
                 Command::Message { conn, msg, res_tx } => {
@@ -183,9 +273,9 @@ impl GameServer {
                     let _ = res_tx.send(());
                 }
 
-                Command::GameStateForPlayer { conn, res_tx } => {
-                    let game_state: Option<GameStateForPlayer> = self.get_game_state_for_player(conn).await;
-                    let _ = res_tx.send(game_state);
+                Command::GameStateForPlayer { player_id, res_tx } => {
+                    self.send_game_state(player_id).await;
+                    let _ = res_tx.send(());
                 }
 
                 Command::Kill { res_tx } => {
@@ -253,8 +343,50 @@ impl GameServerHandle {
         res_rx.await.unwrap()
     }
 
-    pub async fn send_game_state_to_player(&self, conn: ConnId) {
+    pub async fn send_game_state_for_player(&self, player_id: PlayerId) {
+        let (res_tx, res_rx) = oneshot::channel();
 
+        // unwrap: game server should not have been dropped
+        self.cmd_tx
+            .send(Command::GameStateForPlayer {
+                player_id, res_tx
+            })
+            .unwrap();
+
+        // unwrap: game server does not drop our response channel
+        let _ = res_rx.await.unwrap();
+    }
+
+    pub async fn send_play_card_action(&self, player_id: PlayerId, card_index: usize, targets: Vec<PlayerId>) -> Result<PlayInfo, String> {
+        let (res_tx, res_rx) = oneshot::channel();
+
+        // unwrap: game server should not have been dropped
+        self.cmd_tx
+            .send(Command::PlayCard {
+                player_id,
+                card_index,
+                targets,
+                res_tx,
+            })
+            .unwrap();
+
+        // unwrap: game server does not drop our response channel
+        res_rx.await.unwrap()
+    }
+
+    pub async fn send_draw_card_action(&self, player_id: PlayerId) -> Result<CardId, String> {
+        let (res_tx, res_rx) = oneshot::channel();
+
+        // unwrap: game server should not have been dropped
+        self.cmd_tx
+            .send(Command::DrawCard {
+                player_id,
+                res_tx,
+            })
+            .unwrap();
+
+        // unwrap: game server does not drop our response channel
+        res_rx.await.unwrap()
     }
 
     pub fn disconnect(&self, conn: ConnId) {
