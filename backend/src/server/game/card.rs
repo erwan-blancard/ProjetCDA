@@ -141,7 +141,9 @@ pub trait Card: Sync + Send + Debug + CardClone {
                 let (left, right) = players.split_at_mut(player_index);
 
                 let target = {
-                    if target_indices[0] < player_index {
+                    if self.get_kind() == Kind::Food {
+                        &mut right[0]   // target is player who plays the card
+                    } else if target_indices[0] < player_index {
                         &mut left[target_indices[0]]
                     } else if target_indices[0] > player_index {
                         &mut right[target_indices[0] - player_index]
@@ -160,7 +162,7 @@ pub trait Card: Sync + Send + Debug + CardClone {
                         play_action.targets.insert(0, action_target);
                     },
                     Kind::Food => {
-                        let action_target = right[0].heal(self.get_heal(), self.get_heal_effect());
+                        let action_target = target.heal(self.get_heal(), self.get_heal_effect());
                         play_action.targets.insert(0, action_target);
                     }
                 }
@@ -181,7 +183,9 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn get_kind(&self) -> Kind { Kind::Weapon }
     fn get_element(&self) -> Element { Element::Fire }
     fn get_stars(&self) -> Stars { Stars::One }
-    fn get_target_count(&self) -> usize { 1 }
+    fn get_target_count(&self) -> usize {
+        match self.get_kind() { Kind::Food => 0 /* no required target if food */, _ => 1 }
+    }
 
     fn get_damage_effect(&self) -> EffectId {
         match self.get_element() {

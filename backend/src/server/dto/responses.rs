@@ -126,6 +126,16 @@ pub enum ServerResponse {
     ChangeTurn {
         player_id: PlayerId
     },
+
+    /// notify client that all discarded cards were collected to pile
+    CollectDiscardCards {
+        cards_in_pile: u32,
+    },
+
+    /// notify client of game end
+    GameEnd {
+        winner_id: PlayerId
+    }
 }
 
 impl ServerResponse {

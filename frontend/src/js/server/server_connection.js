@@ -1,4 +1,4 @@
-import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, MessageResponse, PlayCardResponse, SessionInfoResponse } from "./dto"
+import { ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, MessageResponse, PlayCardResponse, SessionInfoResponse } from "./dto"
 
 // these types must match the UserActions in the gameserver
 export const PLAY_CARD_ACTION_KEY = "PlayCard"
@@ -11,6 +11,8 @@ export const SESSION_INFO_RESP_KEY = "SessionInfo"
 export const PLAY_CARD_RESP_KEY = "PlayCard"
 export const DRAW_CARD_RESP_KEY = "DrawCard"
 export const CHANGE_TURN_RESP_KEY = "ChangeTurn"
+export const COLLECT_DISCARD_CARDS_RESP_KEY = "CollectDiscardCards"
+export const GAME_END_RESP_KEY = "GameEnd"
 
 
 export class ServerConnexion extends EventTarget {
@@ -116,6 +118,18 @@ export class ServerConnexion extends EventTarget {
                 }))
                 break;
         
+            case COLLECT_DISCARD_CARDS_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("collectdiscardcards", { detail:
+                    new CollectDiscardCardsResponse(json_data)
+                }))
+                break;
+            
+            case GAME_END_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("gameend", { detail:
+                    new GameEndResponse(json_data)
+                }))
+                break;
+
             default:
                 console.log("Unrecognized response type:", resp_type)
                 break;

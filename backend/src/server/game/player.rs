@@ -40,27 +40,27 @@ impl Player {
     pub fn damage(&mut self, amount: u32, element: Element, effect: EffectId) -> ActionTarget {
         // TODO check buffs
         // TODO check element
-        let mut effective_damage = amount;
+        let effective_damage = amount as i32;
 
-        if self.health - i32::try_from(effective_damage).unwrap() < 0 {
-            effective_damage = 0;
+        if self.health - effective_damage < 0 {
+            self.health = 0;
         } else {
-            self.health -= i32::try_from(effective_damage).unwrap();
+            self.health -= effective_damage;
         }
         
-        ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage }, effect }   // FIXME effect
+        ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage as u32 }, effect }   // FIXME effect
     }
 
     pub fn heal(&mut self, amount: u32, effect: EffectId) -> ActionTarget {
         // TODO check buffs
-        let effective_heal = amount;
-        if self.health + i32::try_from(effective_heal).unwrap() > PLAYER_MAX_HEALTH {
+        let effective_heal = amount as i32;
+        if self.health + effective_heal > PLAYER_MAX_HEALTH {
             self.health = PLAYER_MAX_HEALTH;
         } else {
-            self.health += i32::try_from(effective_heal).unwrap();
+            self.health += effective_heal;
         }
 
-        ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal }, effect }   // FIXME effect
+        ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal as u32 }, effect }   // FIXME effect
     }
 
 }

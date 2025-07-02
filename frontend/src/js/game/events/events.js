@@ -4,6 +4,8 @@ import { EventMgr } from "./event_mgr";
 import * as THREE from 'three';
 import * as GAME from "../game";
 import { GameStatusResponse } from "../../server/dto";
+import gsap from "gsap";
+import { sleep } from "../../utils";
 
 
 export class GameEvent {
@@ -18,7 +20,7 @@ export class GameEvent {
     constructor() {}
 
     // reimplement logic here
-    run() {}
+    async run() {}
 
     // read-only
     get started() { return this.#started; }
@@ -69,7 +71,7 @@ export class DamagePlayerEvent extends PlayerEvent {
         this.amount = amount;
     }
 
-    run() {
+    async run() {
         // TODO animate
         this.player.health -= this.amount;
     }
@@ -84,7 +86,7 @@ export class HealPlayerEvent extends PlayerEvent {
         this.amount = amount;
     }
 
-    run() {
+    async run() {
         // TODO animate
         this.player.health += this.amount;
     }
@@ -99,7 +101,7 @@ export class ThrowDiceEvent extends PlayerEvent {
         this.result = result;
     }
 
-    run() {
+    async run() {
         // TODO animate
     }
 
@@ -113,12 +115,13 @@ export class DrawCardEvent extends PlayerEvent {
         this.card_id = card_id;
     }
 
-    run() {
+    async run() {
         if (this.player == GAME.PLAYER) {
             const card = new Card(this.card_id);
             this.player.addCard(card);
             // add card to scene
             GAME.scene.add(card);
+            GAME.cardPile.count -= 1;
         } else if (this.player != null) {
             // opponent, card_id is -1
             this.player.setCardCount(this.player.cards.length + 1);
@@ -136,7 +139,7 @@ export class PutCardForward extends CardEvent {
         this.display_card_id = display_card_id;
     }
 
-    run() {
+    async run() {
         if (this.card != null) {
             if (this.card instanceof OpponentCard) {
                 // change display of OpponentCard to match the expected card's look
@@ -155,22 +158,19 @@ export class PutCardForward extends CardEvent {
 
 export class PutCardInPile extends GameEvent {
     
-    constructor(player, card, is_fake=false) {
+    constructor(player, card) {
         super();
         this.timeout = 400;
         this.player = player;
         this.card = card;
-        this.is_fake = is_fake;
     }
 
-    run() {
+    async run() {
         if (this.card != null) {
             // transfer card to discard pile
             this.player.discard_cards.push(this.card);
             // remove card from hand if it's not fake
-            if (!this.is_fake) {
-                this.player.cards.splice(this.player.cards.indexOf(this.card), 1);
-            }
+            this.player.cards.splice(this.player.cards.indexOf(this.card), 1);
             this.player.updateHandCardPositions();
             this.player.emitCardCountChange();
             this.player.updateDiscardCardPositions();
@@ -187,7 +187,59 @@ export class ChangeTurnEvent extends PlayerEvent {
         this.timeout = 150;
     }
 
-    run() { GAME.updateCurrentPlayerTurn(this.player); }
+    async run() { GAME.updateCurrentPlayerTurn(this.player); }
+
+}
+
+
+export class CollectDiscardCardsEvent extends GameEvent {
+    constructor(cards_in_pile) {
+        super();
+        this.timeout = -1;
+        this.cards_in_pile = cards_in_pile;
+    }
+    
+    async run() {
+        let cards_remain = true;
+        while (cards_remain) {
+            if (GAME.PLAYER.discard_cards.length > 0) {
+                const tl = gsap.timeline();
+                const card = GAME.PLAYER.discard_cards.pop();
+                tl.to(card.position, { x: 0.0, y: 0.0, z: 0.0, duration: 0.5, onComplete: () => {
+                    card.removeFromParent();
+                    GAME.cardPile.count += 1;
+                } });
+            } else {
+                cards_remain = false;
+            }
+
+            let cards_remain_for_opponents = 0;
+            for (const opponent of GAME.OPPONENTS.values()) {
+                if (opponent.discard_cards.length > 0) {
+                    cards_remain_for_opponents += 1;
+                    const tl = gsap.timeline();
+                    const card = opponent.discard_cards.pop();
+                    tl.to(card.position, { x: 0.0, y: 0.0, z: 0.0, duration: 0.5, onComplete: () => {
+                        card.removeFromParent();
+                        GAME.cardPile.count += 1;
+                    } });
+                }
+            }
+
+            cards_remain = GAME.PLAYER.discard_cards.length > 0 || cards_remain_for_opponents > 0;
+            if (cards_remain)
+                await sleep(100);
+            else
+                await sleep(550);   // wait 0.5 secs to complete animations
+        }
+
+        this.onTimeout();
+    }
+
+    onTimeout() {
+        GAME.cardPile.count = this.cards_in_pile;
+        this.mgr.executeNext();
+    }
 
 }
 
@@ -205,7 +257,7 @@ export class GameUpdateEvent extends GameEvent {
         // this.timeout = 0;
     }
 
-    run() {
+    async run() {
         const data = this.upd_data;
 
         try {
@@ -233,3 +285,16 @@ export class GameUpdateEvent extends GameEvent {
 
 }
 
+export class GameEndEvent extends GameEvent {
+    constructor(winner_id) {
+        super();
+        this.timeout = -1;
+        this.winner_id = winner_id;
+    }
+
+    async run() {
+        GAME.winner_id = this.winner_id;
+        GAME.displayGameEndScreen();
+    }
+
+}

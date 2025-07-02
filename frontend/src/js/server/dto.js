@@ -47,6 +47,18 @@ export class ChangeTurnResponse {
     }
 }
 
+export class CollectDiscardCardsResponse {
+    constructor(data) {
+        this.cards_in_pile = data.cards_in_pile;
+    }
+}
+
+export class GameEndResponse {
+    constructor(data) {
+        this.winner_id = data.winner_id;
+    }
+}
+
 
 // PlayInfo DTOs
 

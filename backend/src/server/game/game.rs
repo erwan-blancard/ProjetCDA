@@ -30,7 +30,7 @@ pub enum Order {
 pub enum GameState {
     PreGame,
     InGame,
-    EndGame
+    EndGame { winner_id: PlayerId }
 }
 
 
@@ -78,9 +78,9 @@ impl Game {
         }
     }
 
-    pub fn shuffle_pile(pile: &mut Vec<Box<dyn Card>>) {
+    pub fn shuffle_pile(&mut self) {
         let mut rng = rng();
-        pile.shuffle(&mut rng);
+        self.pile.shuffle(&mut rng);
     }
 
     pub fn collect_discard_cards(&mut self) {
@@ -145,6 +145,19 @@ impl Game {
                 // remove card from hand and put it in discard pile
                 let card = self.players[player_index].hand_cards.remove(card_index);
                 self.players[player_index].discard_cards.push(card);
+
+                // check if game is over
+                let remaining_players: Vec<&Player> = self.players.iter()
+                    .filter(|p| p.health > 0)
+                    .collect();
+
+                // state change will be checked by server to send game end event with the winner
+                if remaining_players.len() == 1 {
+                    self.state = GameState::EndGame { winner_id: remaining_players[0].id };
+                } else if remaining_players.len() == 0 {
+                    self.state = GameState::EndGame { winner_id: self.current_player_id() };
+                }
+
                 Ok(play_info)
             },
             Err(msg) => { Err(msg) }
@@ -169,7 +182,8 @@ impl Game {
         
         Self::give_from_pile(&mut self.pile, &mut self.players[player_index], 1);
 
-        Ok(self.players[player_index].hand_cards[0].get_id())
+        let card_index = self.players[player_index].hand_cards.len() - 1;
+        Ok(self.players[player_index].hand_cards[card_index].get_id())
     }
 
     pub fn status_for_player(&self, player_id: PlayerId) -> Result<GameStateForPlayer, String> {
@@ -184,7 +198,7 @@ impl Game {
             .filter(|player| player.id != player_id)
             .map(|opp| OpponentState {
                 player_id: opp.id,
-                health: player.health as u32,
+                health: opp.health as u32,
                 card_count: opp.hand_cards.len() as u32,
                 discard_cards: opp.discard_cards.iter()
                     .map(|card| card.get_id())

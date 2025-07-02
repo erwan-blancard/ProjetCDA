@@ -128,6 +128,14 @@ impl GameServer {
         }
     }
 
+    async fn notify_game_end(&self, winner_id: PlayerId) {
+        for (_, conn_id) in self.users.clone() {
+            let tx = self.sessions.get(&conn_id).unwrap();
+            let resp = ServerResponse::GameEnd { winner_id };
+            let _ = resp.send_unbounded(tx);
+        }
+    }
+
     async fn send_game_state(&self, player_id: PlayerId) {
         let state = self.game.status_for_player(player_id).unwrap();
         let conn_id = self.users.get(&player_id).unwrap();
@@ -135,8 +143,45 @@ impl GameServer {
     }
 
     async fn advance_turn(&mut self) {
+        match self.game.state {
+            GameState::EndGame { winner_id } => {
+                self.notify_game_end(winner_id).await;
+                return;
+            }
+            _ => {}
+        }
+
         self.game.current_player_turn = self.game.next_player_index();
         self.notify_change_turn().await;
+
+        let current_player_id = self.game.current_player_id();
+        let mut card_count = self.game.players[self.game.current_player_turn].hand_cards.len();
+
+        // collect discard cards if needed
+        if self.game.pile.len() < 5 - card_count {
+            self.game.collect_discard_cards();
+            self.game.shuffle_pile();
+            let resp = ServerResponse::CollectDiscardCards { cards_in_pile: self.game.pile.len() as u32 };
+            for (_, conn_id) in self.users.clone() {
+                let tx = self.sessions.get(&conn_id).unwrap();
+                let _ = resp.send_unbounded(tx);
+            }
+        }
+
+        // draw cards if player has less than 5 cards
+        while card_count < 5 {
+            let card_id = self.game.draw_card(current_player_id).unwrap();
+            card_count += 1;
+            for (&pid, &conn_id) in &self.users {
+                if let Some(tx) = self.sessions.get(&conn_id) {
+                    let resp = ServerResponse::DrawCard {
+                        player_id: current_player_id,
+                        card_id: if pid == current_player_id { card_id } else { -1 },
+                    };
+                    let _ = resp.send_unbounded(tx);
+                }
+            }
+        }
     }
 
     async fn notify_change_turn(&self) {
@@ -196,7 +241,7 @@ impl GameServer {
                             self.send_game_state(player_id).await;
                         }
                         // finished
-                        GameState::EndGame => {
+                        GameState::EndGame { winner_id: _ } => {
                             self.disconnect(conn_id).await;
                         }
                     }
@@ -212,6 +257,14 @@ impl GameServer {
                 }
 
                 Command::PlayCard { player_id, card_index, targets, res_tx } => {
+                    match self.game.state {
+                        GameState::EndGame { .. } => {
+                            let _ = res_tx.send(Err("Game is over".to_string()));
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+
                     // get card id before it is removed from hand
                     let card_id = self.game.players
                         .iter()
@@ -245,6 +298,14 @@ impl GameServer {
                 }
 
                 Command::DrawCard { player_id, res_tx } => {
+                    match self.game.state {
+                        GameState::EndGame { .. } => {
+                            let _ = res_tx.send(Err("Game is over".to_string()));
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+                    
                     let result = self.game.draw_card(player_id);
                     let ok = result.is_ok();
                     let card_id = result.clone().unwrap_or(-1);

@@ -1,5 +1,12 @@
 
 
+export class CardKind {
+    static FOOD = "Food";
+    static SPELL = "Spell";
+    static WEAPON = "Weapon";
+}
+
+
 export class CardInfo {
     name;
     element;
@@ -17,11 +24,11 @@ export class CardInfo {
 
     get color() {
         switch (this.kind) {
-            case "Spell":
+            case CardKind.SPELL:
                 return "#8D9FD1";
-            case "Weapon":
+            case CardKind.WEAPON:
                 return "#A9A9A9";
-            case "Food":
+            case CardKind.FOOD:
                 return "#A9CA3F";
             default:
                 return "#404060";

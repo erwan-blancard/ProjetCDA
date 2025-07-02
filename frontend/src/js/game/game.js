@@ -6,9 +6,11 @@ import { PlayerUI } from '../ui/player_ui';
 import { CSS2DRenderer, OrbitControls } from 'three-stdlib';
 import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
-import { ActionTypeDTO, ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
+import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent } from './events/events';
+import { displayPopup } from '../ui/popup';
+import { CardKind } from './database';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -57,6 +59,9 @@ export let cardTooltip;
 
 /** @type {EventMgr | null} */
 export let eventMgr;
+
+/** @type {number | null} */
+export var winner_id = null;    // fix read only
 
 
 export function initGame() {
@@ -158,6 +163,12 @@ export function initGame() {
     serverConnexion.addEventListener("changeturn", ev => {
         onChangeTurnEvent(ev.detail);
     })
+    serverConnexion.addEventListener("collectdiscardcards", ev => {
+        onCollectDiscardCardsEvent(ev.detail);
+    })
+    serverConnexion.addEventListener("gameend", ev => {
+        onGameEndEvent(ev.detail);
+    })
 }
 
 
@@ -232,13 +243,11 @@ export function onPlayCardEvent(data) {
     const hand_index = data.hand_index;
 
     let card;
-    let is_card_fake = false;
 
     // get card from player hand or create it if it doesn't exist or doesn't match (desync?)
     if (player.isCardInHand(card_id, hand_index)) {
         card = player.cards[hand_index];
     } else {
-        is_card_fake = true;
         if (player instanceof Opponent)
             card = new OpponentCard();
         else
@@ -275,7 +284,7 @@ export function onPlayCardEvent(data) {
         });
     });
 
-    events.push(new PutCardInPile(player, card, is_card_fake));
+    events.push(new PutCardInPile(player, card));
 
     eventMgr.pushEvents(events);
 }
@@ -284,7 +293,7 @@ export function onPlayCardEvent(data) {
 export function onDrawCardEvent(data) {
     const player = getPlayerById(data.player_id);
 
-    console.log(player);
+    console.log(player, data.card_id);
 
     eventMgr.pushEvent(new DrawCardEvent(player, data.card_id));
 }
@@ -293,6 +302,23 @@ export function onDrawCardEvent(data) {
 export function onChangeTurnEvent(data) {
     // updateCurrentPlayerTurn(getPlayerById(data.player_id));
     eventMgr.pushEvent(new ChangeTurnEvent(getPlayerById(data.player_id)));
+}
+
+/** @param {CollectDiscardCardsResponse} data  */
+export function onCollectDiscardCardsEvent(data) {
+    eventMgr.pushEvent(new CollectDiscardCardsEvent(data.cards_in_pile));
+}
+
+/** @param {GameEndResponse} data  */
+export function onGameEndEvent(data) {
+    eventMgr.pushEvent(new GameEndEvent(data.winner_id));
+}
+
+
+export function displayGameEndScreen() {
+    displayPopup("Game End", "The game has ended. The winner is " + getPlayerById(winner_id).name + " !", "Next", () => {
+        window.location.href = "index.html";
+    });
 }
 
 
@@ -443,17 +469,18 @@ function onPointerDown( event ) {
                 PLAYER.toggleCardSelection(PLAYER.cards.indexOf(card));
             }
 
-        } else {
-            const pile_intersects = raycaster.intersectObject( cardPile, false );
+        } else if (PLAYER.selected_card != null) {  // choose target, TODO handle multiple targets
 
-            if (pile_intersects.length > 0) {
+            if (PLAYER.selected_card.info.kind == CardKind.FOOD) {
+                const player_intersects = raycaster.intersectObject(PLAYER, false);
                 
-                // updateCurrentPlayerTurn(null);
-                eventMgr.pushEvent(new ChangeTurnEvent(null));
-                serverConnexion.send_draw_card_action();
-                
-            } else if (PLAYER.selected_card != null) {  // choose target, TODO handle multiple targets
-
+                // if player is selected, play FOOD card
+                if (player_intersects.length > 0) {
+                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
+                    eventMgr.pushEvent(new ChangeTurnEvent(null));
+                    serverConnexion.send_play_card_action(card_index, [] /* no target for food */);
+                }
+            } else {    /* must select target */
                 const opponents = [];
                 OPPONENTS.values().forEach(opponent => {
                     if (opponent.health > 0)
@@ -469,10 +496,8 @@ function onPointerDown( event ) {
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [getIdByPlayer(opponent)]);
                 }
-
             }
         }
-
     }
 
 }
