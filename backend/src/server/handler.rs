@@ -122,9 +122,15 @@ pub async fn game_ws(
             }
 
             // all connection's message senders were dropped
-            Either::Left((Either::Right((None, _)), _)) => unreachable!(
-                "all connection message senders were dropped; server may have panicked"
-            ),
+            // or disconnect was called right after connection (game ended)
+            Either::Left((Either::Right((None, _)), _)) => {
+                // close and return
+                let _ = session.close(Some(CloseReason {
+                    code: CloseCode::Away,
+                    description: Some("The server is no longer available".into())
+                })).await;
+                return;
+            },
 
             // heartbeat internal tick
             Either::Right((_inst, _)) => {

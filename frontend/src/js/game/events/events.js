@@ -293,8 +293,7 @@ export class GameEndEvent extends GameEvent {
     }
 
     async run() {
-        GAME.winner_id = this.winner_id;
-        GAME.displayGameEndScreen();
+        GAME.displayGameEndScreen(this.winner_id);
     }
 
 }

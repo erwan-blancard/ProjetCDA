@@ -61,7 +61,7 @@ export let cardTooltip;
 export let eventMgr;
 
 /** @type {number | null} */
-export var winner_id = null;    // fix read only
+export let winner_id = null;
 
 
 export function initGame() {
@@ -217,6 +217,8 @@ export function onSessionInfoReceived(info) {
     if (opponents_profile.length < 1)
         throw new Error("Not enought opponents !");
 
+    PLAYER.name = my_profile.name;
+
     opponents_profile.forEach(profile => {
         const opponent = new Opponent(scene);
         const ui = new PlayerUI(opponent);
@@ -315,8 +317,11 @@ export function onGameEndEvent(data) {
 }
 
 
-export function displayGameEndScreen() {
-    displayPopup("Game End", "The game has ended. The winner is " + getPlayerById(winner_id).name + " !", "Next", () => {
+export function displayGameEndScreen(player_id) {
+    winner_id = player_id;
+    const winner = getPlayerById(winner_id);
+    const win_text = winner != null ? `The game has ended. The winner is ${winner.name} !` : "The game has ended in a draw !";
+    displayPopup(win_text, "Game End", "Next", () => {
         window.location.href = "index.html";
     });
 }
