@@ -118,10 +118,6 @@ export function initGame() {
     const playerUI = new PlayerUI(PLAYER);
     playerUI.position.set(-4, 0, 0);
 
-    const card1 = new Card(0);
-    scene.add(card1);
-    PLAYER.addCard(card1);
-
     // Interactions
 
     renderer.domElement.addEventListener( 'pointermove', onPointerMove );
@@ -278,6 +274,11 @@ export function onPlayCardEvent(data) {
                     break;
                 case ActionTypeDTO.HEAL:
                     events.push(new HealPlayerEvent(targetedPlayer, target.action.amount));
+                    break;
+                case ActionTypeDTO.DRAW:
+                    target.action.cards.forEach(card_id => {
+                        events.push(new DrawCardEvent(targetedPlayer, card_id));
+                    });
                     break;
                 default:
                     console.log(`No event defined for \"${target.action.type}\"`);
@@ -476,7 +477,7 @@ function onPointerDown( event ) {
 
         } else if (PLAYER.selected_card != null) {  // choose target, TODO handle multiple targets
 
-            if (PLAYER.selected_card.info.kind == CardKind.FOOD) {
+            if (PLAYER.selected_card.info.heal > 0 && PLAYER.selected_card.info.attack <= 0) {  // only heal
                 const player_intersects = raycaster.intersectObject(PLAYER, false);
                 
                 // if player is selected, play FOOD card

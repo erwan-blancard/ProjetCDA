@@ -13,7 +13,7 @@ use serde_json::to_string;
 use tokio::sync::{mpsc, oneshot};
 use uid::IdU64;
 
-use crate::{database::models::Account, server::{dto::responses::ServerResponse, game::{card::CardId, game::GameState, play_info::PlayInfo}}};
+use crate::{database::models::Account, server::{dto::responses::ServerResponse, game::{card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}};
 
 use super::{dto::responses::{GameStateForPlayer, PlayerProfile}, game::{game::Game, player::{Player, PlayerId}}};
 use super::dto::actions::UserAction;
@@ -157,8 +157,10 @@ impl GameServer {
         let current_player_id = self.game.current_player_id();
         let mut card_count = self.game.players[self.game.current_player_turn].hand_cards.len();
 
+        println!("player card count: {}, cards in pile: {}, condition: {}", card_count, self.game.pile.len(), card_count < DRAW_CARD_LIMIT && self.game.pile.len() < DRAW_CARD_LIMIT - card_count);
+
         // collect discard cards if needed
-        if self.game.pile.len() < 5 - card_count {
+        if card_count < DRAW_CARD_LIMIT && self.game.pile.len() < DRAW_CARD_LIMIT - card_count {
             self.game.collect_discard_cards();
             self.game.shuffle_pile();
             let resp = ServerResponse::CollectDiscardCards { cards_in_pile: self.game.pile.len() as u32 };
@@ -169,7 +171,7 @@ impl GameServer {
         }
 
         // draw cards if player has less than 5 cards
-        while card_count < 5 {
+        while card_count < DRAW_CARD_LIMIT {
             let card_id = self.game.draw_card(current_player_id).unwrap();
             card_count += 1;
             for (&pid, &conn_id) in &self.users {

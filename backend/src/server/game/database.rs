@@ -1,9 +1,12 @@
 use std::{fs::File, io::BufReader, path::Path};
 use std::fmt;
 
+use diesel::expression::is_aggregate::No;
 use lazy_static::lazy_static;
 use serde::Deserializer;
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
+
+use crate::server::game::modifiers::{Modifier, ModifierInfo};
 
 use super::card::{BasicCard, Card, CardId, Element, Kind, Stars};
 
@@ -29,7 +32,11 @@ struct BasicCardData {
     #[serde(default)]
     draw: u32,
     #[serde(default)]
-    dice: bool
+    attack_modifier: Option<ModifierInfo>,
+    #[serde(default)]
+    heal_modifier: Option<ModifierInfo>,
+    #[serde(default)]
+    draw_modifier: Option<ModifierInfo>,
 }
 
 
@@ -51,8 +58,20 @@ impl CardInfo {
     fn make_card(&self) -> Box<dyn Card> {
         match &self.variant {
             CardVariant::BasicCard(data) => {
-                Box::new(BasicCard {id: self.id, name: self.name.clone(), element: self.element, stars: self.stars, kind: self.kind, desc: self.desc.clone(),
-                     attack: data.attack, heal: data.heal, draw: data.draw, dice: data.dice})
+                Box::new(BasicCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                    attack: data.attack,
+                    heal: data.heal,
+                    draw: data.draw,
+                    attack_modifier: data.attack_modifier.clone().map(|m| m.into_boxed()),
+                    heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                    draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
+                })
             }
         }
     }

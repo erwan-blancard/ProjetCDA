@@ -188,6 +188,11 @@ export class PlayerObject extends Mesh {
 
 export class Player extends PlayerObject {
 
+    constructor(scene) {
+        super(scene);
+        this.geometry = new BoxGeometry(6.5, 0.1, 4);
+    }
+
     /** @param {Card} card  */
     addCard(card) {
         if (card.card_id != -1) {
@@ -204,10 +209,9 @@ export class Opponent extends PlayerObject {
     /** @type Array<OpponentCard> */
     cards = [];
 
-    constructor(scene, card_count=5) {
+    constructor(scene, card_count=0) {
         super(scene);
         
-        // fill deck with 5 cards
         for (let i = 0; i < card_count; i++) {
             this.cards.push(this.#createOpponentCard());
         }

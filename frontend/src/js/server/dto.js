@@ -85,6 +85,7 @@ export class ActionTargetDTO {
 export class ActionTypeDTO {
     static ATTACK = "Attack";
     static HEAL = "Heal";
+    static DRAW = "Draw";
 
     constructor(data) {
         this.type = data.type;
@@ -94,6 +95,9 @@ export class ActionTypeDTO {
                 break;
             case ActionTypeDTO.HEAL:
                 this.amount = data.amount;
+                break;
+            case ActionTypeDTO.DRAW:
+                this.cards = data.cards;
                 break;
             default:
                 break;

@@ -48,6 +48,7 @@ mod server {
         pub mod card;
         pub mod database;
         pub mod game;
+        pub mod modifiers;
         pub mod player;
         pub mod play_info;
     }

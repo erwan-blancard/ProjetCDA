@@ -13,6 +13,9 @@ export class CardInfo {
     kind;
     stars;
     desc;
+    attack;
+    heal;
+    draw;
 
     constructor(data) {
         this.name = data.name;
@@ -20,6 +23,9 @@ export class CardInfo {
         this.kind = data.kind;
         this.stars = data.stars;
         this.desc = data.desc;
+        this.attack = data.attack;
+        this.heal = data.heal;
+        this.draw = data.draw;
     }
 
     get color() {

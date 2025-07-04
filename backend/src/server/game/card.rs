@@ -1,8 +1,10 @@
 use std::fmt::{self, Debug, Display};
+use serde::Deserialize;
 
-use crate::server::game::player::PlayerId;
+use crate::server::game::{modifiers::Modifier, play_info::{ActionTarget, ActionType}, player::PlayerId};
 
 use super::{game::Game, play_info::{PlayAction, PlayInfo}};
+use super::player::Player;
 
 
 // TODO define effects
@@ -39,25 +41,19 @@ impl Display for Stars {
     }
 }
 
+impl Display for Kind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 impl Display for Element {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self)
     }
 }
 
-use serde::Deserialize;
-
-// use uid::Id as IdT;
-
-// #[derive(Copy, Clone, Eq, PartialEq)]
-// struct T(());
-
-// pub type CardId = IdT<T>;
-
-// ids are not unique
 pub type CardId = i32;
-
-use super::player::Player;
 
 #[derive(Debug, Clone)]
 pub struct BasicCard {
@@ -68,16 +64,22 @@ pub struct BasicCard {
     pub kind: Kind,
     pub desc: String,
     pub attack: u32,
+    pub attack_modifier: Option<Box<dyn Modifier>>,
     pub heal: u32,
+    pub heal_modifier: Option<Box<dyn Modifier>>,
     pub draw: u32,
-    pub dice: bool,
+    pub draw_modifier: Option<Box<dyn Modifier>>,
 }
 
 impl Card for BasicCard {
     fn get_id(&self) -> CardId { self.id }
     fn get_name(&self) -> String { String::from(&self.name) }
     fn get_attack(&self) -> u32 { self.attack }
+    fn get_attack_modifier(&self) -> Option<Box<dyn Modifier>> { self.attack_modifier.clone() }
     fn get_heal(&self) -> u32 { self.heal }
+    fn get_heal_modifier(&self) -> Option<Box<dyn Modifier>> { self.heal_modifier.clone() }
+    fn get_draw(&self) -> u32 { self.draw }
+    fn get_draw_modifier(&self) -> Option<Box<dyn Modifier>> { self.draw_modifier.clone() }
     fn get_description(&self) -> String { String::from(&self.desc) }
     fn get_kind(&self) -> Kind { self.kind }
     fn get_element(&self) -> Element { self.element }
@@ -103,7 +105,6 @@ impl BasicCard {
         attack: u32,
         heal: u32,
         draw: u32,
-        dice: bool,
     ) -> Self {
         Self {
             id,
@@ -113,9 +114,11 @@ impl BasicCard {
             kind,
             desc,
             attack,
+            attack_modifier: None,
             heal,
+            heal_modifier: None,
             draw,
-            dice,
+            draw_modifier: None,
         }
     }
 }
@@ -128,46 +131,85 @@ pub trait Card: Sync + Send + Debug + CardClone {
         self.validate_targets(player, targets)
     }
 
-    // basic play impl
-    // only 1 target
-    fn play(&self, player_index: usize, target_indices: Vec<usize>, players: &mut Vec<Player>) -> Result<PlayInfo, String> {
-        let targets = target_indices.iter().map(|i| &players[*i]).collect();
-        match self.can_play(&players[player_index], &targets) {
+    // common play impl
+    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<PlayInfo, String> {
+        let targets = target_indices.iter().map(|i| &game.players[*i]).collect();
+        match self.can_play(&game.players[player_index], &targets) {
             Ok(_) => {
                 let mut info: PlayInfo = PlayInfo::new();
-                let mut play_action: PlayAction = PlayAction::new();
-                
-                // split_at_mut() is needed to prevent warnings about mutable borrows
-                let (left, right) = players.split_at_mut(player_index);
 
-                let target = {
-                    if self.get_kind() == Kind::Food {
-                        &mut right[0]   // target is player who plays the card
-                    } else if target_indices[0] < player_index {
-                        &mut left[target_indices[0]]
-                    } else if target_indices[0] > player_index {
-                        &mut right[target_indices[0] - player_index]
-                    } else {
-                        panic!("Target is player !")
-                    }
-                };
-                
-                match self.get_kind() {
-                    Kind::Weapon => {
-                        let action_target = target.damage(self.get_attack(), self.get_element(), self.get_damage_effect());
-                        play_action.targets.insert(0, action_target);
-                    },
-                    Kind::Spell => {
-                        let action_target = target.damage(self.get_attack(), self.get_element(), self.get_damage_effect());
-                        play_action.targets.insert(0, action_target);
-                    },
-                    Kind::Food => {
-                        let action_target = target.heal(self.get_heal(), self.get_heal_effect());
-                        play_action.targets.insert(0, action_target);
+                // attack targets
+                if self.get_attack() > 0 || self.get_attack_modifier().is_some() {
+                    for target_index in target_indices {
+                        let mut attack_action: PlayAction = PlayAction::new();
+
+                        // use split_at_mut() to prevent warnings about mutable borrows
+                        let (player, target) = if player_index < target_index {
+                            let (left, right) = game.players.split_at_mut(target_index);
+                            (&mut left[player_index], &mut right[0])
+                        } else if player_index > target_index {
+                            let (left, right) = game.players.split_at_mut(player_index);
+                            (&mut right[0], &mut left[target_index])
+                        } else {
+                            return Err("Target is player !".to_string());
+                        };
+                        
+                        let (amount, dice_roll, player_dice_id) = {
+                            if let Some(modifier) = self.get_attack_modifier() {
+                                modifier.compute(self.get_attack(), player, target)
+                            } else { (self.get_attack(), 0, -1) }
+                        };
+
+                        attack_action.dice_roll = dice_roll;
+                        attack_action.player_dice_id = player_dice_id;
+
+                        let action_target = target.damage(amount, self.get_element(), self.get_damage_effect());
+                        attack_action.targets.push(action_target);
+                        info.actions.push(attack_action);
                     }
                 }
 
-                info.actions.insert(0, play_action);
+                let player = &mut game.players[player_index];
+
+                if self.get_heal() > 0 || self.get_heal_modifier().is_some() {
+                    let mut heal_action: PlayAction = PlayAction::new();
+
+                    let (amount, dice_roll, player_dice_id) = {
+                        if let Some(modifier) = self.get_heal_modifier() {
+                            modifier.compute(self.get_heal(), player, player)
+                        } else { (self.get_heal(), 0, -1) }
+                    };
+
+                    heal_action.dice_roll = dice_roll;
+                    heal_action.player_dice_id = player_dice_id;
+
+                    let action_target = player.heal(amount, self.get_heal_effect());
+                    heal_action.targets.push(action_target);
+                    info.actions.push(heal_action);
+                }
+
+                if self.get_draw() > 0 || self.get_draw_modifier().is_some() {
+                    // FIXME handle discard cards collection later, for now we can't draw more cards than there is in pile
+
+                    let (amount, dice_roll, player_dice_id) = {
+                        if let Some(modifier) = self.get_draw_modifier() {
+                            modifier.compute(self.get_draw(), player, player)
+                        } else { (self.get_draw(), 0, -1) }
+                    };
+
+                    let drawn_cards = Game::give_from_pile(&mut game.pile, player, amount as usize);
+                    if drawn_cards.len() > 0 {
+                        let mut draw_action = PlayAction::new();
+                        draw_action.dice_roll = dice_roll;
+                        draw_action.player_dice_id = player_dice_id;
+                        draw_action.targets.push(ActionTarget {
+                            player_id: player.id,
+                            action: ActionType::Draw { cards: drawn_cards },    // FIXME set to -1 when sending to clients that aren't the current player
+                            effect: String::new()
+                        });
+                        info.actions.push(draw_action);
+                    }
+                }
 
                 Ok(info)
             }
@@ -178,13 +220,17 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn get_id(&self) -> CardId;
     fn get_name(&self) -> String { String::from("???") }
     fn get_attack(&self) -> u32 { 1 }
+    fn get_attack_modifier(&self) -> Option<Box<dyn Modifier>> { None }
     fn get_heal(&self) -> u32 { 0 }
+    fn get_heal_modifier(&self) -> Option<Box<dyn Modifier>> { None }
+    fn get_draw(&self) -> u32 { 0 }
+    fn get_draw_modifier(&self) -> Option<Box<dyn Modifier>> { None }
     fn get_description(&self) -> String { String::from("N/A") }
     fn get_kind(&self) -> Kind { Kind::Weapon }
     fn get_element(&self) -> Element { Element::Fire }
     fn get_stars(&self) -> Stars { Stars::One }
     fn get_target_count(&self) -> usize {
-        match self.get_kind() { Kind::Food => 0 /* no required target if food */, _ => 1 }
+        if self.get_heal() > 0 && self.get_attack() == 0 { 0 } else { 1 }   // no targets if only heal
     }
 
     fn get_damage_effect(&self) -> EffectId {

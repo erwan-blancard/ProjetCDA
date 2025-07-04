@@ -28,32 +28,6 @@ pub struct OpponentState {
 
 
 #[derive(Serialize, Deserialize, Debug)]
-/// Struct of a card action. A card may do more than one action when played.
-pub struct CardAction {
-    dice_roll: u8,
-    targets: Vec<CardActionTarget>
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-/// Describes a card action target
-pub struct CardActionTarget {
-    player_id: PlayerId,
-    action: CardActionType,
-    effect: EffectId,
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type")]
-pub enum CardActionType {
-    Attack {amount: u32},
-    Heal {amount: u32},
-
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct GameStateForPlayer {
     pub current_player_turn: PlayerId,
     #[serde(with = "ts_seconds")]   // needed to serialize a DateTime with serde

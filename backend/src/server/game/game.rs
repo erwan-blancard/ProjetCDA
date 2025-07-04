@@ -16,8 +16,8 @@ use super::player::Player;
 
 
 pub const MAX_PLAYERS: usize = 6;
-const INITIAL_HAND_AMOUNT: usize = 5;
-const DRAW_CARD_LIMIT: usize = 5;   // can't draw if player has more than / or this amount of cards
+pub const INITIAL_HAND_AMOUNT: usize = 5;
+pub const DRAW_CARD_LIMIT: usize = 5;   // can't draw if player has more than / or this amount of cards
 
 
 #[derive(Debug)]
@@ -63,6 +63,7 @@ impl Game {
     /// Distribute cards to players
     /// TODO "throw" dice to determine order
     pub fn begin(&mut self) {
+        self.shuffle_pile();
         let pile = &mut self.pile;
 
         for player in self.players.iter_mut() {
@@ -72,10 +73,16 @@ impl Game {
         self.state = GameState::InGame;
     }
 
-    pub fn give_from_pile(pile: &mut Vec<Box<dyn Card>>, player: &mut Player, amount: usize) {
-        for _ in 0..amount {
-            player.hand_cards.push(pile.remove(0));
+    pub fn give_from_pile(pile: &mut Vec<Box<dyn Card>>, player: &mut Player, amount: usize) -> Vec<CardId> {
+        let stop = if amount <= pile.len() { amount } else { pile.len() };
+        let mut cards = Vec::with_capacity(stop);
+        for _ in 0..stop {
+            let card = pile.remove(0);
+            cards.push(card.get_id());
+            player.hand_cards.push(card);
         }
+
+        cards
     }
 
     pub fn shuffle_pile(&mut self) {
@@ -140,7 +147,7 @@ impl Game {
             .ok_or_else(|| "Card not in hand".to_string())?.clone();
 
         // play the card and return play info
-        match card.play(player_index, target_indices, &mut self.players) {
+        match card.play(player_index, target_indices, self) {
             Ok(play_info) => {
                 // remove card from hand and put it in discard pile
                 let card = self.players[player_index].hand_cards.remove(card_index);
