@@ -11,6 +11,7 @@ import { EventMgr } from './events/event_mgr';
 import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
 import { CardKind } from './database';
+import { Dice } from '../ui/dice';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -56,6 +57,9 @@ export let serverConnexion;
 
 /** @type {CardTooltip | null} */
 export let cardTooltip;
+
+/** @type {Dice | null} */
+export let dice;
 
 /** @type {EventMgr | null} */
 export let eventMgr;
@@ -130,6 +134,8 @@ export function initGame() {
 
     cardTooltip = new CardTooltip(scene);
     cardTooltip.visible = false;
+
+    dice = new Dice(scene);
 
     renderSceneView();
 

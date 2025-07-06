@@ -93,37 +93,6 @@ impl Card for BasicCard {
 // }
 
 
-// FIXME from CardInfo ?
-impl BasicCard {
-    fn new(
-        id: CardId,
-        name: String,
-        element: Element,
-        stars: Stars,
-        kind: Kind,
-        desc: String,
-        attack: u32,
-        heal: u32,
-        draw: u32,
-    ) -> Self {
-        Self {
-            id,
-            name,
-            element,
-            stars,
-            kind,
-            desc,
-            attack,
-            attack_modifier: None,
-            heal,
-            heal_modifier: None,
-            draw,
-            draw_modifier: None,
-        }
-    }
-}
-
-
 pub trait Card: Sync + Send + Debug + CardClone {
 
     // basic can_play impl

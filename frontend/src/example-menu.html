@@ -20,6 +20,58 @@
     <div id="view1" class="view">
       <section>
         <div class="styled"><h2>View 1</h2></div>
+        <div id="dice"></div>
+        <script type="module">
+          import {gsap, Power1} from "gsap";
+
+          fetch("/assets/dice.svg")
+            .then(res => res.text())
+            .then(svg => {
+              document.getElementById("dice").innerHTML = svg;
+            });
+          
+          function setFaceVisibility(face) {
+            for (let i = 1; i <= 6; i++) {
+              const group = document.getElementById(`face${i}`);
+              if (group != undefined)
+                group.style.display = (i == face ? "inline" : "none");
+            }
+          }
+
+          function changeloop(face) {
+            setFaceVisibility(face);
+            setTimeout(() => { changeloop(face >= 6 ? 1 : face + 1) }, 500);
+          }
+
+          function appearloop(appear) {
+            const element = document.getElementById("svg1");
+
+            const tlAppear = gsap.timeline();
+            const tlWiggle = gsap.timeline();
+            if (appear) {
+              tlAppear.fromTo(element, {width: "200px", duration: 0}, {width: "0px", ease: Power1.easeOut, duration: 0.2});
+              tlWiggle.to(element, {rotate: "-18deg", yoyo: true, repeat: 1, duration: 0.05})
+                .to(element, {rotate: "20deg", yoyo: true, repeat: 1, duration: 0.05})
+                .to(element, {rotate: "-6deg", yoyo: true, repeat: 1, duration: 0.04})
+                .to(element, {rotate: "4deg", yoyo: true, repeat: 1, duration: 0.03})
+                .to(element, {rotate: "0deg", duration: 0.015});
+          } else {
+              tlAppear.fromTo(element, {width: "0px", duration: 0}, {width: "200px", ease: Power1.easeOut, duration: 0.2});
+              tlWiggle.to(element, {rotate: "-18deg", yoyo: true, repeat: 1, duration: 0.05})
+                .to(element, {rotate: "20deg", yoyo: true, repeat: 1, duration: 0.05})
+                .to(element, {rotate: "-6deg", yoyo: true, repeat: 1, duration: 0.04})
+                .to(element, {rotate: "4deg", yoyo: true, repeat: 1, duration: 0.03})
+                .to(element, {rotate: "0deg", duration: 0.015});
+
+            }
+
+            setTimeout(() => { appearloop(!appear) }, 1000)
+          }
+
+          appearloop(false);
+          changeloop(1);
+
+        </script>
         <button class="styled" id="button-set-view2"><span>Show View 2</span></button>
       </section>
     </div>

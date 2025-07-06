@@ -99,10 +99,14 @@ export class ThrowDiceEvent extends PlayerEvent {
     constructor(player, result) {
         super(player);
         this.result = result;
+        this.timeout = -1;
     }
 
     async run() {
-        // TODO animate
+        GAME.dice.appear();
+        await GAME.dice.cycleTo(this.result);
+        await GAME.dice.disappear();
+        this.onTimeout();
     }
 
 }

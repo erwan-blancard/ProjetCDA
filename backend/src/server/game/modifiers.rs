@@ -1,7 +1,7 @@
 use std::{fmt::Debug, u32};
 use serde::Deserialize;
 
-use crate::server::game::player::{Player, PlayerId};
+use crate::server::game::{card::Element, player::{Player, PlayerId}};
 
 
 pub trait Modifier: Sync + Send + Debug + ModifierClone {
@@ -56,14 +56,17 @@ impl ModifierInfo {
 
 /// enum that represents the calculation to perform for 2 values
 #[derive(Debug, Clone, Deserialize)]
-pub enum EvalOp { Add, Sub, Mul, Div }
+pub enum EvalOp { Add, Sub, Mul, Pow }
 
 impl EvalOp {
     pub fn eval<T:
         std::ops::Add<Output = T>
         + std::ops::Sub<Output = T>
         + std::ops::Mul<Output = T>
-        + std::ops::Div<Output = T>
+        // needed for pow (ensure that a and b are u32 to be able to call pow)
+        + Copy
+        + Into<u32>
+        + From<u32>
         >(&self, a: T, b: T) -> T {
         use EvalOp::*;
 
@@ -71,7 +74,12 @@ impl EvalOp {
             Add => { a + b }
             Sub => { a - b }
             Mul => { a * b }
-            Div => { a / b }
+            Pow => { 
+                let a_u32: u32 = a.into();
+                let b_u32: u32 = b.into();
+                let result = a_u32.pow(b_u32);
+                T::from(result)
+            }
         }
     }
 }
@@ -158,7 +166,7 @@ impl Modifier for DiscardSizeModifier {
 }
 
 
-// Result value is based on the hand size times the dice roll (base_value is ignored)
+/// Result value is based on the hand size times the dice roll (base_value is ignored)
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub struct HandAndDiceMultModifier {
