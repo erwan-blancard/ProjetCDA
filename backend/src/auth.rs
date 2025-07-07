@@ -172,6 +172,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_create_jwt() {
+        std::env::set_var("BACKEND_SECRET_KEY", "test_secret");
         let token = create_jwt(1);
         assert!(token.len() > 0);
     }

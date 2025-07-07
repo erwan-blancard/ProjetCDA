@@ -1,41 +1,41 @@
-name: CI
+name: CI Backend Rust
 
 on:
   push:
-    branches: [ "main", "gameserver" ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
   pull_request:
-    branches: [ "main", "gameserver" ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
 
 jobs:
-  backend-test:
+  test-backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Installer les dépendances système
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
       - name: Installer Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-      - name: Installer les dépendances
-        run: cargo fetch
-      - name: Lancer les tests
-        run: cargo test --all --verbose
-
-  frontend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-    steps:
-      - uses: actions/checkout@v3
-      - name: Installer Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Installer les dépendances
-        run: npm install
-      - name: Lancer les tests
-        run: npm run test 
+      - name: Lancer les tests Rust du backend
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/testdb
+          BACKEND_SECRET_KEY: test_secret
+        run: cargo test --all --verbose 
