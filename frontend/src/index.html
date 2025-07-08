@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>RANDOMI GO</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
@@ -14,12 +14,14 @@
     <link rel='stylesheet' type='text/css' media='screen' href='/css/menu.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/lobby.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/friends.css'>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
-        /* remove scrolling */
-        html, body {
-            overflow: hidden;
-        }
+      /* remove scrolling */
+      html,
+      body {
+        overflow: hidden;
+      }
     </style>
     <!-- Font Awesome Icon Kit -->
     <script src="https://kit.fontawesome.com/b588752ce8.js" crossorigin="anonymous"></script>
@@ -78,7 +80,16 @@
         <lobby-view id="lobby"></lobby-view>
       </section>
     </div>
-      
-  </div>
-</body>
+
+    <!-- side buttons -->
+    <section id="side-actions-container" class="vlayout" style="font-size: 0.8em; position: fixed; top: 20px; right: -2em;">
+      <button id="show-friend-list" class="styled" style="background-color: white; cursor: pointer;"
+      ><span style="padding-right: 1em;"><i class="fas fa-users"></i></span></button>
+    </section>
+
+    <!-- Friend panel -->
+    <script type="module" src="js/ui/friend_panel.js"></script>
+    <div id="friend-panel-backdrop"></div>
+    <friend-panel id="friend-panel"></friend-panel>
+  </body>
 </html>

@@ -1,3 +1,5 @@
+import { AccountDTO } from "./api/dto";
+
 /** use IndexedDB API to store account names based on account id
  * to reduce amount of requests to make to the api
  * @type IDBDatabase */
@@ -48,6 +50,7 @@ let dbReady = new Promise((resolve, reject) => {
 });
 
 
+/** @returns {Promise<AccountDTO | null>} */
 export async function getAccountFromStore(account_id) {
 	await dbReady;
 

@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound};
-use actix_web::{delete, error, patch, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
-use actix_web::{get, post};
+use actix_web::{error, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, post, delete, patch};
 use nanoid::nanoid;
 use tokio::spawn;
 use tokio::sync::oneshot;
@@ -102,12 +102,8 @@ pub struct CreateLobbyInfo {
 }
 
 
-fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
-    println!("acc id: {}", account_id);
+pub fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
     for (lobby_id, lobby) in lobbies.iter() {
-        for user_id in lobby.users.iter() {
-            println!("id {}", user_id);
-        }
         if lobby.users.get(&account_id).is_some() {
             return Some(lobby_id.clone());
         }

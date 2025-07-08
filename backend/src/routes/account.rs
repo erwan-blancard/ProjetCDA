@@ -41,7 +41,6 @@ async fn get_my_account(req: HttpRequest, pool: web::Data<DbPool>) -> actix_web:
     Ok(HttpResponse::Ok().json(account))
 }
 
-
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(get_my_account)
         .service(get_other_account);

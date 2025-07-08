@@ -5,6 +5,7 @@ import { api_url, login_guard } from '../utils';
 import { create_lobby, current_lobby_set_ready_state, get_current_lobby, leave_current_lobby } from '../api/lobby';
 import { displayInput, displayPopup, displayYesNo } from '../ui/popup';
 import { LobbyView } from '../ui/lobby';
+import { FriendPanel } from '../ui/friend_panel';
 
 
 const account = await login_guard();
@@ -89,6 +90,70 @@ document.getElementById("to-join-lobby").onclick = () => {
 };
 
 
+
+
+
+// Friends panel elements
+/** @type {FriendPanel} */
+const friendPanel = document.getElementById('friend-panel');
+const btnShowFriendList = document.getElementById('show-friend-list');
+const friendPanelBackdrop = document.getElementById('friend-panel-backdrop');
+const closeFriendButton = document.getElementById('close-friend-button');
+
+function showFriendPanel() {
+    friendPanel.style.display = 'block';
+    friendPanelBackdrop.style.display = 'block';
+
+    friendPanel.addFriendFeedback.textContent = "";
+
+    updateShowPanelButtonColor(false);
+}
+
+function closeFriendPanel() {
+    friendPanel.style.display = 'none';
+    friendPanelBackdrop.style.display = 'none';
+}
+
+function updateShowPanelButtonColor(pending_updates=true) {
+    if (pending_updates) {
+        // update color only if not already open
+        if (friendPanel.style.display == "none") {
+            btnShowFriendList.style.backgroundColor = "#f0c115";
+        }
+    } else {
+        btnShowFriendList.style.backgroundColor = "white";
+    }
+}
+
+btnShowFriendList.addEventListener('click', () => {
+  const isHidden = friendPanel.style.display === 'none' || friendPanel.style.display === '';
+  if (isHidden) {
+    friendPanel.updateFriendRequests();
+    friendPanel.updateFriendList();
+
+    // Ajoute la section demandes d'amis en haut du panneau si pas déjà présente
+    if (!friendPanel.contains(friendPanel.friendRequestsDiv)) {
+      friendPanel.insertBefore(friendPanel.friendRequestsDiv, friendPanel.firstChild);
+      // Optionnel: titre
+      if (!document.getElementById('friend-requests-title')) {
+        const title = document.createElement('div');
+        title.id = 'friend-requests-title';
+        title.textContent = 'Demandes d\'amis reçues';
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        friendPanel.insertBefore(title, friendPanel.friendRequestsDiv);
+      }
+    }
+    showFriendPanel();
+  } else {
+    closeFriendPanel();
+  }
+});
+
+closeFriendButton.addEventListener('click', closeFriendPanel);
+friendPanelBackdrop.addEventListener('click', closeFriendPanel);
+
+
 const createLobbyForm = document.getElementById("create-lobby-form");
 const lobbyUnlistedCheck = document.getElementById("lobby-unlisted-check");
 const createLobbyValidateButton = document.getElementById("create-lobby-validate-button");
@@ -154,6 +219,13 @@ lobbyViewElement.leaveButton.onclick = () => {
 
 function handle_friend_request_update(request_id, user_id, status) {
     console.log(`request_id: ${request_id}, user_id: ${user_id}, status: ${status}`);
+    friendPanel.handleFriendRequestUpdate(request_id, user_id, status);
+    updateShowPanelButtonColor();
+}
+
+function handle_friendship_deleted(request_id) {
+    console.log(`request_id: ${request_id}`);
+    friendPanel.handleFriendshipDeleted(request_id);
 }
 
 function handle_lobby_user_list_change(user_ids) {
@@ -190,9 +262,14 @@ if (account != null) {
             return;
         }
 
+        console.log("Sse Message Type: "+json_data["type"]);
+
         switch(json_data["type"]) {
             case "FriendRequest":
                 handle_friend_request_update(json_data["request_id"], json_data["user"], json_data["status"]);
+                break;
+            case "FriendshipDeleted":
+                handle_friendship_deleted(json_data["id"]);
                 break;
             case "LobbyUserListChange":
                 handle_lobby_user_list_change(json_data["users"]);

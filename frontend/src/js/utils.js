@@ -1,6 +1,7 @@
 import { get_my_account } from "./api/account";
 import { AccountDTO } from "./api/dto";
 import { displayMessageNoControls, displayPopup } from "./ui/popup";
+import { APP_STATE } from "./app_state";
 
 export const HOST = "localhost:8080";
 export const API_URL = `http://${HOST}`;
@@ -28,10 +29,12 @@ export async function login_guard(silent=true) {
             if (account == null)
                 throw new Error("You are not logged in !")
 
+            APP_STATE.account = account;
             return account;
         } catch (error) {
             console.log("Error: " + error.message);
             window.location.href = "/login.html";
+            APP_STATE.account = account;
             return null;
         }
 
@@ -45,6 +48,7 @@ export async function login_guard(silent=true) {
 
             const account = await get_my_account();
             msgFrame.remove();
+            APP_STATE.account = account;
             return account;
         } catch (error) {
             msgFrame.remove();
@@ -52,6 +56,7 @@ export async function login_guard(silent=true) {
             displayPopup(error.message, "Error", "Go to Login Page", () => {
                 window.location.href = "/login.html";
             })
+            APP_STATE.account = account;
             return null;
         }
 

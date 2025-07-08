@@ -71,3 +71,31 @@ export class LobbyPageListDTO {
         this.page_count = data.page_count;
     }
 }
+
+
+export class FriendDTO {
+    id;
+    account1;
+    account2;
+    status;
+
+    constructor(data) {
+        this.id = data.id;
+        this.account1 = data.account1;
+        this.account2 = data.account2;
+        this.status = data.status;
+    }
+}
+
+
+export class FriendWithLobbyStatusDTO {
+    id;
+    username;
+    lobby_id;
+
+    constructor(data) {
+        this.id = data.id;
+        this.username = data.username;
+        this.lobby_id = data.lobby_id;
+    }
+}

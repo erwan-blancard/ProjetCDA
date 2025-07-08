@@ -23,6 +23,7 @@ use crate::GameId;
 #[serde(tag = "type")]
 pub enum SseMessage {
     FriendRequest { request_id: i32, user: i32, status: i32 },
+    FriendshipDeleted { id: i32 },
     LobbyUserListChange { users: HashSet<i32> },
     LobbyUserReadyChange { user: i32, ready: bool },
     GameStarted { game_id: GameId }
@@ -30,7 +31,9 @@ pub enum SseMessage {
 
 impl SseMessage {
     pub async fn send(&self, tx: &mpsc::Sender<sse::Event>) -> Result<(), mpsc::error::SendError<sse::Event>> {
-        tx.send(sse::Data::new_json(&self).unwrap().into()).await
+        let data = sse::Data::new_json(&self).unwrap().into();
+        log::info!("Sending SseMessage: {:?}", data);
+        tx.send(data).await
     }
 }
 
@@ -120,6 +123,21 @@ impl Broadcaster {
                 return;
             }
         }
+    }
+
+    pub async fn notify_friendship_deleted(&self, id: i32, acc1: i32, acc2: i32) {
+        let clients = self.inner.lock().clients.clone();
+
+        let msg = SseMessage::FriendshipDeleted { id };
+
+        let send_futures = clients
+            .iter()
+            .filter(|client|
+                client.account_id == acc1 || client.account_id == acc2)
+            .map(|client| msg.send(&client.tx));
+
+        // wait for sends
+        let _ = future::join_all(send_futures).await;
     }
 
     pub async fn notify_lobby_user_list_update(&self, lobby: &Lobby, skip_id: i32) {

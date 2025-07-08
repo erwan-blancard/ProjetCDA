@@ -1,0 +1,131 @@
+friend-panel {
+    display: none;  /* start hidden */
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 15px;
+    width: 300px;
+    top: 80px;
+    right: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-family: sans-serif;
+    z-index: 5;
+}
+
+friend-panel h3 {
+    margin-top: 0px;
+    margin-bottom: 0.4em;
+}
+
+friend-panel button.styled {
+    font-size: 0.75em;
+}
+
+#friend-panel-backdrop {
+    display: none;  /* start hidden */
+    position: fixed;
+    background: rgba(0, 0, 0, 0.3);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 4;
+}
+
+#add-friend-name {
+    width: 100%;
+    margin-top: 5px;
+}
+
+#add-friend-feedback {
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+.friend-list {
+    max-height: 8em;
+    overflow-y: auto;
+}
+
+.friend-requests-list {
+    margin-bottom: 15px;
+
+    max-height: 8em;
+    overflow-y: auto;
+}
+
+friend-entry {
+    font-size: 0.75em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+
+    .friend-entry-label {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip ellipsis;
+    };
+
+    button {
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.8em;
+    }
+
+    .join-lobby-button {
+        background-color: green;
+    };
+
+    .remove-button {
+        background-color: red;
+        /* margin for scroll bar */
+        margin-right: 20px;
+    };
+}
+
+friend-request-entry {
+    font-size: 0.75em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+
+    span {
+        max-width: 8em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip ellipsis;
+    };
+
+    button {
+        border: none;
+        padding: 4px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 5px;
+        color: white;
+    };
+
+    .accept-button {
+        background-color: green;
+    };
+
+    .decline-button {
+        background-color: gray;
+    };
+
+    .cancel-button {
+        background-color: red;
+    };
+
+    .clear-declined-button {
+        background-color: gray;
+    }
+}

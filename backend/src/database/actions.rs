@@ -7,6 +7,8 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 
 use crate::database::models::*;
 use crate::database::schema::*;
+use crate::routes::game::Lobbies;
+use crate::routes::game::LobbyId;
 
 use super::models::{Account, Friend};
 
@@ -129,17 +131,21 @@ pub fn get_account_stats(conn: &mut PgConnection, account_id: i32) -> diesel::Qu
 pub fn send_friend_request(conn: &mut PgConnection, sender_id: i32, username: &String) -> diesel::QueryResult<Friend> {
     use super::schema::friends::dsl::{friends, id};
 
-    let target_account_id: i32 = accounts::table.select(accounts::id)
-        .filter(accounts::dsl::username.eq(username))
-        .first(conn)
-        .expect("The account doesn't exist !");
-
-    let friend_request = FriendRequest {
-        account1: sender_id,
-        account2: target_account_id
-    };
-
     conn.transaction(|conn| {
+        let target_account_id: i32 = accounts::table.select(accounts::id)
+            .filter(accounts::dsl::username.eq(username))
+            .first(conn)?;
+
+        let friend_request = FriendRequest {
+            account1: sender_id,
+            account2: target_account_id
+        };
+
+        // don't create relationship if one already exists
+        if get_accounts_relationship(conn, sender_id, target_account_id).is_ok() {
+            return Err(diesel::result::Error::NotFound);
+        }
+
         insert_into(friends)
             .values(&friend_request)
             .execute(conn)?;
@@ -151,6 +157,15 @@ pub fn send_friend_request(conn: &mut PgConnection, sender_id: i32, username: &S
     
         Ok(friend)
     })
+}
+
+pub fn get_accounts_relationship(conn: &mut PgConnection, acc1: i32, acc2: i32) -> diesel::QueryResult<Friend> {
+    use super::schema::friends::dsl::{friends, account1, account2};
+
+    friends.select(Friend::as_select())
+        .filter((account1.eq(acc1).and(account2.eq(acc2)))
+            .or(account1.eq(acc2).and(account2.eq(acc1))))
+        .first(conn)
 }
 
 pub fn get_friend_request_of_account_by_username(conn: &mut PgConnection, receiver_id: i32, username: &String) -> diesel::QueryResult<Friend> {
@@ -211,6 +226,73 @@ pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32
             .and(status.ne(1))
         )
         .load(conn)
+}
+
+pub fn delete_friendship(conn: &mut PgConnection, account_id: i32, username: &str) -> diesel::QueryResult<(i32, i32, i32)> {
+    use super::schema::friends::dsl::{friends, account1, account2};
+    use super::schema::accounts::dsl::{accounts, id as acc_id, username as acc_username};
+
+    // find other account id
+    let other_id: i32 = accounts
+        .select(acc_id)
+        .filter(acc_username.eq(username))
+        .first(conn)?;
+
+    let relationship: Friend = friends.select(Friend::as_select())
+        .filter(
+            (account1.eq(account_id).and(account2.eq(other_id)))
+            .or(account1.eq(other_id).and(account2.eq(account_id))))
+        .first(conn)?;
+
+    // delete friend (account_id may be account1 or account2)
+    diesel::delete(friends.filter(
+        (account1.eq(account_id).and(account2.eq(other_id)))
+        .or(account1.eq(other_id).and(account2.eq(account_id)))
+    )).execute(conn)?;
+
+    Ok((relationship.id, relationship.account1, relationship.account2))
+}
+
+
+#[derive(Queryable, Serialize)]
+pub struct FriendWithLobbyStatus {
+    pub id: i32,
+    pub username: String,
+    pub lobby_id: Option<LobbyId>,
+}
+
+pub fn list_friends_with_status_for_account(
+    conn: &mut PgConnection,
+    account_id: i32,
+    lobbies: &Lobbies,
+) -> diesel::QueryResult<Vec<FriendWithLobbyStatus>> {
+    use super::schema::friends::dsl::{friends, account1, account2, status, id as friend_id};
+    use super::schema::accounts::dsl::{accounts, username, id as acc_id};
+    use crate::routes::game::get_lobby_id_for_user;
+
+    let results = friends
+        .filter(
+            (account1.eq(account_id).or(account2.eq(account_id)))
+            .and(status.eq(1))
+        )
+        .inner_join(accounts.on(
+            acc_id.eq(account1).and(account2.eq(account_id))
+            .or(acc_id.eq(account2).and(account1.eq(account_id)))
+        ))
+        .select((friend_id, acc_id, username))
+        .load::<(i32, i32, String)>(conn)?;
+
+    let lobbies = lobbies.lock().unwrap();
+    let mut friends_with_status = Vec::new();
+    for (id, friend_account_id, other_username) in results {
+        let lobby_id = get_lobby_id_for_user(friend_account_id, &lobbies);
+        friends_with_status.push(FriendWithLobbyStatus {
+            id,
+            username: other_username,
+            lobby_id,
+        });
+    }
+    Ok(friends_with_status)
 }
 
 

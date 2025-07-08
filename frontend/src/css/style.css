@@ -111,6 +111,13 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 .styled:has(h2) { padding-left: 2em; padding-right: 2em; margin-bottom: 1em; }
 .styled:has(h3) { padding-left: 1em; padding-right: 1em; margin-bottom: 0.5em; }
 
+
+.ui-symbols {
+    color: black;
+    font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif';
+}
+
+
 .hlayout {
     display: flex;
     flex-direction: row;
