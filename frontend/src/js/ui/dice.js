@@ -56,7 +56,7 @@ export class Dice extends CSS2DObject {
             setTimeout(() => { resolve(); }, 1000);
         } else {
             this.setVisibleFace(randInt(1, 6));
-            setTimeout(() => { this.#cycleLoop(face, counter+1, resolve); }, 100);
+            setTimeout(() => { this.#cycleLoop(face, counter+1, resolve); }, 120);
         }
     }
 

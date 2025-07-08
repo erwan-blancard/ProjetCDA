@@ -896,11 +896,7 @@
     "stars": "Three",
     "kind": "Food",
     "desc": "Récupérez autant de points que le nombre de cartes défaussées par tous les joueurs.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "type": "PearthCard"
   },
   {
     "name": "Pomme de terre",

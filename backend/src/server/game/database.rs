@@ -1,14 +1,13 @@
 use std::{fs::File, io::BufReader, path::Path};
 use std::fmt;
 
-use diesel::expression::is_aggregate::No;
 use lazy_static::lazy_static;
 use serde::Deserializer;
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
 use crate::server::game::card::{MultiActionCard, MultiHitCard, TargetBothCard, TargetType};
-use crate::server::game::modifiers::{Modifier, ModifierInfo};
-use crate::server::game::special_cards::{PlayersRollsDiceCard, PlayersRollsDiceCardAction, PlayersRollsDiceCardActionType};
+use crate::server::game::modifiers::ModifierInfo;
+use crate::server::game::special_cards::{PearthCard, PlayersRollsDiceCard, PlayersRollsDiceCardAction};
 
 use super::card::{BasicCard, Card, CardId, Element, Kind, Stars};
 
@@ -27,6 +26,7 @@ enum CardVariant {
     TargetBothCard(BasicCardData),    // same fields as BasicCard
     MultiActionCard(MultiActionCardData),
     PlayersRollsDiceCard(PlayersRollsDiceCardData),
+    PearthCard,
 }
 
 #[derive(Debug, Deserialize)]
@@ -194,6 +194,16 @@ impl CardInfo {
                     draw: data.draw,
                     target_type: data.targets,
                     dice_action: data.dice_action,
+                })
+            }
+            CardVariant::PearthCard => {
+                Box::new(PearthCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
                 })
             }
         }
