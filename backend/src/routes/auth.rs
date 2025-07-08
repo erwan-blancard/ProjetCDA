@@ -1,6 +1,7 @@
 use actix_web::{cookie::{Cookie, SameSite}, error::{self, ErrorUnauthorized}, post, web, HttpResponse, Responder};
 
 use crate::{auth, database::actions::{self, AccountLogin, NewAccount}, DbPool};
+use crate::presence::Presence;
 
 
 
@@ -21,7 +22,11 @@ async fn register(pool: web::Data<DbPool>, json: web::Json<NewAccount>) -> actix
 
 
 #[post("/login")]
-async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_web::Result<impl Responder> {
+async fn login(
+    pool: web::Data<DbPool>,
+    json: web::Json<AccountLogin>,
+    presence: web::Data<Presence>,
+) -> actix_web::Result<impl Responder> {
     let account = web::block(move || {
         // Obtaining a connection from the pool is also a potentially blocking operation.
         // So, it should be called within the `web::block` closure, as well.
@@ -34,6 +39,12 @@ async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_
 
     if account.suspended {
         return Err(ErrorUnauthorized("The account is suspended."));
+    }
+
+    // Ajoute l'utilisateur à la présence
+    {
+        let mut set = presence.lock().unwrap();
+        set.insert(account.id);
     }
 
     let token = auth::create_jwt(account.id);

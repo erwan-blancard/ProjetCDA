@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use std::fs;
 
 use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound};
 use actix_web::{delete, error, patch, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
@@ -7,6 +8,7 @@ use actix_web::{get, post};
 use tokio::spawn;
 use uuid::Uuid;
 use serde_derive::{Serialize, Deserialize};
+use serde_json::Value;
 
 use crate::dto::GameSessionInfo;
 use crate::routes::sse::Broadcaster;
@@ -78,7 +80,7 @@ pub struct CreateLobbyInfo {
 }
 
 
-fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
+pub fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
     println!("acc id: {}", account_id);
     for (lobby_id, lobby) in lobbies.iter() {
         for user_id in lobby.users.iter() {
@@ -531,6 +533,14 @@ async fn kill_session(path: web::Path<(GameId,)>, game_handlers: web::Data<GameH
 
 }
 
+#[get("/cards")]
+pub async fn get_deck_collection() -> actix_web::Result<HttpResponse> {
+    let data = fs::read_to_string("assets/cards.json")
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    let json: Value = serde_json::from_str(&data)
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    Ok(HttpResponse::Ok().json(json))
+}
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(create_lobby)
@@ -540,10 +550,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(get_lobby_info)
         .service(join_lobby)
         .service(leave_current_lobby)
-
         .service(get_game_session_info)
         .service(get_current_game_session_info)
         .service(list_game_sessions)
         .service(kill_session)
+        .service(get_deck_collection)
         ;
 }

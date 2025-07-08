@@ -53,6 +53,8 @@ mod server {
     }
 }
 
+mod presence;
+
 // type ApiUrl = Url;
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
@@ -61,6 +63,7 @@ use uuid::Uuid;
 
 use crate::routes::game::{Lobbies, Lobby, LobbyId};
 use crate::routes::sse::Broadcaster;
+use crate::presence::{Presence, new_presence};
 
 // use uid::Id as IdT;
 
@@ -148,6 +151,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     let broadcaster = Broadcaster::create();
+    let presence: Presence = new_presence();
 
     HttpServer::new(move || {
         // FIXME configure
@@ -165,7 +169,9 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(server_handlers.clone()))
             // .app_data(web::Data::new(api_url.clone()))
             .app_data(web::Data::from(Arc::clone(&broadcaster)))
+            .app_data(web::Data::new(presence.clone()))
             .wrap(cors)
+            // .service(routes::game::get_deck_collection)
             .wrap(auth::JwtMiddleware)
             .wrap(NormalizePath::trim())    // normalizes paths (no trailing "/")
 

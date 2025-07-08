@@ -38,6 +38,30 @@ pub struct NewEmptyStats {
     pub account_id: i32,
 }
 
+#[derive(Queryable, Serialize)]
+pub struct FriendRequestWithSender {
+    pub id: i32,
+    pub account1: i32,
+    pub account2: i32,
+    pub status: i32,
+    pub sender_username: String,
+}
+
+#[derive(Queryable, Serialize)]
+pub struct FriendWithUsernameAndOnline {
+    pub id: i32,
+    pub username: String,
+    pub online: bool,
+}
+
+#[derive(Queryable, Serialize)]
+pub struct FriendWithStatus {
+    pub id: i32,
+    pub username: String,
+    pub online: bool,
+    pub in_lobby: bool,
+    pub lobby_id: Option<uuid::Uuid>,
+}
 
 pub fn create_account(conn: &mut PgConnection, username: &String, email: &String, password: &String) -> diesel::QueryResult<FilteredAccount> {
     use super::schema::accounts::dsl::{accounts, id};
@@ -172,26 +196,97 @@ pub fn change_friend_request_status(conn: &mut PgConnection, receiver_id: i32, u
     })
 }
 
-pub fn list_friends_for_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Vec<Friend>> {
-    use super::schema::friends::dsl::{friends, account1, account2, status};
+pub fn list_friends_for_account(conn: &mut PgConnection, account_id: i32, presence: &crate::presence::Presence) -> diesel::QueryResult<Vec<FriendWithUsernameAndOnline>> {
+    use super::schema::friends::dsl::{friends, account1, account2, status, id as friend_id};
+    use super::schema::accounts::dsl::{accounts, username, id as acc_id};
 
-    friends.select(Friend::as_select())
+    let results = friends
         .filter(
-            account1.eq(account_id)
-            .or(account2.eq(account_id))
+            (account1.eq(account_id).or(account2.eq(account_id)))
             .and(status.eq(1))
         )
-        .load(conn)
+        .inner_join(accounts.on(
+            acc_id.eq(account1).and(account2.eq(account_id))
+            .or(acc_id.eq(account2).and(account1.eq(account_id)))
+        ))
+        .select((friend_id, acc_id, username))
+        .load::<(i32, i32, String)>(conn)?;
+
+    let set = presence.lock().unwrap();
+    let friends_with_online = results.into_iter().map(|(id, friend_account_id, other_username)| FriendWithUsernameAndOnline {
+        id,
+        username: other_username,
+        online: set.contains(&friend_account_id),
+    }).collect();
+    Ok(friends_with_online)
 }
 
-pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Vec<Friend>> {
-    use super::schema::friends::dsl::{friends, account1, account2, status};
+pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32) -> diesel::QueryResult<Vec<FriendRequestWithSender>> {
+    use super::schema::friends::dsl::{friends, account1, account2, status, id as friend_id};
+    use super::schema::accounts::dsl::{accounts, username, id as acc_id};
 
-    friends.select(Friend::as_select())
+    friends.inner_join(accounts.on(acc_id.eq(account1)))
+        .select((friend_id, account1, account2, status, username))
         .filter(
-            account1.eq(account_id)
-            .or(account2.eq(account_id))
+            account2.eq(account_id)
             .and(status.ne(1))
         )
-        .load(conn)
+        .load::<FriendRequestWithSender>(conn)
+}
+
+pub fn delete_friendship(conn: &mut PgConnection, account_id: i32, username: &str) -> diesel::QueryResult<usize> {
+    use super::schema::friends::dsl::{friends, account1, account2};
+    use super::schema::accounts::dsl::{accounts, id as acc_id, username as acc_username};
+
+    // Trouver l'id de l'autre compte
+    let other_id: i32 = accounts
+        .select(acc_id)
+        .filter(acc_username.eq(username))
+        .first(conn)?;
+
+    // Supprimer la relation dans les deux sens
+    diesel::delete(friends.filter(
+        (account1.eq(account_id).and(account2.eq(other_id)))
+        .or(account1.eq(other_id).and(account2.eq(account_id)))
+    )).execute(conn)
+}
+
+pub fn list_friends_with_status_for_account(
+    conn: &mut PgConnection,
+    account_id: i32,
+    presence: &crate::presence::Presence,
+    lobbies: &std::sync::Arc<std::sync::Mutex<std::collections::HashMap<uuid::Uuid, crate::routes::game::Lobby>>>,
+) -> diesel::QueryResult<Vec<FriendWithStatus>> {
+    use super::schema::friends::dsl::{friends, account1, account2, status, id as friend_id};
+    use super::schema::accounts::dsl::{accounts, username, id as acc_id};
+    use crate::routes::game::get_lobby_id_for_user;
+
+    let results = friends
+        .filter(
+            (account1.eq(account_id).or(account2.eq(account_id)))
+            .and(status.eq(1))
+        )
+        .inner_join(accounts.on(
+            acc_id.eq(account1).and(account2.eq(account_id))
+            .or(acc_id.eq(account2).and(account1.eq(account_id)))
+        ))
+        .select((friend_id, acc_id, username))
+        .load::<(i32, i32, String)>(conn)?;
+
+    let set = presence.lock().unwrap();
+    let lobbies = lobbies.lock().unwrap();
+    let mut friends_with_status = Vec::new();
+    for (id, friend_account_id, other_username) in results {
+        let online = set.contains(&friend_account_id);
+        let lobby_id = get_lobby_id_for_user(friend_account_id, &lobbies);
+        let in_lobby = lobby_id.is_some();
+        friends_with_status.push(FriendWithStatus {
+            id,
+            username: other_username,
+            online,
+            in_lobby,
+            lobby_id,
+        });
+    }
+    Ok(friends_with_status)
 }

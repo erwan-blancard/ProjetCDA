@@ -26,7 +26,7 @@ const currentlobbyview = document.getElementById("current-lobby");
 
 const viewMgr = new ViewMgr();
 
-const lobbyViewElement = document.getElementById("lobby");
+const lobbyViewElement = new LobbyView(document.getElementById("lobby"));
 
 
 /** @type LobbyList */
