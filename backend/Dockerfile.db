@@ -1,0 +1,8 @@
+FROM postgres:17
+
+# copy diesel migrations to /docker-entrypoint-initdb.d and the init script
+# to run it when creating the db
+COPY ./migrations /docker-entrypoint-initdb.d/migrations
+COPY ./scripts/run-diesel-migrations.sh /docker-entrypoint-initdb.d/run-diesel-migrations.sh
+
+CMD [ "postgres" ]

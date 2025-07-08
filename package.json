@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "three": "^0.178.0",
+    "three-nebula": "^10.0.3"
+  }
+}

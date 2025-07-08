@@ -143,8 +143,7 @@ Lancer les tests du frontend en local:
         -accepter d'installer la dépendance "jsdom"
     -retaper: npm run test
 
-Lancer les tests du backend en local: 
-    -docker build --no-cache -f backend/Dockerfile.dev -t backend-dev ./backend
+Lancer les tests du backend en local, en étant sur la racine du projet: 
     -docker build --no-cache -f backend/Dockerfile.dev -t backend-dev ./backend
     -docker run -it --rm backend-dev
     (-cargo fix --bin backend --tests)
