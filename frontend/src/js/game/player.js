@@ -39,8 +39,10 @@ export class PlayerObject extends Mesh {
 
     updateHandCardPositions(instant=false) {
         for (let i = 0; i < this.cards.length; i++) {
-            const { x, y, z } = this.getHandCardPositionByIndex(i);
-            this.cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            if (!this.cards[i].active) {
+                const { x, y, z } = this.getHandCardPositionByIndex(i);
+                this.cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            }
         }
     }
 
@@ -66,8 +68,10 @@ export class PlayerObject extends Mesh {
 
     updateDiscardCardPositions(instant=false) {
         for (let i = 0; i < this.discard_cards.length; i++) {
-            const { x, y, z } = this.getDiscardCardPositionByIndex(i);
-            this.discard_cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            if (!this.discard_cards[i].active) {
+                const { x, y, z } = this.getDiscardCardPositionByIndex(i);
+                this.discard_cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            }
         }
     }
 

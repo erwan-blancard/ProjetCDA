@@ -16,6 +16,9 @@ export class CardInfo {
     attack;
     heal;
     draw;
+    attack_modifier;
+    heal_modifier;
+    draw_modifier;
 
     constructor(data) {
         this.name = data.name;
@@ -23,9 +26,12 @@ export class CardInfo {
         this.kind = data.kind;
         this.stars = data.stars;
         this.desc = data.desc;
-        this.attack = data.attack;
-        this.heal = data.heal;
-        this.draw = data.draw;
+        this.attack = data.attack != undefined ? data.attack : 0;
+        this.heal = data.heal != undefined ? data.heal : 0;
+        this.draw = data.draw != undefined ? data.draw : 0;
+        this.attack_modifier = data.attack_modifier != undefined ? data.attack_modifier : null;
+        this.heal_modifier = data.heal_modifier != undefined ? data.heal_modifier : null;
+        this.draw_modifier = data.draw_modifier != undefined ? data.draw_modifier : null;
     }
 
     get color() {

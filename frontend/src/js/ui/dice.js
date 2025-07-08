@@ -12,6 +12,7 @@ export class Dice extends CSS2DObject {
     wiggleTl = gsap.timeline();
     appearTl = gsap.timeline();
     diceSvg;
+    playerNameLabel;
 
     constructor(scene) {
         const element = document.createElement("div");
@@ -20,11 +21,20 @@ export class Dice extends CSS2DObject {
         super(element);
 
         this.diceSvg = this.element.firstElementChild;
+        this.playerNameLabel = document.createElement("p");
+        this.playerNameLabel.className = "dice-player-name";
+        this.playerNameLabel.style.visibility = "hidden";
+
+        this.element.appendChild(this.playerNameLabel);
 
         this.diceSvg.style.width = "0em";
         this.setVisibleFace(6);
 
         scene.add(this);
+    }
+
+    setPlayerName(name) {
+        this.playerNameLabel.textContent = name;
     }
 
     setVisibleFace(face) {
@@ -46,7 +56,7 @@ export class Dice extends CSS2DObject {
             setTimeout(() => { resolve(); }, 1000);
         } else {
             this.setVisibleFace(randInt(1, 6));
-            setTimeout(() => { this.#cycleLoop(face, counter+1, resolve); }, 150);
+            setTimeout(() => { this.#cycleLoop(face, counter+1, resolve); }, 100);
         }
     }
 
@@ -60,6 +70,7 @@ export class Dice extends CSS2DObject {
     }
 
     async appear() {
+        this.playerNameLabel.style.visibility = "visible";
         return new Promise(resolve => {
             this.appearTl.clear();
             // this.appearTl.fromTo(this.scale, { x: 0, y: 0, z: 0, duration: 0 }, { x: 1, y: 1, z: 1, ease: Power1.easeOut, duration: 0.05, onComplete: resolve });
@@ -69,10 +80,11 @@ export class Dice extends CSS2DObject {
     }
 
     async disappear() {
+        this.playerNameLabel.style.visibility = "hidden";
         return new Promise(resolve => {
             this.appearTl.clear();
             // this.appearTl.fromTo(this.scale, { x: 1, y: 1, z: 1, duration: 0 }, { x: 0, y: 0, z: 0, ease: Power1.easeOut, duration: 0.05, onComplete: resolve });
-            this.appearTl.fromTo(this.diceSvg, { width: TARGET_APPEAR_WIDTH, duration: 0 }, { width: "0em", ease: Power1.easeOut, duration: 0.05, onComplete: resolve });
+            this.appearTl.fromTo(this.diceSvg, { width: TARGET_APPEAR_WIDTH, duration: 0 }, { width: "0em", ease: Power1.easeOut, duration: 0.075, onComplete: resolve });
             this.wiggle();
         });
     }

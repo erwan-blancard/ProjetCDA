@@ -103,6 +103,12 @@ export class ThrowDiceEvent extends PlayerEvent {
     }
 
     async run() {
+        try {
+            GAME.dice.setPlayerName(this.player.name);
+        } catch (e) {
+            console.log("Exception when setting dice player name:", e);
+            GAME.dice.setPlayerName("N/A");
+        }
         GAME.dice.appear();
         await GAME.dice.cycleTo(this.result);
         await GAME.dice.disappear();
@@ -134,6 +140,28 @@ export class DrawCardEvent extends PlayerEvent {
 
 }
 
+export class DiscardCardEvent extends PlayerEvent {
+
+    constructor(player, card_index) {
+        super(player);
+        this.card_index = card_index;
+    }
+
+    async run() {
+        if (this.player != null) {
+            this.player.cards.splice(this.card_index, 1).forEach((card) => {
+                this.player.discard_cards.push(card);
+            });
+            
+            this.player.updateHandCardPositions();
+            this.player.emitCardCountChange();
+            this.player.updateDiscardCardPositions();
+            this.player.emitDiscardCountChange();
+        }
+    }
+
+}
+
 
 // event to move card towards the center of the playing field
 export class PutCardForward extends CardEvent {
@@ -145,6 +173,8 @@ export class PutCardForward extends CardEvent {
 
     async run() {
         if (this.card != null) {
+            this.card.active = true; // prevent position updates with updateHandCardPositions() and updateDiscardCardPositions()
+
             if (this.card instanceof OpponentCard) {
                 // change display of OpponentCard to match the expected card's look
                 this.card.displayCardAsFront(this.display_card_id);
@@ -171,10 +201,13 @@ export class PutCardInPile extends GameEvent {
 
     async run() {
         if (this.card != null) {
+            this.card.active = false;
             // transfer card to discard pile
             this.player.discard_cards.push(this.card);
             // remove card from hand if it's not fake
-            this.player.cards.splice(this.player.cards.indexOf(this.card), 1);
+            const idx = this.player.cards.indexOf(this.card);
+            if (idx != -1)
+                this.player.cards.splice(idx, 1);
             this.player.updateHandCardPositions();
             this.player.emitCardCountChange();
             this.player.updateDiscardCardPositions();

@@ -50,12 +50,12 @@
     "element": "Earth",
     "stars": "Three",
     "kind": "Spell",
-    "desc": "Consultez la pioche. Piochez les 2 premières cartes d'élément Terre que vous trouvez",
+    "desc": "Piochez les 3 cartes.",
     "type": "BasicCard",
     "attack": 0,
     "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "draw": 3,
+    "note": "Original effect: Consultez la pioche. Piochez les 2 premières cartes d'élément Terre que vous trouvez"
   },
   {
     "name": "Aspiration",
@@ -87,15 +87,17 @@
     "stars": "Four",
     "kind": "Spell",
     "desc": "Enlevez 10 points à votre adversaire. Lancez un dé. Enlevez le nombre indiqué par le dé à tous vos adversaires.",
-    "type": "BasicCard",
-    "attack": 10,
-    "heal": 0,
-    "draw": 0,
-    "attack_modifier": {
-      "type": "DiceRollModifier",
-      "dice_op": "Add"
-    },
-    "note": "Complex effect: not fully handled by simple modifier"
+    "type": "MultiActionCard",
+    "actions": 2,
+    "attacks": [10, 0],
+    "target_types": ["Single", "All"],
+    "attack_modifiers": [
+      null,
+      {
+        "type": "DiceRollModifier",
+        "dice_op": "Add"
+      }
+    ]
   },
   {
     "name": "Attaque ardente",
@@ -139,8 +141,8 @@
     "stars": "Two",
     "kind": "Spell",
     "desc": "Enlevez 2 points à votre adversaire. Enlevez 2 points à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 4,
+    "type": "MultiHitCard",
+    "attacks": [2, 2],
     "heal": 0,
     "draw": 0
   },
@@ -161,11 +163,10 @@
     "stars": "Three",
     "kind": "Spell",
     "desc": "Chaque joueur lance le dé. Additionnez les nombres obtenus aux lancers. Enlevez la somme au(x) joueur(s) ayant fait le lancer le plus bas.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "type": "PlayersRollsDiceCard",
+    "attack": true,
+    "targets": "All",
+    "dice_action": "AffectsMinRollPlayersRollsSum"
   },
   {
     "name": "Bougie",
@@ -196,10 +197,11 @@
     "stars": "Five",
     "kind": "Spell",
     "desc": "Enlevez 15 points à tous les joueurs y compris vous. Chaque joueur défausse toutes ses cartes en main.",
-    "type": "BasicCard",
+    "type": "TargetBothCard",
     "attack": 15,
     "heal": 0,
     "draw": 0,
+    "targets": "All",
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -355,8 +357,9 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "draw_modifier": {
-        "type": "HandAndDiceMultModifier"
+    "heal_modifier": {
+        "type": "HandAndDiceModifier",
+        "op": "Mul"
     }
   },
   {
@@ -382,8 +385,8 @@
     "heal": 0,
     "draw": 0,
     "attack_modifier": {
-        "type": "HandAndDiceMultModifier",
-        "hand_size_op": "Mul"
+        "type": "HandAndDiceModifier",
+        "op": "Mul"
     }
   },
   {
@@ -391,9 +394,9 @@
     "element": "Water",
     "stars": "Four",
     "kind": "Weapon",
-    "desc": "Enlevez 6 points à votre adversaire.Enlevez 6 points à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 12,
+    "desc": "Enlevez 6 points à votre adversaire. Enlevez 6 points à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [6, 6],
     "heal": 0,
     "draw": 0
   },
@@ -463,15 +466,17 @@
     "stars": "Two",
     "kind": "Spell",
     "desc": "Lancez un dé. Enlevez à votre adversaire autant de points que le nombre indiqué par le dé. Enlevez 3 points à tous les autres joueurs.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "attack_modifier": {
-      "type": "DiceRollModifier",
-      "dice_op": "Add"
-    },
-    "note": "Complex effect: not fully handled by simple modifier"
+    "type": "MultiActionCard",
+    "actions": 2,
+    "targets": ["Single", "All"],
+    "attacks": [0, 3],
+    "attack_modifiers": [
+      {
+        "type": "DiceRollModifier",
+        "dice_op": "Add"
+      },
+      null
+    ]
   },
   {
     "name": "Enterrement",
@@ -518,11 +523,15 @@
     "stars": "Four",
     "kind": "Spell",
     "desc": "Lancez 4 fois le dé. Additionnez les lancers. Enlevez le résultat à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "type": "MultiActionCard",
+    "actions": 4,
+    "attack_modifiers": [
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" }
+    ],
+    "note": "Not accurate but good enough"
   },
   {
     "name": "Feu de détresse",
@@ -558,6 +567,10 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
+    "heal_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    },
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -565,7 +578,7 @@
     "element": "Fire",
     "stars": "Three",
     "kind": "Food",
-    "desc": "Lancez deux fois le dé  Multipliez les deux nombres obtenus. Récupérez le résultat.",
+    "desc": "Lancez deux fois le dé. Multipliez les deux nombres obtenus. Récupérez le résultat.",
     "type": "BasicCard",
     "attack": 0,
     "heal": 0,
@@ -680,7 +693,8 @@
     "attack_modifier": {
         "type": "DiscardSizeModifier",
         "discard_size_op": "Add"
-    }
+    },
+    "note": "Complex effect: not fully handled by simple modifier"
   },
   {
     "name": "Inondation",
@@ -688,7 +702,7 @@
     "stars": "Five",
     "kind": "Spell",
     "desc": "Enlevez 13 points à tous les joueurs y compris vous même. Tous les joueurs défaussent leurs cartes n'étant pas d'élément Eau",
-    "type": "BasicCard",
+    "type": "TargetBothCard",
     "attack": 13,
     "heal": 0,
     "draw": 0,
@@ -762,8 +776,8 @@
     "stars": "Five",
     "kind": "Weapon",
     "desc": "Enlevez 4 points à votre adversaire. Enlevez 3 points à votre adversaire. Enlevez 2 points à votre adversaire. Enlevez 1 point à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 10,
+    "type": "MultiHitCard",
+    "attacks": [4, 3, 2, 1],
     "heal": 0,
     "draw": 0
   },
@@ -773,11 +787,17 @@
     "stars": "Three",
     "kind": "Food",
     "desc": "Lancez 7 fois le dé. Récupérez la somme des 7 lancers de dé.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "type": "MultiActionCard",
+    "actions": 7,
+    "heal_modifiers": [
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"}
+    ]
   },
   {
     "name": "Mistral",
@@ -817,7 +837,12 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "attack_modifier": {
+      "type": "HandAndDiceModifier",
+      "op": "Add",
+      "hand_from_target": true
+    },
+    "targets": "All"
   },
   {
     "name": "Pelle",
@@ -848,8 +873,8 @@
     "stars": "Three",
     "kind": "Weapon",
     "desc": "Enlevez 4 points à votre adversaire. Enlevez 2 points à votre adversaire. Enlevez 1 point à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 7,
+    "type": "MultiHitCard",
+    "attacks": [4, 2, 1],
     "heal": 0,
     "draw": 0
   },
@@ -897,9 +922,9 @@
     "element": "Earth",
     "stars": "One",
     "kind": "Spell",
-    "desc": "Enlevez 0 points à votreadversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 0,
+    "desc": "Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [0, 0, 0, 0, 0, 0],
     "heal": 0,
     "draw": 0
   },
@@ -929,7 +954,7 @@
       "type": "DiceRollModifier",
       "dice_op": "Mul"
     },
-    "note": "Complex effect: not fully handled by simple modifier"
+    "targets": "All"
   },
   {
     "name": "Récolte",
@@ -953,7 +978,10 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "draw_modifier": {
+      "type": "DiscardSizeModifier",
+      "discard_size_op": "Add"
+    }
   },
   {
     "name": "Puisage",
@@ -989,6 +1017,7 @@
     "attack": 6,
     "heal": 0,
     "draw": 0,
+    "targets": "All",
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -997,11 +1026,15 @@
     "stars": "Five",
     "kind": "Spell",
     "desc": "Lancez un dé. Enlevez à tous les joueurs ( y compris vous ) , le carré du nombre indiqué par le dé.",
-    "type": "BasicCard",
-    "attack": 0,
+    "type": "TargetBothCard",
+    "attack": 2,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "PowA"
+    },
+    "targets": "All"
   },
   {
     "name": "Shuriken",
@@ -1021,8 +1054,8 @@
     "stars": "Three",
     "kind": "Weapon",
     "desc": "Enlevez 6 points à votre adversaire. Enlevez 3 points à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 9,
+    "type": "MultiHitCard",
+    "attacks": [6, 3],
     "heal": 0,
     "draw": 0
   },
@@ -1060,11 +1093,15 @@
     "stars": "Two",
     "kind": "Food",
     "desc": "Lancez un dé. Tous les joueurs y compris vous récupèrent 6 fois le nombre indiqué par le dé.",
-    "type": "BasicCard",
+    "type": "TargetBothCard",
     "attack": 0,
-    "heal": 0,
+    "heal": 6,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "heal_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Mul"
+    },
+    "targets": "All"
   },
   {
     "name": "Terrain glissant",
@@ -1143,12 +1180,12 @@
     "element": "Earth",
     "stars": "Five",
     "kind": "Spell",
-    "desc": "Enlevez 15 points à TOUS les joueurs .",
-    "type": "BasicCard",
+    "desc": "Enlevez 15 points à TOUS les joueurs.",
+    "type": "TargetBothCard",
     "attack": 15,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "targets": "All"
   },
   {
     "name": "Tremblottement",
@@ -1156,10 +1193,11 @@
     "stars": "Two",
     "kind": "Spell",
     "desc": "Enlevez 4 points à tous les joueurs vous y compris. Votre attaque augmente de 4 points pour le prochain tour.",
-    "type": "BasicCard",
+    "type": "TargetBothCard",
     "attack": 4,
     "heal": 0,
     "draw": 0,
+    "targets": "All",
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -1179,12 +1217,16 @@
     "element": "Water",
     "stars": "Five",
     "kind": "Spell",
-    "desc": "Lancez un dé. Enlevez à tous vos adversaires le carré du nombre indiqué par le dé ( nombre multiplié par lui-même ) .",
+    "desc": "Lancez un dé. Enlevez à tous vos adversaires le carré du nombre indiqué par le dé.",
     "type": "BasicCard",
-    "attack": 0,
+    "attack": 2,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "PowA"
+    },
+    "targets": "All"
   },
   {
     "name": "Vent contraire",
@@ -1234,10 +1276,11 @@
     "stars": "Two",
     "kind": "Spell",
     "desc": "Tous les joueurs piochent 2 cartes. Vous d'abord puis les autres dans le sens des aiguilles d'une montre.",
-    "type": "BasicCard",
+    "type": "TargetBothCard",
     "attack": 0,
     "heal": 0,
-    "draw": 0,
+    "draw": 2,
+    "targets": "All",
     "note": "Complex effect: no simple modifier"
   },
   {

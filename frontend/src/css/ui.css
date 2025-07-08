@@ -139,6 +139,23 @@ input[type='text'] {
 }
 
 
+/* Dice Anim */
+
+.dice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.dice-player-name {
+    font-size: x-large;
+    border-radius: 0.4em;
+    background-color: whitesmoke;
+    padding: 0.2em 0.4em;
+}
+
+
 /* MOBILE VIEW */
 @media (max-device-width: 720px) and (orientation: landscape) {
     body {

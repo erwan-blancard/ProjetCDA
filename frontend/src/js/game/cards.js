@@ -84,6 +84,10 @@ export class Card extends THREE.Mesh {
     info = null;
     flipped = false;
     swingTimeline = gsap.timeline();
+    /**
+     * Used by player class to prevent position updates if the card is being used in an event
+     * */
+    active = false;
 
     constructor(card_id) {
         const image = getCardTexturePathById(card_id);

@@ -8,7 +8,7 @@ import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
 import { CardKind } from './database';
 import { Dice } from '../ui/dice';
@@ -284,6 +284,12 @@ export function onPlayCardEvent(data) {
                 case ActionTypeDTO.DRAW:
                     target.action.cards.forEach(card_id => {
                         events.push(new DrawCardEvent(targetedPlayer, card_id));
+                    });
+                    break;
+                case ActionTypeDTO.DISCARD:
+                    // sort indexes in descending order
+                    target.action.cards.sort((a, b) => a < b).forEach(card_index => {
+                        events.push(new DiscardCardEvent(targetedPlayer, card_index));
                     });
                     break;
                 default:

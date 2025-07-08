@@ -21,6 +21,7 @@ use tokio::{self, spawn};
 mod auth;
 mod utils {
     pub mod limited_string;
+    pub mod clamp;
 }
 
 mod dto;
@@ -46,6 +47,8 @@ mod server {
     }
     pub mod game {
         pub mod card;
+        /// This module contains special cards that don't fit into the normal card system
+        pub mod special_cards;
         pub mod database;
         pub mod game;
         pub mod modifiers;
