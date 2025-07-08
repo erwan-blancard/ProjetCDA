@@ -18,6 +18,15 @@ html, body, canvas {
     outline: none;
 }
 
+input[type=checkbox] {
+    min-width: 1.2em;
+    min-height: 1.2em;
+}
+
+label:disabled {
+    color: gray;
+}
+
 /* disable mouse input for disabled buttons */
 button:disabled, input[type=submit]:disabled {
     pointer-events: none;
@@ -44,18 +53,22 @@ button:disabled, input[type=submit]:disabled {
     transform: skew(-6deg) rotate(1deg);
 }
 
+.styled > .styled {
+    transform: skew(6deg) rotate(0deg);
+}
+
 button.styled {
     transform: skew(10deg) rotate(-1.5deg);
     border: none;
     font-size: inherit;
     background-color: #f0c115;
-    min-width: 9em;
+    min-width: 5em;
     min-height: 2em;
     transition: 0.05s;
     margin: 1em;
 }
 
-button.styled > * {
+button.styled > *, button.styled::before, button.styled::after {
     transform: skew(-10deg) rotate(1.5deg);
 }
 
@@ -93,21 +106,17 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
-.styled:has(h1) { padding-left: 4em; padding-right: 4em; }
-.styled:has(h2) { padding-left: 2em; padding-right: 2em; }
-.styled:has(h3) { padding-left: 1em; padding-right: 1em; }
+.styled:has(h1) { padding-left: 4em; padding-right: 4em; margin-bottom: 1.5em; }
+.styled:has(h2) { padding-left: 2em; padding-right: 2em; margin-bottom: 1em; }
+.styled:has(h3) { padding-left: 1em; padding-right: 1em; margin-bottom: 0.5em; }
 
 .hlayout {
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: row;
     /* justify-content: space-evenly; */
 }
 
 .vlayout {
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: column;
     /* justify-content: space-evenly; */
@@ -115,10 +124,39 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 
 .hlayout.center, .vlayout.center {
     align-items: center;
+    justify-content: center;
 }
 
 .hlayout.space-evenly, .vlayout.space-evenly {
     justify-content: space-evenly;
+}
+
+.stretch {
+    width: 100%;
+    height: 100%;
+}
+
+
+.lock[type=checkbox] {
+    appearance: none;
+    -webkit-appearance: none; /* Safari */
+    font-size: xx-large;
+}
+
+.lock[type=checkbox]:checked::before {
+    content: "🔒";
+}
+
+.lock[type=checkbox]:not(:checked)::before {
+    content: "🔓";
+}
+
+.locked::after {
+    content: "🔒";
+}
+
+.unlocked::after {
+    content: "🔓";
 }
 
 
@@ -140,6 +178,37 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     animation-timing-function: linear;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
+}
+
+
+.sidepanel {
+    width: 0px;
+    height: 100vh;
+    top: 0px;
+    left: 0px;
+    overflow-x: hidden;
+    position: fixed;
+    z-index: 100;
+    transition: 0.3s;
+    background-color: whitesmoke;
+}
+
+.sidepanel .close-panel {
+    position: absolute;
+    top: 0;
+}
+
+.sidepanel a {
+  padding: 8px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #4b4b4b;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidepanel a:hover {
+  color: #000000;
 }
 
 
@@ -179,6 +248,11 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 @media all and ((max-width: 480px) or (max-height: 480px)) {
     body {
         font-size: medium;
+    }
+
+    input[type=checkbox] {
+        min-width: initial;
+        min-height: initial;
     }
 }
 

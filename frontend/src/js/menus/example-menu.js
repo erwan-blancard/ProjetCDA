@@ -13,3 +13,5 @@ document.getElementById("button-set-view1").onclick = () => {
 document.getElementById("button-set-view2").onclick = () => {
     viewMgr.setPrimaryView("view2");
 };
+
+viewMgr.setPrimaryView("view1");

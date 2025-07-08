@@ -19,10 +19,5 @@ async fn reset_password() -> actix_web::Result<impl Responder> {
 
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_game_session)
-        .service(get_game_session_info)
-        .service(get_current_game_session_info)
-        .service(list_game_sessions)
-        .service(kill_session)
-        ;
+    // À compléter selon les besoins réels de settings
 }

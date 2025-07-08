@@ -1,4 +1,18 @@
 import gsap from "gsap";
+import { login_guard, ws_url } from "./utils";
+
+import * as THREE from 'three';
+import * as GAME from './game/game';
+import { get_current_game_info } from "./api/account";
+import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from "./server/dto";
+import { GameSessionInfoDTO } from "./api/dto";
+import { CARD_DATABASE } from "./game/database";
+import { randInt } from "three/src/math/MathUtils";
+import { displayMessage } from "./ui/popup";
+
+
+// expose for debug
+window.GAME = GAME;
 
 if (typeof screen === "undefined") {
   globalThis.screen = { orientation: { lock: () => {} } };
@@ -9,73 +23,67 @@ if (typeof screen === "undefined") {
 screen.orientation.lock("landscape");
 
 
-function getCookie(name) {
-    const match = document.cookie
-                  .match(new RegExp("(^| )" + name + "=([^;]+)"));
-    if (match) return match[2];
-    return null;
-}
+const account = await login_guard();
 
-// if (!getCookie("token")) {
-//     alert("Not logged in!");
-//     window.location.href = "/login.html";
-// }
+const game_info = await get_current_game_info();
 
-import * as THREE from 'three';
-import * as GAME from './game';
+// const game_info = new GameSessionInfoDTO({"game_id": 0, "players": [
+//     {"id": 0, "name": "Player 1"},
+//     {"id": 1, "name": "Player 2"},
+//     {"id": 2, "name": "Player 3"}
+// ]});
 
-const server_host = "localhost:8081";
-const wsUri = `ws://${server_host}/ws`;
+// const session_info = new SessionInfoResponse({"id": 0, "players": [
+//     {"id": 0, "name": "Player 1"},
+//     {"id": 1, "name": "Player 2"},
+//     {"id": 2, "name": "Player 3"}
+// ]});
 
-let token = getCookie("token");
-if (token == null) {
-    token = "";
-}
+if (game_info != null) {
+    const wsUrl = ws_url(game_info.game_id);
 
-GAME.initGame();
+    try {
+        GAME.initGame();
+    } catch (e) {
+        displayMessage(`Error when initializing Game: ${e.message}`);
+    }
 
-// chat
+    // chat
 
-const $log = document.querySelector('#log')
-const $form = document.querySelector('#chatform')
-const $input = document.querySelector('#text')
+    const $log = document.querySelector('#log')
+    const $form = document.querySelector('#chatform')
+    const $input = document.querySelector('#text')
 
-const $conn = document.querySelector('#connection-status')
-const $auth = document.querySelector('#auth-status')
+    const $conn = document.querySelector('#connection-status')
 
-function log(msg, type = 'status') {
-    $log.innerHTML += `<p class="msg msg--${type}">${msg}</p>`
-    $log.scrollTop += 1000
-}
+    function log(msg, type = 'status') {
+        $log.innerHTML += `<p class="msg msg--${type}">${msg}</p>`
+        $log.scrollTop += 1000
+    }
 
-GAME.serverConnexion.addEventListener("chatmessage", ev => {
-    log(ev.detail.msg);
-})
+    GAME.serverConnexion.addEventListener("chatmessage", ev => {
+        log(ev.detail.message);
+    })
 
-GAME.serverConnexion.addEventListener("connectionchange", ev => {
-    $conn.textContent = (ev.detail.status ? "Connected" : "Not connected");
-})
+    GAME.serverConnexion.addEventListener("connectionchange", ev => {
+        $conn.textContent = (ev.detail.status ? "Connected" : "Not connected");
+    })
 
-GAME.serverConnexion.addEventListener("authchange", ev => {
-    $auth.textContent = (ev.detail.status ? "Ok" : "Fail");
-})
+    $form.addEventListener('submit', ev => {
+        ev.preventDefault()
 
-$form.addEventListener('submit', ev => {
-    ev.preventDefault()
+        const text = $input.value
 
-    const text = $input.value
+        GAME.serverConnexion.send_chat_message(text);
 
-    GAME.serverConnexion.send_chat_message(text);
+        log(text);
 
-    log(text);
+        $input.value = ''
+        $input.focus()
+    })
 
-    $input.value = ''
-    $input.focus()
-})
-
-GAME.connectToServer(wsUri, token);
-
-// Exemple de fonction à tester
-export function addition(a, b) {
-    return a + b;
+    GAME.connectToServer(wsUrl);
+    // GAME.onSessionInfoReceived(session_info);
+} else {
+    window.location.href = "/index.html";
 }

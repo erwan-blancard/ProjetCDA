@@ -12,6 +12,9 @@
 
     <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/menu.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/lobby.css'>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         /* remove scrolling */
         html, body {
@@ -20,23 +23,69 @@
     </style>
 </head>
 <body>
-  <script type="module" src="/js/menus/mainmenu.js"></script>
+  <script type="module" src="/js/menus/main-menu.js"></script>
+  <script>
+    function showSidepanel() {
+      document.getElementById('friends-panel').style.width = '30%';
+    }
+    function hideSidepanel() {
+      document.getElementById('friends-panel').style.width = '0px';
+    }
+  </script>
   <div class="root">
-    <div id="view1" class="view">
+    <a href="javascript:void(0)" onclick="showSidepanel()">☰</a>
+
+    <div id="main" class="view">
+      <div class="vlayout stretch center">
+        <div class="styled"><h1>Main</h1></div>
+
+        <div class="hlayout center">
+          <button class="styled" id="to-create-lobby"><span>
+            <h2>Create Lobby</h2>
+          </span></button>
+          <button class="styled" id="to-join-lobby"><span>
+            <h2>Join Lobby</h2>
+          </span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-lobby" class="view">
       <section>
-        <div class="styled"><h1>View 1</h1></div>
-        <button class="styled"><span>span</span></button>
-        <button class="styled"><p style="margin: 0px;">p margin 0px</p></button>
-        <button class="styled"><p>p</p></button>
-        <button class="styled">plain</button>
-        <button class="styled" id="button-set-view2"><span>View 2</span></button>
+        <div class="styled"><h1>Create Lobby</h1></div>
+        <section class="styled vlayout" style="padding: 1.5em;">
+          <div>
+            <label for="lobby-password-input">Password:</label>
+            <input id="lobby-password-input" type="password" maxlength="9"/>
+            <input id="lobby-private-check" class="lock" type="checkbox"/>
+          </div>
+          <button class="styled" id="create-lobby-validate-button"><span>Create</span></button>
+        </section>
+        <button class="styled" id="create-lobby-back-button"><span>Back</span></button>
       </section>
     </div>
-    <div id="view2" class="view">
-      <section>
-        <div class="styled"><h1>View 2</h1></div>
-        <button class="styled" id="button-set-view1"><span>View 1</span></button>
+
+    <div id="select-lobby" class="view">
+      <section class="vlayout">
+        <div class="styled"><h2>Select Lobby</h2></div>
+        <lobby-list id="lobby-list" style="height: 40vh; margin-bottom: 24px;"></lobby-list>
+        <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
       </section>
+    </div>
+
+    <div id="current-lobby" class="view">
+      <section>
+        <div class="styled"><h1>Lobby</h1></div>
+
+        <lobby-view id="lobby"></lobby-view>
+      </section>
+    </div>
+
+    <!-- panels -->
+
+    <div id="friends-panel" class="sidepanel">
+      <a href="javascript:void(0)" class="close-panel" onclick="hideSidepanel()">×</a>
+      
     </div>
   </div>
 </body>

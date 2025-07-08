@@ -22,8 +22,6 @@ pub struct Account {
 pub struct FilteredAccount {
     pub id: i32,
     pub username: String,
-    pub email: String,
-    pub premium: bool,
     pub suspended: bool,
 }
 
