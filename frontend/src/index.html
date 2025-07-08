@@ -24,17 +24,7 @@
 </head>
 <body>
   <script type="module" src="/js/menus/main-menu.js"></script>
-  <script>
-    function showSidepanel() {
-      document.getElementById('friends-panel').style.width = '30%';
-    }
-    function hideSidepanel() {
-      document.getElementById('friends-panel').style.width = '0px';
-    }
-  </script>
   <div class="root">
-    <a href="javascript:void(0)" onclick="showSidepanel()">☰</a>
-
     <div id="main" class="view">
       <div class="vlayout stretch center">
         <div class="styled"><h1>Main</h1></div>
@@ -80,13 +70,7 @@
         <lobby-view id="lobby"></lobby-view>
       </section>
     </div>
-
-    <!-- panels -->
-
-    <div id="friends-panel" class="sidepanel">
-      <a href="javascript:void(0)" class="close-panel" onclick="hideSidepanel()">×</a>
       
-    </div>
   </div>
 </body>
 </html>
