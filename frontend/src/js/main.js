@@ -6,7 +6,7 @@ import * as GAME from './game/game';
 import { get_current_game_info } from "./api/account";
 import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from "./server/dto";
 import { GameSessionInfoDTO } from "./api/dto";
-import { CARD_DATABASE } from "./game/database";
+import { CARD_COLLECTION } from "./game/collection";
 import { randInt } from "three/src/math/MathUtils";
 import { displayMessage } from "./ui/popup";
 

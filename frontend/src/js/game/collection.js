@@ -60,7 +60,7 @@ await fetch('/assets/cards.json')
     })
     .catch(error => console.error('Error loading card database:', error));
 
-export let CARD_DATABASE = cards;
+export let CARD_COLLECTION = cards;
 
 // test
-window.CARD_DATABASE = CARD_DATABASE;
+window.CARD_COLLECTION = CARD_COLLECTION;

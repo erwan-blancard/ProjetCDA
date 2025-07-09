@@ -10,7 +10,7 @@ import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCar
 import { EventMgr } from './events/event_mgr';
 import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
-import { CardKind } from './database';
+import { CardKind } from './collection';
 import { Dice } from '../ui/dice';
 
 /** @type {THREE.Scene | null} */

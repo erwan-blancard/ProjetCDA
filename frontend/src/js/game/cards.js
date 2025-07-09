@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import gsap, { Power1, Power2 } from 'gsap';
 import { clamp, randInt } from 'three/src/math/MathUtils.js';
-import { CARD_DATABASE, CardInfo } from './database';
+import { CARD_COLLECTION, CardInfo } from './collection';
 
 
 const textureLoader = new THREE.TextureLoader();
@@ -96,7 +96,7 @@ export class Card extends THREE.Mesh {
 
         super(cardGeo, newCardMat(tex));
         this.card_id = card_id;
-        this.info = CARD_DATABASE.get(this.card_id);
+        this.info = CARD_COLLECTION.get(this.card_id);
         this.rotateX(THREE.MathUtils.degToRad(-90));
     }
 
