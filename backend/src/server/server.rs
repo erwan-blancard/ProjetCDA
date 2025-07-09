@@ -13,7 +13,7 @@ use serde_json::to_string;
 use tokio::sync::{mpsc, oneshot};
 use uid::IdU64;
 
-use crate::{database::models::Account, server::{dto::responses::ServerResponse, game::{card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}};
+use crate::{database::models::Account, routes::game::{Lobbies, Lobby, LobbyId}, server::{dto::responses::ServerResponse, game::{card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
 
 use super::{dto::responses::{GameStateForPlayer, PlayerProfile}, game::{game::Game, player::{Player, PlayerId}}};
 use super::dto::actions::UserAction;
@@ -88,10 +88,19 @@ pub struct GameServer {
 
     /// Command receiver.
     cmd_rx: mpsc::UnboundedReceiver<Command>,
+
+    /// GameId for this server
+    game_id: GameId,
+
+    /// Shared lobbies handle
+    lobbies: Lobbies,
+
+    /// sent when run is called
+    ready_tx: Option<oneshot::Sender<()>>,
 }
 
 impl GameServer {
-    pub fn new(players: Vec<PlayerProfile>) -> (Self, GameServerHandle) {
+    pub fn new(players: Vec<PlayerProfile>, game_id: GameId, lobbies: Lobbies, ready_tx: oneshot::Sender<()>,) -> (Self, GameServerHandle) {
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
 
@@ -102,6 +111,9 @@ impl GameServer {
                 accounts: players,
                 users: HashMap::new(),
                 cmd_rx,
+                game_id,
+                lobbies,
+                ready_tx: Some(ready_tx),
             },
             GameServerHandle { cmd_tx },
         )
@@ -146,6 +158,20 @@ impl GameServer {
         match self.game.state {
             GameState::EndGame { winner_id } => {
                 self.notify_game_end(winner_id).await;
+
+                self.sessions.clear();
+
+                // close handler channel
+                self.cmd_rx.close();
+                
+                // Reset ready status in the associated lobby
+                {
+                    let mut lobbies = self.lobbies.lock().unwrap();
+                    let maybe_lobby = lobbies.iter_mut().find(|(_, lobby)| lobby.game_id == Some(self.game_id));
+                    if let Some((_lobby_id, lobby)) = maybe_lobby {
+                        lobby.users_ready.clear();
+                    }
+                }
                 return;
             }
             _ => {}
@@ -227,6 +253,10 @@ impl GameServer {
     }
 
     pub async fn run(mut self) -> io::Result<()> {
+        if let Some(ready_tx) = self.ready_tx.take() {
+            let _ = ready_tx.send(());
+        }
+
         while let Some(cmd) = self.cmd_rx.recv().await {
             match cmd {
                 Command::Connect { player_id, conn_tx, res_tx } => {
@@ -243,8 +273,11 @@ impl GameServer {
                             self.send_game_state(player_id).await;
                         }
                         // finished
+                        // should not happen as we exit the recv loop
                         GameState::EndGame { winner_id: _ } => {
                             self.disconnect(conn_id).await;
+                            // exit loop
+                            break;
                         }
                     }
                 }
@@ -259,13 +292,15 @@ impl GameServer {
                 }
 
                 Command::PlayCard { player_id, card_index, targets, res_tx } => {
-                    match self.game.state {
-                        GameState::EndGame { .. } => {
-                            let _ = res_tx.send(Err("Game is over".to_string()));
-                            return Ok(());
-                        }
-                        _ => {}
-                    }
+                    // match self.game.state {
+                    //     // should not happen as we exit the recv loop
+                    //     GameState::EndGame { .. } => {
+                    //         let _ = res_tx.send(Err("Game is over".to_string()));
+                    //         // exit loop
+                    //         break;
+                    //     }
+                    //     _ => {}
+                    // }
 
                     // get card id before it is removed from hand
                     let card_id = self.game.players
@@ -300,13 +335,15 @@ impl GameServer {
                 }
 
                 Command::DrawCard { player_id, res_tx } => {
-                    match self.game.state {
-                        GameState::EndGame { .. } => {
-                            let _ = res_tx.send(Err("Game is over".to_string()));
-                            return Ok(());
-                        }
-                        _ => {}
-                    }
+                    // match self.game.state {
+                    //     // should not happen as we exit the recv loop
+                    //     GameState::EndGame { .. } => {
+                    //         let _ = res_tx.send(Err("Game is over".to_string()));
+                    //         // exit loop
+                    //         break;
+                    //     }
+                    //     _ => {}
+                    // }
                     
                     let result = self.game.draw_card(player_id);
                     let ok = result.is_ok();
@@ -342,20 +379,30 @@ impl GameServer {
                 }
 
                 Command::Kill { res_tx } => {
+                    log::info!("Received kill command");
                     self.sessions.clear();
                     let _ = res_tx.send(());
+                    self.cmd_rx.close();
+                    // exit loop
+                    break;
                 }
             }
+
+            match self.game.state {
+                GameState::EndGame { .. } => { break; } // exit loop to stop the server
+                _ => {}
+            }
+
         }
 
+        log::info!("GameServer worker stopped (game ended)");
+        
         Ok(())
     }
 }
 
 
 /// Handle and command sender for game server.
-///
-/// Reduces boilerplate of setting up response channels in WebSocket handlers.
 #[derive(Debug, Clone)]
 pub struct GameServerHandle {
     cmd_tx: mpsc::UnboundedSender<Command>,

@@ -83,10 +83,12 @@ async fn purge_server_handlers_periodic(server_handlers: GameHandlers, period: D
     loop {
         interval.tick().await;
 
-        let mut handlers = server_handlers.lock().unwrap();
+        {
+            let mut handlers = server_handlers.lock().unwrap();
 
-        // keep handlers that are not finished
-        handlers.retain(|&_, (child, _)| !child.is_finished());
+            // keep handlers that are not finished
+            handlers.retain(|&_, (child, _)| !child.is_finished());
+        }
     }
 }
 
@@ -109,6 +111,10 @@ async fn connect_to_ws(
 
     match game_handlers.get(&game_id) {
         Some((_, handle)) => {
+
+            if handle.is_closed() {
+                return Err(ErrorNotFound("Game is over"));
+            }
             
             let (res, session, msg_stream) = actix_ws::handle(&req, stream)?;
             

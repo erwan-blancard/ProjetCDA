@@ -1,12 +1,15 @@
 FROM node:latest
 
-WORKDIR /app
+WORKDIR /app/frontend
 
 COPY package*.json ./
 RUN npm i
 RUN npm install vite
 
 COPY . .
+
+# grab assets folder from build context "assets"
+COPY --from=assets ./assets/cards.json ../assets/cards.json
 
 EXPOSE 5173
 

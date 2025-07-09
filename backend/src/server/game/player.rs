@@ -1,6 +1,6 @@
 use super::{card::{Card, EffectId, Element}, game::Game, play_info::{ActionTarget, ActionType}};
 
-const PLAYER_MAX_HEALTH: i32 = 100;
+const PLAYER_MAX_HEALTH: i32 = 10;
 
 // use uid::Id as IdT;
 

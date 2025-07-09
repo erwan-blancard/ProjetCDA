@@ -27,7 +27,7 @@ export async function create_lobby(password, warn=true) {
         console.log(`Could not create lobby: ${error.message}`);
 
         if (warn)
-            displayPopup("Error", `Could not create lobby: ${error.message}`);
+            displayPopup(`Could not create lobby: ${error.message}`, "Error");
 
         return null;
     }

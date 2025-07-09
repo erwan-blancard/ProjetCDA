@@ -40,7 +40,11 @@ services:
       - db
   
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      additional_contexts:
+        # this context is used to point to the parent assets folder
+        assets: .
     container_name: randomi-frontend
     ports:
       - "5173:5173"
