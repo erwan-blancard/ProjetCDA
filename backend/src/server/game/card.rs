@@ -229,7 +229,10 @@ pub trait Card: Sync + Send + Debug + CardClone {
         println!("Validate targets: target type is {:?}", self.get_target_type());
 
         let expected =  {
-            if self.get_heal() > 0 && self.get_attack() == 0 { 0 }   // no targets if only heal
+            // no targets if only heal and/or draw
+            if (self.get_attack() == 0 && self.get_attack_modifier().is_none())
+                && ((self.get_heal() > 0 || self.get_heal_modifier().is_some())
+                || (self.get_draw() > 0 || self.get_draw_modifier().is_some())) { 0 }
             else {
                 clamp(1, MAX_PLAYERS - 1,
                     match self.get_target_type() {
@@ -634,7 +637,9 @@ impl MultiActionCard {
         println!("Validate targets: target type is {:?}", self.get_target_type_for_action(action_idx));
 
         let expected =  {
-            if self.get_heal_for_action(action_idx) > 0 && self.get_attack_for_action(action_idx) == 0 { 0 }   // no targets if only heal
+            if (self.get_attack_for_action(action_idx) == 0 && self.get_attack_modifier_for_action(action_idx).is_none())
+                && ((self.get_heal_for_action(action_idx) > 0 || self.get_heal_modifier_for_action(action_idx).is_some())
+                || (self.get_draw_for_action(action_idx) > 0 || self.get_draw_modifier_for_action(action_idx).is_some())) { 0 }   // no targets if only heal and/or draw
             else {
                 clamp(1, MAX_PLAYERS - 1,
                     match self.get_target_type_for_action(action_idx) {

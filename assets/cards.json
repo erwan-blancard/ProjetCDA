@@ -706,6 +706,7 @@
     "attack": 13,
     "heal": 0,
     "draw": 0,
+    "targets": "All",
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -902,7 +903,7 @@
     "name": "Pomme de terre",
     "element": "Earth",
     "stars": "Two",
-    "kind": "Spell",
+    "kind": "Food",
     "desc": "Récupérez le double du nombre de cartes présentes dans votre pile de défausse.",
     "type": "BasicCard",
     "attack": 0,
