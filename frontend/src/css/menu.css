@@ -5,9 +5,10 @@ body {
     background-image: url("/box-art.jpg");
 }
 
-body > * {
+.root {
     width: 100vw;
     height: 100vh;
+    backdrop-filter: blur(4px);
 }
 
 .view {
@@ -22,12 +23,6 @@ body > * {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-}
-
-.root {
-    width: 100vw;
-    height: 100vh;
-    backdrop-filter: blur(4px);
 }
 
 
