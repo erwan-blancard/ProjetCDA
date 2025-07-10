@@ -29,6 +29,7 @@ mod routes {
     pub mod account;
     pub mod auth;
     pub mod game;
+    pub mod settings;
     pub mod sse;
 }
 
@@ -57,12 +58,15 @@ mod server {
     }
 }
 
+mod email;
+
 // type ApiUrl = Url;
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 use tokio::task::{spawn_local, JoinHandle};
 use uuid::Uuid;
 
+use crate::email::Mailer;
 use crate::routes::game::{Lobbies, Lobby, LobbyId};
 use crate::routes::sse::Broadcaster;
 
@@ -159,6 +163,8 @@ async fn main() -> std::io::Result<()> {
 
     let broadcaster = Broadcaster::create();
 
+    let mailer = Mailer::create();
+
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin(website_url.as_str())
@@ -174,6 +180,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(server_handlers.clone()))
             // .app_data(web::Data::new(api_url.clone()))
             .app_data(web::Data::from(Arc::clone(&broadcaster)))
+            .app_data(web::Data::new(mailer.clone()))
             .wrap(cors)
             .wrap(auth::JwtMiddleware)
             .wrap(NormalizePath::trim())    // normalizes paths (no trailing "/")
@@ -184,6 +191,8 @@ async fn main() -> std::io::Result<()> {
             .configure(routes::account::configure_routes)
             // game
             .configure(routes::game::configure_routes)
+            // settings
+            .configure(routes::settings::configure_routes)
             // sse
             .configure(routes::sse::configure_routes)
 

@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::dsl::insert_into;
 use diesel::PgConnection;
 use diesel::prelude::*;
@@ -91,6 +92,12 @@ pub fn get_accounts_by_id(conn: &mut PgConnection, account_ids: &Vec<i32>) -> di
 pub fn get_account_by_username(conn: &mut PgConnection, username: &String) -> diesel::QueryResult<FilteredAccount> {
     accounts::table.select(FilteredAccount::as_select())
         .filter(accounts::dsl::username.eq(username))
+        .first(conn)
+}
+
+pub fn get_full_account_by_email(conn: &mut PgConnection, email: &String) -> diesel::QueryResult<Account> {
+    accounts::table.select(Account::as_select())
+        .filter(accounts::dsl::email.eq(email))
         .first(conn)
 }
 
@@ -194,4 +201,68 @@ pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32
             .and(status.ne(1))
         )
         .load(conn)
+}
+
+
+#[derive(Insertable, Deserialize)]
+#[diesel(table_name = super::schema::password_reset_tokens)]
+pub struct NewPasswordResetToken {
+    pub account_id: i32,
+    pub token: String,
+    pub expires_at: NaiveDateTime,
+}
+
+/// Creates a new password reset token for an account and deletes the previous one if it exists and was not used
+pub fn create_password_reset_token(conn: &mut PgConnection, account_id: i32, token: &String, expires_at: &NaiveDateTime) -> diesel::QueryResult<PasswordResetToken> {
+    use super::schema::password_reset_tokens::dsl::id;
+
+    let new_password_reset_token = NewPasswordResetToken {
+        account_id,
+        token: token.to_string(),
+        expires_at: expires_at.clone(),
+    };
+
+    conn.transaction(|conn| {
+        // delete previous token if it exists and was not used
+        diesel::delete(password_reset_tokens::dsl::password_reset_tokens.filter(password_reset_tokens::dsl::account_id.eq(account_id)
+            .and(password_reset_tokens::dsl::used.eq(false))))
+            .execute(conn)?;
+        
+        insert_into(password_reset_tokens::dsl::password_reset_tokens)
+            .values(&new_password_reset_token)
+            .execute(conn)?;
+
+        // get newly inserted token
+        let token = password_reset_tokens::dsl::password_reset_tokens.select(PasswordResetToken::as_select())
+            .order_by(id.desc())
+            .first(conn)?;
+
+        Ok(token)
+    })
+}
+
+pub fn get_password_reset_token(conn: &mut PgConnection, reset_token: &String) -> diesel::QueryResult<PasswordResetToken> {
+    use super::schema::password_reset_tokens::dsl::{password_reset_tokens, token};
+
+    password_reset_tokens.select(PasswordResetToken::as_select())
+        .filter(token.eq(reset_token))
+        .first(conn)
+}
+
+pub fn reset_password(conn: &mut PgConnection, reset_token: PasswordResetToken, new_password: &String) -> diesel::QueryResult<()> {
+    use super::schema::accounts::dsl::{accounts, password};
+    use super::schema::password_reset_tokens::dsl::{password_reset_tokens, used};
+
+    conn.transaction(|conn| {
+        // mark token as used
+        diesel::update(password_reset_tokens.find(reset_token.id))
+            .set(used.eq(true))
+            .execute(conn)?;
+
+        diesel::update(accounts.find(reset_token.account_id))
+            .set(password.eq(new_password))
+            .execute(conn)?;
+
+        Ok(())
+    })
 }
