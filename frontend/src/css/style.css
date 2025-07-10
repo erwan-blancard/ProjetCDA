@@ -66,6 +66,7 @@ button.styled {
     min-height: 2em;
     transition: 0.05s;
     margin: 1em;
+    nav-index: -1;
 }
 
 button.styled > *, button.styled::before, button.styled::after {

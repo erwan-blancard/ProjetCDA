@@ -1,3 +1,20 @@
+/** prevent tabbing to elements outside of the popup by adding inert attribute */
+function setInertExceptPopup(popupFrame) {
+    Array.from(document.body.children).forEach(child => {
+        if (child !== popupFrame) {
+            child.setAttribute('inert', '');
+            child.setAttribute('aria-hidden', 'true');
+        }
+    });
+}
+
+function removeInert() {
+    Array.from(document.body.children).forEach(child => {
+        child.removeAttribute('inert');
+        child.removeAttribute('aria-hidden');
+    });
+}
+
 
 export function displayPopup(message, title, buttonText="Ok", onclose=null) {
     const frame = document.createElement("div");
@@ -20,6 +37,7 @@ export function displayPopup(message, title, buttonText="Ok", onclose=null) {
 
     button.onclick = () => {
         frame.remove();
+        removeInert();
 
         if (onclose != null) {
             onclose();
@@ -33,6 +51,8 @@ export function displayPopup(message, title, buttonText="Ok", onclose=null) {
     frame.appendChild(container);
 
     document.body.appendChild(frame);
+
+    setInertExceptPopup(frame);
 
     return frame;
 }
@@ -62,6 +82,7 @@ export function displayYesNo(message, title, onYesClose=null, onNoClose=null) {
 
     acceptButton.onclick = () => {
         frame.remove();
+        removeInert();
 
         if (onYesClose != null) {
             onYesClose();
@@ -76,6 +97,7 @@ export function displayYesNo(message, title, onYesClose=null, onNoClose=null) {
 
     cancelButton.onclick = () => {
         frame.remove();
+        removeInert();
 
         if (onNoClose != null) {
             onNoClose();
@@ -91,6 +113,8 @@ export function displayYesNo(message, title, onYesClose=null, onNoClose=null) {
     frame.appendChild(container);
 
     document.body.appendChild(frame);
+
+    setInertExceptPopup(frame);
 
     return frame;
 }
@@ -148,6 +172,7 @@ export function displayInput(label, title, buttonText="Ok", isPassword=false, on
 
     button.onclick = async () => {
         frame.remove();
+        removeInert();
 
         if (onclose != null) {
             await onclose(inputElement);
@@ -161,6 +186,8 @@ export function displayInput(label, title, buttonText="Ok", isPassword=false, on
     frame.appendChild(container);
 
     document.body.appendChild(frame);
+
+    setInertExceptPopup(frame);
 
     return frame;
 }

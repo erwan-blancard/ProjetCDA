@@ -39,6 +39,16 @@ lobbyList.lobbyJoinedCallback = (lobby) => {
 };
 
 
+lobbyList.busyCallback = (busy) => {
+    document.getElementById("select-lobby-back-button").disabled = busy;
+};
+
+
+document.getElementById("select-lobby-back-button").onclick = () => {
+    viewMgr.setPrimaryView(mainview);
+};
+
+
 try {
     // check if lobby
     const lobbyDTO = await get_current_lobby();
@@ -54,6 +64,7 @@ try {
 
 
 document.getElementById("to-create-lobby").onclick = () => {
+    lobbyPasswordInput.value = "";   // clear password
     viewMgr.setPrimaryView(createlobbyview);
 };
 document.getElementById("to-join-lobby").onclick = () => {
@@ -66,6 +77,8 @@ document.getElementById("to-join-lobby").onclick = () => {
 
 const lobbyPasswordCheck = document.getElementById("lobby-private-check");
 const lobbyPasswordInput = document.getElementById("lobby-password-input");
+const createLobbyValidateButton = document.getElementById("create-lobby-validate-button");
+const createLobbyBackButton = document.getElementById("create-lobby-back-button");
 lobbyPasswordCheck.checked = false;
 lobbyPasswordInput.disabled = true;
 
@@ -74,22 +87,32 @@ lobbyPasswordCheck.onclick = () => {
 };
 
 
-document.getElementById("create-lobby-validate-button").onclick = async () => {
+createLobbyValidateButton.onclick = async () => {
     const use_password = lobbyPasswordCheck.checked;
     const password = lobbyPasswordInput.value;
+
+    createLobbyValidateButton.disabled = true;
+    createLobbyBackButton.disabled = true;
+
+    // disable interactions with password inputs
+    lobbyPasswordInput.disabled = true;
+    lobbyPasswordCheck.disabled = true;
+
     const lobby = await create_lobby(use_password ? password : null, true);
 
     if (lobby) {
         lobbyViewElement.update(lobby);
         viewMgr.setPrimaryView(currentlobbyview);
     }
-};
-document.getElementById("create-lobby-back-button").onclick = () => {
-    viewMgr.setPrimaryView(mainview);
-};
 
+    createLobbyValidateButton.disabled = false;
+    createLobbyBackButton.disabled = false;
 
-document.getElementById("select-lobby-back-button").onclick = () => {
+    // re-enable interactions with password inputs
+    lobbyPasswordInput.disabled = !lobbyPasswordCheck.checked;
+    lobbyPasswordCheck.disabled = false;
+};
+createLobbyBackButton.onclick = () => {
     viewMgr.setPrimaryView(mainview);
 };
 
@@ -97,6 +120,7 @@ document.getElementById("select-lobby-back-button").onclick = () => {
 lobbyViewElement.readyButton.onclick = async () => {
     if (lobbyViewElement.lobbyDTO != null) {
         const was_ready = lobbyViewElement.lobbyDTO.is_user_ready(account.id);
+        lobbyViewElement.leaveButton.disabled = true;
         lobbyViewElement.readyButton.disabled = true;
 
         if (await current_lobby_set_ready_state(!was_ready)) {
@@ -105,6 +129,7 @@ lobbyViewElement.readyButton.onclick = async () => {
             displayPopup("An error occured trying to change ready state !", "Error !");
         }
 
+        lobbyViewElement.leaveButton.disabled = false;
         lobbyViewElement.readyButton.disabled = false;
     }
 };
@@ -112,11 +137,13 @@ lobbyViewElement.readyButton.onclick = async () => {
 lobbyViewElement.leaveButton.onclick = () => {
     displayYesNo("Leave this lobby ?", "", async () => {
         lobbyViewElement.leaveButton.disabled = true;
+        lobbyViewElement.readyButton.disabled = true;
         if (await leave_current_lobby())
             viewMgr.setPrimaryView(mainview);
         else
             displayPopup("An error occured when leaving the lobby !", "Error !");
         lobbyViewElement.leaveButton.disabled = false;
+        lobbyViewElement.readyButton.disabled = false;
     });
 };
 
