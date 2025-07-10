@@ -38,7 +38,7 @@
     <div class="root">
       <div id="main" class="view">
         <div class="vlayout stretch center">
-          <div class="styled"><h1>Main</h1></div>
+          <div class="styled"><h1>Menu principal</h1></div>
 
           <div class="hlayout center">
             <button class="styled" id="to-create-lobby">
@@ -53,24 +53,20 @@
             </button>
           </div>
           <div
-            id="notif-container"
-            style="position: fixed; top: 20px; right: 20px"
+            id="settings-container"
+            style="position: fixed; top: 20px; right: 20px; z-index: 30;"
           >
             <button
-              id="show-notifications"
+              id="show-settings-menu"
               class="styled"
-              style="
-                background-color: white;
-                margin-top: 40px;
-                color: black;
-                font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif';
-                font-size: 24px;
-                border: none;
-                cursor: pointer;
-              "
+              style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
             >
-              🔔
+              ☰
             </button>
+            <div id="settings-menu" style="display: none; position: absolute; top: 40px; right: 0; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 120px; z-index: 31;">
+              <button id="settings-btn" class="styled" style="width: 100%; border-bottom: 1px solid #eee; background: none; color: #222;">Paramètres</button>
+              <button id="logout-btn" class="styled" style="width: 100%; background: none; color: #d32f2f;">Déconnexion</button>
+            </div>
           </div>
           <div
             id="friend-container"
@@ -99,18 +95,22 @@
             <button
               id="show-collection"
               class="styled"
-              style="
-                background-color: white;
-                margin-top: 40px;
-                color: black;
-                font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif';
-                font-size: 24px;
-                border: none;
-                cursor: pointer;
-              "
+              style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
               onclick="window.location.href='collection.html'"
             >
               🃏
+            </button>
+          </div>
+          <div
+            id="logout-container"
+            style="position: fixed; top: 260px; right: 20px"
+          >
+            <button
+              id="logout-side"
+              class="styled"
+              style="background-color: white; margin-top: 40px; color: #d32f2f; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+            >
+              ⏻
             </button>
           </div>
         </div>

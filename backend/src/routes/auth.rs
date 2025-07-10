@@ -4,6 +4,12 @@ use crate::{auth, database::actions::{self, AccountLogin, NewAccount}, DbPool};
 use crate::presence::Presence;
 
 
+#[derive(serde::Serialize)]
+struct LoginResponse {
+    token: String,
+    username: String,
+}
+
 
 #[post("/register")]
 async fn register(pool: web::Data<DbPool>, json: web::Json<NewAccount>) -> actix_web::Result<impl Responder> {
@@ -49,6 +55,11 @@ async fn login(
 
     let token = auth::create_jwt(account.id);
 
+    let response = LoginResponse {
+        token: token.clone(),
+        username: account.username.clone(),
+    };
+
     // create a cookie containing the token and send it to the user
     let cookie = Cookie::build("token", token.clone())
         // FIXME cookie config is permissive
@@ -56,7 +67,7 @@ async fn login(
         .same_site(SameSite::None)
         .finish();
 
-    Ok(HttpResponse::Ok().cookie(cookie).json(token))
+    Ok(HttpResponse::Ok().cookie(cookie).json(response))
 }
 
 

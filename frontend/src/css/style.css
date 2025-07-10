@@ -261,3 +261,21 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 @media all and (max-width: 820px) {
 
 }
+
+@media all and (max-width: 600px) {
+  #friend-container, #collection-container, #logout-container {
+    position: static !important;
+    display: block;
+    margin: 1em auto 0 auto !important;
+    top: unset !important;
+    right: unset !important;
+    left: unset !important;
+    width: 90vw;
+    text-align: center;
+  }
+  #friend-container button, #collection-container button, #logout-container button {
+    width: 100%;
+    margin-top: 0.5em;
+    font-size: 1.5em;
+  }
+}

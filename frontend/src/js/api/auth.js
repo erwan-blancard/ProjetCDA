@@ -26,6 +26,12 @@ export async function login_submit() {
         if (!response.ok)
             throw new Error(`Status: ${response.status}, message: ${await response.text()}`);
 
+        // Récupère le pseudo et le stocke
+        const data = await response.json();
+        if (data.username) {
+            localStorage.setItem('username', data.username);
+        }
+
         // go to index.html
         // cookie with token should have been updated
         window.location.href = "/index.html";

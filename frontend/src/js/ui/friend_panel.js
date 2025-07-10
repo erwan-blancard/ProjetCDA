@@ -10,7 +10,7 @@ const addFriendButton = document.getElementById('add-friend-button');
 const addFriendFeedback = document.getElementById('add-friend-feedback');
 const closeFriendButton = document.getElementById('close-friend-button');
 const friendPanelBackdrop = document.getElementById('friend-panel-backdrop');
-import { get_friends, send_friend_request, get_friend_requests, respond_friend_request, delete_friend } from '../api/account.js';
+import { get_my_account, get_friends, send_friend_request, get_friend_requests, respond_friend_request, delete_friend } from '../api/account.js';
 
 let friends = [
   { username: "Bob", online: false },
@@ -26,6 +26,47 @@ const friendRequestsDiv = document.createElement('div');
 friendRequestsDiv.id = 'friend-requests-list';
 friendRequestsDiv.style.marginBottom = '15px';
 
+function updateFriendButtonColor(requests) {
+  if (!btnShowFriendList) return;
+  // Par défaut
+  btnShowFriendList.style.backgroundColor = 'white';
+  btnShowFriendList.style.color = 'black';
+  // Nouvelle demande non vue
+  if (requests && requests.some(r => r.status === 0 && !r.viewed)) {
+    btnShowFriendList.style.backgroundColor = '#90ee90'; // vert clair
+    btnShowFriendList.style.color = '#1a4d1a';
+  } else if (requests && requests.some(r => r.status === 0)) {
+    // Demandes vues mais non traitées
+    btnShowFriendList.style.backgroundColor = '#d6ff70'; // jaune-vert
+    btnShowFriendList.style.color = '#5a5a00';
+  }
+}
+
+async function displayPseudo(targetId = 'friend-panel-username', container = null) {
+  let pseudo = '';
+  try {
+    const account = await get_my_account();
+    if (account && account.username) {
+      pseudo = account.username;
+    }
+  } catch (e) {}
+  let pseudoDiv = document.getElementById(targetId);
+  if (!pseudoDiv && container) {
+    pseudoDiv = document.createElement('div');
+    pseudoDiv.id = targetId;
+    pseudoDiv.style.fontWeight = 'bold';
+    pseudoDiv.style.marginBottom = '10px';
+    container.insertBefore(pseudoDiv, container.firstChild);
+  }
+  if (pseudoDiv) {
+    if (targetId === 'welcome-username' || targetId === 'main-username') {
+      pseudoDiv.textContent = pseudo;
+    } else {
+      pseudoDiv.textContent = 'Compte : ' + pseudo;
+    }
+  }
+}
+
 async function renderFriendList() {
   // Récupère la vraie liste d'amis depuis l'API
   let apiFriends = [];
@@ -35,7 +76,8 @@ async function renderFriendList() {
       apiFriends = res.map(f => ({
         username: f.username || 'Inconnu',
         online: !!f.online,
-        in_lobby: !!f.in_lobby
+        in_lobby: !!f.in_lobby,
+        lobby_id: f.lobby_id // <-- important !
       }));
     }
   } catch (e) {
@@ -62,19 +104,44 @@ async function renderFriendList() {
     // Couleur selon l'état
     if (friend.in_lobby) {
       info.textContent += 'Dans un lobby';
-      if (friend.lobby_id) {
-        info.textContent += ` (${friend.lobby_id})`;
-      }
       info.style.color = '#90EE90';
       info.style.fontWeight = 'bold';
     } else if (friend.online) {
       info.textContent += 'En ligne';
-      info.style.color = '#4ee44e'; 
+      info.style.color = '#4ee44e';
       info.style.fontWeight = 'bold';
     } else {
       info.textContent += 'Hors ligne';
       info.style.color = 'gray';
       info.style.fontWeight = 'normal';
+    }
+
+    // Ajout du bouton rejoindre si dans un lobby
+    let joinBtn = null;
+    if (friend.in_lobby && friend.lobby_id) {
+      joinBtn = document.createElement('button');
+      joinBtn.title = 'Rejoindre le lobby';
+      joinBtn.textContent = '>';
+      joinBtn.style.background = '#1de9b6'; // turquoise
+      joinBtn.style.color = 'white';
+      joinBtn.style.border = 'none';
+      joinBtn.style.padding = '4px 8px';
+      joinBtn.style.borderRadius = '5px';
+      joinBtn.style.cursor = 'pointer';
+      joinBtn.style.fontSize = '0.8em';
+      joinBtn.style.marginRight = '0.5em';
+      joinBtn.onclick = () => {
+        // Simule un clic sur le bouton "to-join-lobby" si présent
+        const joinLobbyBtn = document.getElementById('to-join-lobby');
+        if (joinLobbyBtn) {
+          joinLobbyBtn.click();
+        } else {
+          window.location.hash = '#lobby';
+        }
+        // Ferme le panel amis
+        friendPanel.style.display = 'none';
+        friendPanelBackdrop.style.display = 'none';
+      };
     }
 
     const removeButton = document.createElement('button');
@@ -92,8 +159,13 @@ async function renderFriendList() {
       renderFriendList();
     });
 
+    // Ajoute le bouton rejoindre à gauche du bouton supprimer
+    const btnGroup = document.createElement('span');
+    if (joinBtn) btnGroup.appendChild(joinBtn);
+    btnGroup.appendChild(removeButton);
+
     line.appendChild(info);
-    line.appendChild(removeButton);
+    line.appendChild(btnGroup);
     friendListDiv.appendChild(line);
   });
 }
@@ -107,6 +179,7 @@ async function renderFriendRequests() {
   } catch (e) {
     console.error('Erreur lors de la récupération des demandes d\'amis:', e);
   }
+  updateFriendButtonColor(requests);
   // Message de confirmation
   const confirmDiv = document.createElement('div');
   confirmDiv.id = 'friend-request-confirm';
@@ -115,13 +188,6 @@ async function renderFriendRequests() {
   friendRequestsDiv.appendChild(confirmDiv);
   if (requests.length === 0) {
     friendRequestsDiv.innerHTML += '<div style="color:gray;">Aucune demande d\'ami en attente.</div>';
-    // Cloche blanche si aucune demande
-    const notifBtn = document.getElementById('show-notifications');
-    if (notifBtn) {
-      notifBtn.style.backgroundColor = '';
-      notifBtn.style.color = '';
-      notifBtn.style.border = '';
-    }
     return;
   }
   // Limite à 10 demandes
@@ -133,13 +199,6 @@ async function renderFriendRequests() {
     infoMsg.style.marginBottom = '5px';
     infoMsg.textContent = `Affichage des 10 premières demandes sur ${requests.length}. Veuillez traiter vos demandes.`;
     friendRequestsDiv.appendChild(infoMsg);
-  }
-  // Cloche orange si demandes
-  const notifBtn = document.getElementById('show-notifications');
-  if (notifBtn) {
-    notifBtn.style.backgroundColor = '#FFD700';
-    notifBtn.style.color = '#b36b00';
-    notifBtn.style.border = '2px solid #b36b00';
   }
   limitedRequests.forEach(req => {
     const pseudo = req.sender_username || req.account1_username || req.sender_username || req.account1_pseudo || req.account1 || 'Inconnu';
@@ -207,11 +266,12 @@ async function renderFriendRequests() {
 btnShowFriendList.addEventListener('click', () => {
   const isHidden = friendPanel.style.display === 'none' || friendPanel.style.display === '';
   if (isHidden) {
+    displayPseudo('friend-panel-username', friendPanel);
     renderFriendRequests();
     renderFriendList();
     // Ajoute la section demandes d'amis en haut du panneau si pas déjà présente
     if (!friendPanel.contains(friendRequestsDiv)) {
-      friendPanel.insertBefore(friendRequestsDiv, friendPanel.firstChild);
+      friendPanel.insertBefore(friendRequestsDiv, friendPanel.firstChild.nextSibling);
       // Optionnel: titre
       if (!document.getElementById('friend-requests-title')) {
         const title = document.createElement('div');
@@ -262,13 +322,6 @@ addFriendButton.addEventListener('click', async () => {
     addFriendFeedback.textContent = "Demande envoyée à " + name + " !";
     addFriendFeedback.style.color = 'green';
     addFriendInput.value = '';
-    // Change la couleur du bouton cloche
-    const notifBtn = document.getElementById('show-notifications');
-    if (notifBtn) {
-      notifBtn.style.backgroundColor = '#FFD700'; // jaune-orangé
-      notifBtn.style.color = '#b36b00';
-      notifBtn.style.border = '2px solid #b36b00';
-    }
   } else {
     addFriendFeedback.textContent = "Erreur : " + (result && result.message ? result.message : "Ce pseudo n'existe pas ou la demande a échoué.");
     addFriendFeedback.style.color = 'red';
@@ -278,4 +331,11 @@ addFriendButton.addEventListener('click', async () => {
 const buttons = document.getElementsByTagName('button');
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].setAttribute("tabindex", "-1");
+}
+
+// Ajoute cette fonction utilitaire en haut ou en bas du fichier
+function joinFriendLobby(lobby_id) {
+  // À implémenter : appel API pour rejoindre le lobby
+  alert('Rejoindre le lobby : ' + lobby_id);
+  // Ici tu peux faire un fetch ou rediriger vers la page du lobby
 }

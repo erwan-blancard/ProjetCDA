@@ -213,11 +213,13 @@ pub fn list_friends_for_account(conn: &mut PgConnection, account_id: i32, presen
         .load::<(i32, i32, String)>(conn)?;
 
     let set = presence.lock().unwrap();
-    let friends_with_online = results.into_iter().map(|(id, friend_account_id, other_username)| FriendWithUsernameAndOnline {
-        id,
-        username: other_username,
-        online: set.contains(&friend_account_id),
-    }).collect();
+    let friends_with_online = results.into_iter()
+        .filter(|(_, friend_account_id, _)| *friend_account_id != account_id)
+        .map(|(id, friend_account_id, other_username)| FriendWithUsernameAndOnline {
+            id,
+            username: other_username,
+            online: set.contains(&friend_account_id),
+        }).collect();
     Ok(friends_with_online)
 }
 
