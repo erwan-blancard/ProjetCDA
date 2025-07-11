@@ -138,7 +138,7 @@ async fn connect_to_ws(
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    // let api_url: ApiUrl = ApiUrl::parse(&std::env::var("BACKEND_URL").unwrap_or(String::new())).expect("BACKEND_URL is not valid !");
+    let website_url = std::env::var("WEBSITE_URL").expect("WEBSITE_URL env var not set !");
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not set !");
     let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url.clone());
@@ -160,9 +160,8 @@ async fn main() -> std::io::Result<()> {
     let broadcaster = Broadcaster::create();
 
     HttpServer::new(move || {
-        // FIXME configure
         let cors = Cors::default()
-            .allowed_origin("http://localhost:5173")
+            .allowed_origin(website_url.as_str())
             .allow_any_header()
             .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE", "OPTIONS"])
             .supports_credentials()
