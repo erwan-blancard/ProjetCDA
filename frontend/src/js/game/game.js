@@ -10,8 +10,9 @@ import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCar
 import { EventMgr } from './events/event_mgr';
 import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
-import { CardKind } from './collection';
+import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
+import gsap, { Power1 } from 'gsap';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -48,6 +49,9 @@ export let current_player_turn;
 * @type {SessionInfo | null}
 */
 export let session_info;
+
+/** @type {SelectHintBox | null} */
+export let selectHintBox;
 
 /** @type {CardPile | null} */
 export let cardPile;
@@ -113,6 +117,12 @@ export function initGame() {
     const board = new THREE.Mesh(boardGeometry, boardMaterial);
     board.rotation.x = -Math.PI / 2;
     scene.add(board);
+
+    // target all hint
+    selectHintBox = new SelectHintBox(boardGeometry);
+    selectHintBox.rotation.x = -Math.PI / 2;
+    selectHintBox.position.set(0, 9, 0);
+    scene.add(selectHintBox);
 
     cardPile = new CardPile();
     scene.add(cardPile);
@@ -383,6 +393,8 @@ export function getOpponentPosition(index) {
  */
 export function updateCurrentPlayerTurn(who, turn_end=0) {
 
+    stopSelectionGlow();
+
     PLAYER.clearSelection();
     OPPONENTS.values().forEach(opponent => {
         opponent.clearSelection();
@@ -419,6 +431,15 @@ export function getIdByPlayer(player) {
         }
         return undefined;
     }
+}
+
+
+function stopSelectionGlow() {
+    PLAYER.stopGlowLoop();
+    OPPONENTS.values().forEach(opponent => {
+        opponent.stopGlowLoop();
+    });
+    selectHintBox.stopGlowLoop();
 }
 
 
@@ -477,28 +498,64 @@ function onPointerDown( event ) {
 
         raycaster.setFromCamera( pointer, camera );
 
-        const intersects = raycaster.intersectObjects( PLAYER.cards /* scene.children */, false );
+        const card_intersects = raycaster.intersectObjects( PLAYER.cards /* scene.children */, false );
 
-        if ( intersects.length > 0 ) {
+        if ( card_intersects.length > 0 ) {
 
-            const card = intersects[ 0 ].object;
+            const card = card_intersects[ 0 ].object;
 
             if (event.button == 0) {
                 PLAYER.toggleCardSelection(PLAYER.cards.indexOf(card));
+
+                stopSelectionGlow();
+
+                if (PLAYER.selected_card != null) {
+                    console.log(`SELECT CARD TARGET TYPE: ${PLAYER.selected_card.info.targets}`);
+                    switch (PLAYER.selected_card.info.targets) {
+                        case TargetType.SINGLE:
+                        case TargetType.MULTIPLE:
+                            OPPONENTS.values().forEach(opponent => {
+                                opponent.startGlowLoop();
+                            });
+                            break;
+                        case TargetType.SINGLE_AND_SELF:
+                        case TargetType.MULTIPLE_AND_SELF:
+                            PLAYER.startGlowLoop();
+                            OPPONENTS.values().forEach(opponent => {
+                                opponent.startGlowLoop();
+                            });
+                            break;
+                        case TargetType.SELF:
+                            PLAYER.startGlowLoop();
+                            break;
+                        case TargetType.ALL:
+                        case TargetType.ALL_AND_SELF:
+                            // TODO
+                            selectHintBox.startGlowLoop();
+                            break;
+                    }
+
+                }
             }
 
-        } else if (PLAYER.selected_card != null) {  // choose target, TODO handle multiple targets
+        } else {
+            // choose target, TODO handle multiple targets
+            handleTargetSelection();
+        }
+    }
 
-            if (PLAYER.selected_card.info.heal > 0 && PLAYER.selected_card.info.attack <= 0) {  // only heal
-                const player_intersects = raycaster.intersectObject(PLAYER, false);
-                
-                // if player is selected, play FOOD card
-                if (player_intersects.length > 0) {
-                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
-                    eventMgr.pushEvent(new ChangeTurnEvent(null));
-                    serverConnexion.send_play_card_action(card_index, [] /* no target for food */);
-                }
-            } else {    /* must select target */
+}
+
+
+function handleTargetSelection() {
+    // raycaster is already setup
+
+    if (PLAYER.selected_card != null) {
+        
+        switch (PLAYER.selected_card.info.targets) {
+            // TODO handle MULTIPLE target type
+            case TargetType.SINGLE:     // select opponent to play the card
+            case TargetType.SINGLE_AND_SELF:
                 const opponents = [];
                 OPPONENTS.values().forEach(opponent => {
                     if (opponent.health > 0)
@@ -514,8 +571,50 @@ function onPointerDown( event ) {
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [getIdByPlayer(opponent)]);
                 }
-            }
+                break;
+            case TargetType.ALL:    // select hint box to play the card
+            case TargetType.ALL_AND_SELF:
+                const select_hint_intersects = raycaster.intersectObject(selectHintBox, false);
+            
+                // if hint box is selected, play card
+                if (select_hint_intersects.length > 0) {
+                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
+                    eventMgr.pushEvent(new ChangeTurnEvent(null));
+                    serverConnexion.send_play_card_action(card_index, [] /* targets are filled by server */);
+                }
+                break;
+            case TargetType.SELF:    // select self to play the card
+                const player_intersects = raycaster.intersectObject(PLAYER, false);
+            
+                // if player is selected, play card
+                if (player_intersects.length > 0) {
+                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
+                    eventMgr.pushEvent(new ChangeTurnEvent(null));
+                    serverConnexion.send_play_card_action(card_index, [] /* no targets needed */);
+                }
+                break;
         }
     }
+}
 
+
+class SelectHintBox extends THREE.Mesh {
+    /** @type {gsap.core.Timeline} */
+    glowTl = gsap.timeline();
+
+    constructor(geo) {
+        const mat = new THREE.MeshBasicMaterial( { color: 0xffffff, opacity: 0.0, transparent: true } );
+        super(geo, mat);
+    }
+
+    startGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+        this.glowTl.to(this.material, { opacity: 0.3, duration: 0.5, repeat: -1, yoyo: true, ease: Power1.easeInOut });
+    }
+
+    stopGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+    }
 }

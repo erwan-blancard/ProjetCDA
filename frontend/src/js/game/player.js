@@ -1,5 +1,6 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from "three";
 import { Card, CardPile, OpponentCard } from "./cards";
+import gsap, { Power1 } from 'gsap';
 
 
 // common attributes and methods for Player and Opponent
@@ -18,9 +19,12 @@ export class PlayerObject extends Mesh {
     /** @type {THREE.Scene} */
     scene;
 
+    /** @type {gsap.core.Timeline} */
+    glowTl = gsap.timeline();
+
     constructor(scene) {
-        const box = new BoxGeometry(6, 0.1, 3);
-        const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.2, transparent: true } );
+        const box = new BoxGeometry(6, 0.0, 3);
+        const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.0, transparent: true } );
         super(box, mat);
 
         this.scene = scene;
@@ -187,6 +191,17 @@ export class PlayerObject extends Mesh {
     emitDiscardCountChange() {
         this.dispatchEvent({type: "discardcountchange"})
     }
+
+    startGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+        this.glowTl.to(this.material, { opacity: 0.3, duration: 0.5, repeat: -1, yoyo: true, ease: Power1.easeInOut });
+    }
+
+    stopGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+    }
 }
 
 
@@ -194,7 +209,7 @@ export class Player extends PlayerObject {
 
     constructor(scene) {
         super(scene);
-        this.geometry = new BoxGeometry(6.5, 0.1, 4);
+        this.geometry = new BoxGeometry(6.5, 0.0, 4);
     }
 
     /** @param {Card} card  */
@@ -260,7 +275,7 @@ export class Opponent extends PlayerObject {
         const count = this.cards.length;
         // TODO may be used to offset deck pos and player pos
         const cx = this.position.x;
-        const cy = this.position.y;
+        const cy = this.position.y + 0.01;
         const cz = this.position.z;
 
         const x = cx + ((count-1-i)*space) - ((count-1)*space) / 2;
