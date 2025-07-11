@@ -44,6 +44,7 @@ impl Mailer {
     pub fn send_password_reset_email(&self, to: &str, token: &str) -> Result<(), String> {
         let website_url = env::var("WEBSITE_URL").map_err(|_| "WEBSITE_URL not set")?;
         let subject = "Password Reset Request";
+        // TODO: use a template
         let body = format!(
             "Hello,\n\nYou requested a password reset. Click the link below to reset your password:\n{website_url}/reset-password?token={token}\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nRandomi GO Team"
         );

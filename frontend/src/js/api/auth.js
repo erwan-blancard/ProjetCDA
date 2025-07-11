@@ -3,11 +3,40 @@ import { displayPopup } from "../ui/popup";
 
 export async function login_submit() {
     const button = document.getElementById("form-submit");
-    button.disabled = true;
 
     const username = document.getElementById("username-input").value;
     const password = document.getElementById("password-input").value;
 
+    button.disabled = true;
+
+    await login(username, password);
+
+    button.disabled = false;
+}
+
+
+export async function register_submit() {
+    const button = document.getElementById("form-submit");
+
+    const username = document.getElementById("username-input").value;
+    const email = document.getElementById("email-input").value;
+    const password = document.getElementById("password-input").value;
+    const confirm_password = document.getElementById("confirm-password-input").value;
+
+    if (password !== confirm_password) {
+        displayPopup("Passwords do not match", "Error");
+        return;
+    }
+
+    button.disabled = true;
+
+    await register(username, email, password);
+
+    button.disabled = false;
+}
+
+
+export async function login(username, password) {
     const payload = {
         "username": username,
         "password": password
@@ -32,19 +61,10 @@ export async function login_submit() {
     } catch (error) {
         displayPopup(`An error occured when logging in: ${error.message}`, "Error");
     }
-
-    button.disabled = false;
 }
 
 
-export async function register_submit() {
-    const button = document.getElementById("form-submit");
-    button.disabled = true;
-
-    const username = document.getElementById("username-input").value;
-    const email = document.getElementById("email-input").value;
-    const password = document.getElementById("password-input").value;
-
+export async function register(username, email, password) {
     const payload = {
         "username": username,
         "email": email,
@@ -71,8 +91,6 @@ export async function register_submit() {
     } catch (error) {
         displayPopup(`There was an error when creating the account: ${error.message}`, "Error");
     }
-
-    button.disabled = false;
 }
 
 

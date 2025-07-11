@@ -14,7 +14,6 @@ COPY ./diesel.toml ./diesel.toml
 RUN cargo install --path .
 
 ENV DATABASE_URL postgres://localhost:5432/randomi
-ENV BACKEND_URL http://localhost:8080
 
 EXPOSE 8080
 

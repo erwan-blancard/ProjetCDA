@@ -58,7 +58,9 @@ mod server {
     }
 }
 
-mod email;
+mod email {
+    pub mod mailer;
+}
 
 // type ApiUrl = Url;
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
@@ -66,7 +68,7 @@ type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 use tokio::task::{spawn_local, JoinHandle};
 use uuid::Uuid;
 
-use crate::email::Mailer;
+use crate::email::mailer::Mailer;
 use crate::routes::game::{Lobbies, Lobby, LobbyId};
 use crate::routes::sse::Broadcaster;
 

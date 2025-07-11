@@ -107,7 +107,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
-.styled:has(h1) { padding-left: 4em; padding-right: 4em; margin-bottom: 1.5em; }
+.styled:has(h1) { padding-left: 3em; padding-right: 3em; margin-bottom: 1.5em; }
 .styled:has(h2) { padding-left: 2em; padding-right: 2em; margin-bottom: 1em; }
 .styled:has(h3) { padding-left: 1em; padding-right: 1em; margin-bottom: 0.5em; }
 

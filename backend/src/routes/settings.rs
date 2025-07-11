@@ -2,7 +2,7 @@ use actix_web::{error, web, HttpRequest, HttpMessage, HttpResponse, Responder};
 use actix_web::{get, patch, post};
 use serde_derive::Deserialize;
 
-use crate::email::Mailer;
+use crate::email::mailer::Mailer;
 use crate::{database::actions, DbPool};
 
 
