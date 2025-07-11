@@ -15,5 +15,5 @@ EXPOSE 5173
 
 # CMD ["npx", "vite", "src", "--host", "0.0.0.0"]
 
-# use vite.config.ts
+# use vite.config.js
 CMD ["npx", "vite"]

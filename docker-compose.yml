@@ -50,8 +50,8 @@ services:
       - "5173:5173"
     env_file: .env
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
     
     depends_on:
       - backend
