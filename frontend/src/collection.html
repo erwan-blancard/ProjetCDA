@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Collection de Cartes - RANDOMI GO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/style.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/menu.css" />
+    <style>
+      .card-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+        margin-top: 1em;
+      }
+      .card-item {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+        padding: 0.6em 0.8em;
+        min-width: 160px;
+        max-width: 200px;
+        border: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        font-family: inherit;
+        font-size: 0.92em;
+        transition: transform 0.12s;
+      }
+      .card-item:hover {
+        transform: scale(1.03);
+        border-color: #bdbdbd;
+      }
+      .card-title {
+        font-size: 1.05em;
+        font-weight: bold;
+        margin-bottom: 0.2em;
+        color: #222;
+      }
+      .card-meta {
+        font-size: 0.85em;
+        color: #666;
+        margin-bottom: 0.3em;
+      }
+      .card-desc {
+        font-size: 0.92em;
+        color: #333;
+        margin-bottom: 0.3em;
+      }
+      .card-stats {
+        font-size: 0.85em;
+        color: #444;
+        margin-top: auto;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+      }
+      .back-btn {
+        margin-top: 1em;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 0.95em;
+        padding: 0.4em 1.2em;
+      }
+      #card-table {
+        width: 100%;
+        max-width: 1000px;
+        border-collapse: collapse;
+        table-layout: fixed;
+        margin: 0 auto;
+        font-size: 0.85em;
+      }
+      #card-table thead {
+        display: table-header-group;
+        border-top: 2px solid #bdbdbd;
+        border-bottom: 2px solid #bdbdbd;
+        background: #f5f5f5;
+      }
+      #card-table th, #card-table td {
+        padding: 0.28em 0.35em;
+        box-sizing: border-box;
+        word-break: break-word;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      #card-table th {
+        font-weight: bold;
+        text-align: center;
+      }
+      /* Alignement par colonne */
+      #card-table th:nth-child(1), #card-table td:nth-child(1) { width: 7%; min-width: 40px; text-align: center; }
+      #card-table th:nth-child(2), #card-table td:nth-child(2) { width: 18%; text-align: left; }
+      #card-table th:nth-child(3), #card-table td:nth-child(3) { width: 12%; text-align: left; }
+      #card-table th:nth-child(4), #card-table td:nth-child(4) { width: 12%; text-align: center; }
+      #card-table th:nth-child(5), #card-table td:nth-child(5) { width: 8%; text-align: center; }
+      #card-table th:nth-child(6), #card-table td:nth-child(6) { width: 33%; text-align: left; }
+      #card-table th:nth-child(7), #card-table td:nth-child(7) { width: 10%; text-align: center; }
+      .collection-grid {
+        display: grid;
+        grid-template-columns: 10% 20% 13% 13% 9% 25% 10%;
+        max-width: 1100px;
+        margin: 0 auto;
+        font-size: 12px;
+        border-collapse: separate;
+      }
+      .collection-header {
+        background: #f5f5f5;
+        border-top: 2px solid #bdbdbd;
+        border-bottom: 2px solid #bdbdbd;
+        text-align: center;
+      }
+      .collection-header > div {
+        padding: 0.28em 0.35em;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        border-right: 1px solid #e0e0e0;
+        font-weight: bold;
+      }
+      .collection-header > div:last-child {
+        border-right: none;
+      }
+      .collection-row {
+        display: contents;
+      }
+      .collection-cell {
+        padding: 0.28em 0.35em;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        border-bottom: 1px solid #e0e0e0;
+        background: #fff;
+        font-weight: normal;
+      }
+      .collection-cell:nth-child(1), .collection-header > div:nth-child(1) { text-align: center; }
+      .collection-cell:nth-child(2), .collection-header > div:nth-child(2) { text-align: left; }
+      .collection-cell:nth-child(3), .collection-header > div:nth-child(3) { text-align: left; }
+      .collection-cell:nth-child(4), .collection-header > div:nth-child(4) { text-align: center; }
+      .collection-cell:nth-child(5), .collection-header > div:nth-child(5) { text-align: center; }
+      .collection-cell:nth-child(6), .collection-header > div:nth-child(6) { text-align: left; }
+      .collection-cell:nth-child(7), .collection-header > div:nth-child(7) { text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="vlayout stretch center">
+      <div class="styled" style="margin-top: 2em; margin-bottom: 1em;">
+        <h1>Collection de Cartes</h1>
+      </div>
+      <div id="collection-grid" class="collection-grid">
+        <div class="collection-header">Illustration</div>
+        <div class="collection-header">Nom</div>
+        <div class="collection-header">Type</div>
+        <div class="collection-header">Élément</div>
+        <div class="collection-header">Étoiles</div>
+        <div class="collection-header">Description</div>
+        <div class="collection-header">Set</div>
+      </div>
+      <button class="styled back-btn" onclick="window.location.href='index.html'">Retour</button>
+    </div>
+    <script type="module">
+    function getElementEmoji(element) {
+      switch(element) {
+        case 'Fire': return '🔥';
+        case 'Water': return '💧';
+        case 'Air': return '💨';
+        case 'Earth': return '🌱';
+        default: return '❓';
+      }
+    }
+    async function fetchCards() {
+      const response = await fetch("http://localhost:8080/cards", {
+        credentials: "include"
+      });
+      const grid = document.getElementById('collection-grid');
+      if (!response.ok) {
+        grid.innerHTML += '<div style="grid-column: span 7; text-align:center; color:#b00;">Erreur lors de la récupération de la collection.</div>';
+        return;
+      }
+      const cards = await response.json();
+      cards.forEach(card => {
+        grid.innerHTML += `
+          <div class="collection-cell">${getElementEmoji(card.element)}</div>
+          <div class="collection-cell">${card.name}</div>
+          <div class="collection-cell">${card.kind}</div>
+          <div class="collection-cell">${card.element}</div>
+          <div class="collection-cell">⭐${card.stars}</div>
+          <div class="collection-cell">${card.desc}</div>
+          <div class="collection-cell">Basique</div>
+        `;
+      });
+    }
+    fetchCards();
+    </script>
+  </body>
+</html> 

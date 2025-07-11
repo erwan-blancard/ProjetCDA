@@ -1,76 +1,158 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>RANDOMI GO</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
-    <link rel='stylesheet' type='text/css' media='screen' href='/css/menu.css'>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="/css/style.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="/css/menu.css"
+    />
     <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/lobby.css'>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
-        /* remove scrolling */
-        html, body {
-            overflow: hidden;
-        }
+      /* remove scrolling */
+      html,
+      body {
+        overflow: hidden;
+      }
     </style>
-</head>
-<body>
-  <script type="module" src="/js/menus/main-menu.js"></script>
-  <div class="root">
-    <div id="main" class="view">
-      <div class="vlayout stretch center">
-        <div class="styled"><h1>Main</h1></div>
+  </head>
+  <body>
+    <script type="module" src="/js/menus/main-menu.js"></script>
+    <div class="root">
+      <div id="main" class="view">
+        <div class="vlayout stretch center">
+          <div class="styled"><h1>Menu principal</h1></div>
 
-        <div class="hlayout center">
-          <button class="styled" id="to-create-lobby"><span>
-            <h2>Create Lobby</h2>
-          </span></button>
-          <button class="styled" id="to-join-lobby"><span>
-            <h2>Join Lobby</h2>
-          </span></button>
+          <div class="hlayout center">
+            <button class="styled" id="to-create-lobby">
+              <span>
+                <h2>Create Lobby</h2>
+              </span>
+            </button>
+            <button class="styled" id="to-join-lobby">
+              <span>
+                <h2>Join Lobby</h2>
+              </span>
+            </button>
+          </div>
+          <div
+            id="settings-container"
+            style="position: fixed; top: 20px; right: 20px; z-index: 30;"
+          >
+            <button
+              id="show-settings-menu"
+              class="styled"
+              style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+            >
+              ☰
+            </button>
+            <div id="settings-menu" style="display: none; position: absolute; top: 40px; right: 0; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 120px; z-index: 31;">
+              <button id="settings-btn" class="styled" style="width: 100%; border-bottom: 1px solid #eee; background: none; color: #222;">Paramètres</button>
+              <button id="logout-btn" class="styled" style="width: 100%; background: none; color: #d32f2f;">Déconnexion</button>
+            </div>
+          </div>
+          <div
+            id="friend-container"
+            style="position: fixed; top: 100px; right: 20px"
+          >
+            <button
+              id="show-friend-list"
+              class="styled"
+              style="
+                background-color: white;
+                margin-top: 40px;
+                color: black;
+                font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif';
+                font-size: 24px;
+                border: none;
+                cursor: pointer;
+              "
+            >
+              👤
+            </button>
+          </div>
+          <div
+            id="collection-container"
+            style="position: fixed; top: 180px; right: 20px"
+          >
+            <button
+              id="show-collection"
+              class="styled"
+              style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+              onclick="window.location.href='collection.html'"
+            >
+              🃏
+            </button>
+          </div>
+          <div
+            id="logout-container"
+            style="position: fixed; top: 260px; right: 20px"
+          >
+            <button
+              id="logout-side"
+              class="styled"
+              style="background-color: white; margin-top: 40px; color: #d32f2f; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+            >
+              ⏻
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div id="create-lobby" class="view">
-      <section>
-        <div class="styled"><h1>Create Lobby</h1></div>
-        <section class="styled vlayout" style="padding: 1.5em;">
-          <div>
-            <label for="lobby-password-input">Password:</label>
-            <input id="lobby-password-input" type="password" maxlength="9"/>
-            <input id="lobby-private-check" class="lock" type="checkbox"/>
-          </div>
-          <button class="styled" id="create-lobby-validate-button"><span>Create</span></button>
+      <div id="create-lobby" class="view">
+        <section>
+          <div class="styled"><h1>Create Lobby</h1></div>
+          <section class="styled vlayout" style="padding: 1.5em;">
+            <div>
+              <label for="lobby-password-input">Password:</label>
+              <input id="lobby-password-input" type="password" maxlength="9"/>
+              <input id="lobby-private-check" class="lock" type="checkbox"/>
+            </div>
+            <button class="styled" id="create-lobby-validate-button"><span>Create</span></button>
+          </section>
+          <button class="styled" id="create-lobby-back-button"><span>Back</span></button>
         </section>
-        <button class="styled" id="create-lobby-back-button"><span>Back</span></button>
-      </section>
-    </div>
+      </div>
 
-    <div id="select-lobby" class="view">
-      <section class="vlayout">
-        <div class="styled"><h2>Select Lobby</h2></div>
-        <lobby-list id="lobby-list" style="height: 40vh; margin-bottom: 24px;"></lobby-list>
-        <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
-      </section>
-    </div>
+      <div id="select-lobby" class="view">
+        <section class="vlayout">
+          <div class="styled"><h2>Select Lobby</h2></div>
+          <lobby-list id="lobby-list" style="height: 40vh; margin-bottom: 24px;"></lobby-list>
+          <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
+        </section>
+      </div>
 
-    <div id="current-lobby" class="view">
-      <section>
-        <div class="styled"><h1>Lobby</h1></div>
+      <div id="current-lobby" class="view">
+        <section>
+          <div class="styled"><h1>Lobby</h1></div>
 
-        <lobby-view id="lobby"></lobby-view>
-      </section>
+          <lobby-view id="lobby"></lobby-view>
+        </section>
+      </div>
+        
     </div>
-      
-  </div>
-</body>
+  </body>
 </html>
+
+
+>>>>>>> origin/social

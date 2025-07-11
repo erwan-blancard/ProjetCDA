@@ -1,7 +1,14 @@
 use actix_web::{cookie::{Cookie, SameSite}, error::{self, ErrorUnauthorized}, post, web, HttpResponse, Responder};
 
 use crate::{auth, database::actions::{self, AccountLogin, NewAccount}, DbPool};
+use crate::presence::Presence;
 
+
+#[derive(serde::Serialize)]
+struct LoginResponse {
+    token: String,
+    username: String,
+}
 
 
 #[post("/register")]
@@ -21,7 +28,11 @@ async fn register(pool: web::Data<DbPool>, json: web::Json<NewAccount>) -> actix
 
 
 #[post("/login")]
-async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_web::Result<impl Responder> {
+async fn login(
+    pool: web::Data<DbPool>,
+    json: web::Json<AccountLogin>,
+    presence: web::Data<Presence>,
+) -> actix_web::Result<impl Responder> {
     let account = web::block(move || {
         // Obtaining a connection from the pool is also a potentially blocking operation.
         // So, it should be called within the `web::block` closure, as well.
@@ -36,7 +47,18 @@ async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_
         return Err(ErrorUnauthorized("The account is suspended."));
     }
 
+    // Ajoute l'utilisateur à la présence
+    {
+        let mut set = presence.lock().unwrap();
+        set.insert(account.id);
+    }
+
     let token = auth::create_jwt(account.id);
+
+    let response = LoginResponse {
+        token: token.clone(),
+        username: account.username.clone(),
+    };
 
     // create a cookie containing the token and send it to the user
     let cookie = Cookie::build("token", token.clone())
@@ -45,7 +67,7 @@ async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_
         .same_site(SameSite::None)
         .finish();
 
-    Ok(HttpResponse::Ok().cookie(cookie).json(token))
+    Ok(HttpResponse::Ok().cookie(cookie).json(response))
 }
 
 

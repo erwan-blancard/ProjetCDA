@@ -91,3 +91,104 @@ export async function get_current_game_info() {
     }
     
 }
+
+/**
+ * Récupère la liste des amis de l'utilisateur connecté
+ * @returns {Promise<Array| null>}
+ */
+export async function get_friends() {
+    try {
+        const response = await fetch(api_url("/account/friends"), {
+            method: 'GET',
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!response.ok) throw new Error("Impossible de récupérer la liste d'amis");
+        return await response.json();
+    } catch (error) {
+        console.error("Erreur get_friends:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Récupère la liste des demandes d'amis reçues/en attente
+ * @returns {Promise<Array| null>}
+ */
+export async function get_friend_requests() {
+    try {
+        const response = await fetch(api_url("/account/requests"), {
+            method: 'GET',
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!response.ok) throw new Error("Impossible de récupérer les demandes d'amis");
+        return await response.json();
+    } catch (error) {
+        console.error("Erreur get_friend_requests:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Envoie une demande d'ami à un utilisateur
+ * @param {string} username
+ * @returns {Promise<Object|null>}
+ */
+export async function send_friend_request(username) {
+    try {
+        const response = await fetch(api_url("/account/requests"), {
+            method: 'POST',
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return await response.json();
+    } catch (error) {
+        console.error("Erreur send_friend_request:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Accepte ou refuse une demande d'ami
+ * @param {string} username
+ * @param {boolean} accepted
+ * @returns {Promise<Object|null>}
+ */
+export async function respond_friend_request(username, accepted) {
+    try {
+        const response = await fetch(api_url(`/account/requests/${username}`), {
+            method: 'PATCH',
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accepted })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return await response.json();
+    } catch (error) {
+        console.error("Erreur respond_friend_request:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Supprime un ami de la liste
+ * @param {string} username
+ * @returns {Promise<Object|null>}
+ */
+export async function delete_friend(username) {
+    try {
+        const response = await fetch(api_url(`/account/friends/${username}`), {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return await response.json();
+    } catch (error) {
+        console.error('Erreur delete_friend:', error.message);
+        return null;
+    }
+}
