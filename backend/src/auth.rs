@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use chrono::{Duration, Utc};
 
 
-const IGNORE_ROUTES: [&str; 2] = ["/login", "/register"];
+const IGNORE_ROUTES: [&str; 4] = ["/login", "/register", "/account/reset-password", "/account/request-password-reset"];
 
 
 #[derive(Debug, Deserialize, Serialize)]

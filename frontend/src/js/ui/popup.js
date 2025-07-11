@@ -1,5 +1,5 @@
 /** prevent tabbing to elements outside of the popup by adding inert attribute */
-function setInertExceptPopup(popupFrame) {
+export function setInertExceptPopup(popupFrame) {
     Array.from(document.body.children).forEach(child => {
         if (child !== popupFrame) {
             child.setAttribute('inert', '');
@@ -8,7 +8,7 @@ function setInertExceptPopup(popupFrame) {
     });
 }
 
-function removeInert() {
+export function removeInert() {
     Array.from(document.body.children).forEach(child => {
         child.removeAttribute('inert');
         child.removeAttribute('aria-hidden');

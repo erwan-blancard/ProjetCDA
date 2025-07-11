@@ -32,3 +32,5 @@ env_logger = "0.11.8"
 uid = "0.1.8"
 tokio-stream = "0.1.17"
 parking_lot = "0.12.4"
+
+lettre = "0.11"
