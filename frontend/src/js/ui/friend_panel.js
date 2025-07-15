@@ -42,7 +42,7 @@ function updateFriendButtonColor(requests) {
   }
 }
 
-async function displayPseudo(targetId = 'friend-panel-username', container = null) {
+export async function displayPseudo(targetId = 'friend-panel-username', container = null) {
   let pseudo = '';
   try {
     const account = await get_my_account();
@@ -263,74 +263,94 @@ async function renderFriendRequests() {
   });
 }
 
-btnShowFriendList.addEventListener('click', () => {
-  const isHidden = friendPanel.style.display === 'none' || friendPanel.style.display === '';
-  if (isHidden) {
-    displayPseudo('friend-panel-username', friendPanel);
-    renderFriendRequests();
-    renderFriendList();
-    // Ajoute la section demandes d'amis en haut du panneau si pas déjà présente
-    if (!friendPanel.contains(friendRequestsDiv)) {
-      friendPanel.insertBefore(friendRequestsDiv, friendPanel.firstChild.nextSibling);
-      // Optionnel: titre
-      if (!document.getElementById('friend-requests-title')) {
-        const title = document.createElement('div');
-        title.id = 'friend-requests-title';
-        title.textContent = 'Demandes d\'amis reçues';
-        title.style.fontWeight = 'bold';
-        title.style.marginBottom = '5px';
-        friendPanel.insertBefore(title, friendRequestsDiv);
-      }
-    }
-    friendPanel.style.display = 'block';
-    friendPanelBackdrop.style.display = 'block';
+export function initFriendPanel() {
+  const btnShowFriendList = document.getElementById('show-friend-list');
+  console.log("show-friend-list:", btnShowFriendList);
+  if (!btnShowFriendList) {
+    console.error("Le bouton 'show-friend-list' est introuvable !");
+  }
+  const friendPanel = document.getElementById('friend-panel');
+  const friendListDiv = document.getElementById('friend-list');
+  const addFriendInput = document.getElementById('add-friend-name');
+  const addFriendButton = document.getElementById('add-friend-button');
+  const addFriendFeedback = document.getElementById('add-friend-feedback');
+  const closeFriendButton = document.getElementById('close-friend-button');
+  const friendPanelBackdrop = document.getElementById('friend-panel-backdrop');
+
+  // Ajoute les listeners et l'initialisation ici
+  if (closeFriendButton && friendPanel && friendPanelBackdrop) {
+    closeFriendButton.addEventListener('click', () => {
+      friendPanel.style.display = 'none';
+      friendPanelBackdrop.style.display = 'none';
+    });
   } else {
+    console.warn("Un ou plusieurs éléments du panneau d'amis sont introuvables !");
+  }
+
+  btnShowFriendList.addEventListener('click', () => {
+    const isHidden = friendPanel.style.display === 'none' || friendPanel.style.display === '';
+    if (isHidden) {
+      displayPseudo('friend-panel-username', friendPanel);
+      renderFriendRequests();
+      renderFriendList();
+      // Ajoute la section demandes d'amis en haut du panneau si pas déjà présente
+      if (!friendPanel.contains(friendRequestsDiv)) {
+        friendPanel.insertBefore(friendRequestsDiv, friendPanel.firstChild.nextSibling);
+        // Optionnel: titre
+        if (!document.getElementById('friend-requests-title')) {
+          const title = document.createElement('div');
+          title.id = 'friend-requests-title';
+          title.textContent = 'Demandes d\'amis reçues';
+          title.style.fontWeight = 'bold';
+          title.style.marginBottom = '5px';
+          friendPanel.insertBefore(title, friendRequestsDiv);
+        }
+      }
+      friendPanel.style.display = 'block';
+      friendPanelBackdrop.style.display = 'block';
+    } else {
+      friendPanel.style.display = 'none';
+      friendPanelBackdrop.style.display = 'none';
+    }
+  });
+
+  friendPanelBackdrop.addEventListener('click', () => {
     friendPanel.style.display = 'none';
     friendPanelBackdrop.style.display = 'none';
-  }
-});
+  });
 
-closeFriendButton.addEventListener('click', () => {
-  friendPanel.style.display = 'none';
-  friendPanelBackdrop.style.display = 'none';
-});
+  addFriendButton.addEventListener('click', async () => {
+    const name = addFriendInput.value.trim();
+    if (!name) {
+      addFriendFeedback.textContent = "Entrez un nom valide.";
+      addFriendFeedback.style.color = 'red';
+      return;
+    }
+    // Vérifie si déjà dans la liste affichée
+    const currentFriends = Array.from(friendListDiv.children).map(div => div.firstChild.textContent.split(' - ')[0]);
+    if (currentFriends.some(f => f.toLowerCase() === name.toLowerCase())) {
+      addFriendFeedback.textContent = "Cet ami est déjà dans la liste.";
+      addFriendFeedback.style.color = 'red';
+      return;
+    }
+    // Appel API pour envoyer la demande
+    addFriendFeedback.textContent = "Envoi de la demande...";
+    addFriendFeedback.style.color = 'black';
+    const result = await send_friend_request(name);
+    if (result && result.id) {
+      addFriendFeedback.textContent = "Demande envoyée à " + name + " !";
+      addFriendFeedback.style.color = 'green';
+      addFriendInput.value = '';
+    } else {
+      addFriendFeedback.textContent = "Erreur : " + (result && result.message ? result.message : "Ce pseudo n'existe pas ou la demande a échoué.");
+      addFriendFeedback.style.color = 'red';
+    }
+  });
 
-friendPanelBackdrop.addEventListener('click', () => {
-  friendPanel.style.display = 'none';
-  friendPanelBackdrop.style.display = 'none';
-});
-
-addFriendButton.addEventListener('click', async () => {
-  const name = addFriendInput.value.trim();
-  if (!name) {
-    addFriendFeedback.textContent = "Entrez un nom valide.";
-    addFriendFeedback.style.color = 'red';
-    return;
+  const buttons = document.getElementsByTagName('button');
+  for (let i = 0; i < buttons.length; i++) {
+    buttons[i].setAttribute("tabindex", "-1");
   }
-  // Vérifie si déjà dans la liste affichée
-  const currentFriends = Array.from(friendListDiv.children).map(div => div.firstChild.textContent.split(' - ')[0]);
-  if (currentFriends.some(f => f.toLowerCase() === name.toLowerCase())) {
-    addFriendFeedback.textContent = "Cet ami est déjà dans la liste.";
-    addFriendFeedback.style.color = 'red';
-    return;
-  }
-  // Appel API pour envoyer la demande
-  addFriendFeedback.textContent = "Envoi de la demande...";
-  addFriendFeedback.style.color = 'black';
-  const result = await send_friend_request(name);
-  if (result && result.id) {
-    addFriendFeedback.textContent = "Demande envoyée à " + name + " !";
-    addFriendFeedback.style.color = 'green';
-    addFriendInput.value = '';
-  } else {
-    addFriendFeedback.textContent = "Erreur : " + (result && result.message ? result.message : "Ce pseudo n'existe pas ou la demande a échoué.");
-    addFriendFeedback.style.color = 'red';
-  }
-});
-
-const buttons = document.getElementsByTagName('button');
-for (let i = 0; i < buttons.length; i++) {
-  buttons[i].setAttribute("tabindex", "-1");
 }
 
 // Ajoute cette fonction utilitaire en haut ou en bas du fichier
