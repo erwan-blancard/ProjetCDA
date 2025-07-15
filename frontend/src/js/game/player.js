@@ -1,5 +1,6 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from "three";
 import { Card, CardPile, OpponentCard } from "./cards";
+import gsap, { Power1 } from 'gsap';
 
 
 // common attributes and methods for Player and Opponent
@@ -18,9 +19,12 @@ export class PlayerObject extends Mesh {
     /** @type {THREE.Scene} */
     scene;
 
+    /** @type {gsap.core.Timeline} */
+    glowTl = gsap.timeline();
+
     constructor(scene) {
-        const box = new BoxGeometry(6, 0.1, 3);
-        const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.2, transparent: true } );
+        const box = new BoxGeometry(6, 0.0, 3);
+        const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.0, transparent: true } );
         super(box, mat);
 
         this.scene = scene;
@@ -39,8 +43,10 @@ export class PlayerObject extends Mesh {
 
     updateHandCardPositions(instant=false) {
         for (let i = 0; i < this.cards.length; i++) {
-            const { x, y, z } = this.getHandCardPositionByIndex(i);
-            this.cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            if (!this.cards[i].active) {
+                const { x, y, z } = this.getHandCardPositionByIndex(i);
+                this.cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            }
         }
     }
 
@@ -66,8 +72,10 @@ export class PlayerObject extends Mesh {
 
     updateDiscardCardPositions(instant=false) {
         for (let i = 0; i < this.discard_cards.length; i++) {
-            const { x, y, z } = this.getDiscardCardPositionByIndex(i);
-            this.discard_cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            if (!this.discard_cards[i].active) {
+                const { x, y, z } = this.getDiscardCardPositionByIndex(i);
+                this.discard_cards[i].goto(x, y, z, (instant ? 0.0 : 0.4));
+            }
         }
     }
 
@@ -183,10 +191,47 @@ export class PlayerObject extends Mesh {
     emitDiscardCountChange() {
         this.dispatchEvent({type: "discardcountchange"})
     }
+
+    startGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+        this.glowTl.to(this.material, { opacity: 0.3, duration: 0.5, repeat: -1, yoyo: true, ease: Power1.easeInOut });
+    }
+
+    stopGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+    }
+
+    removeCardFromHand(card_id) {
+        const idx = this.cards.findIndex(card => card.card_id === card_id);
+        if (idx !== -1) {
+            const [removed] = this.cards.splice(idx, 1);
+            if (removed && removed.parent) removed.parent.remove(removed);
+            this.updateHandCardPositions();
+            this.emitCardCountChange && this.emitCardCountChange();
+            return removed;
+        }
+        return null;
+    }
+
+    addCardToHand(card_id) {
+        const card = new Card(card_id);
+        this.cards.push(card);
+        if (this.scene) this.scene.add(card);
+        this.updateHandCardPositions();
+        this.emitCardCountChange && this.emitCardCountChange();
+        return card;
+    }
 }
 
 
 export class Player extends PlayerObject {
+
+    constructor(scene) {
+        super(scene);
+        this.geometry = new BoxGeometry(6.5, 0.0, 4);
+    }
 
     /** @param {Card} card  */
     addCard(card) {
@@ -204,10 +249,9 @@ export class Opponent extends PlayerObject {
     /** @type Array<OpponentCard> */
     cards = [];
 
-    constructor(scene, card_count=5) {
+    constructor(scene, card_count=0) {
         super(scene);
         
-        // fill deck with 5 cards
         for (let i = 0; i < card_count; i++) {
             this.cards.push(this.#createOpponentCard());
         }
@@ -252,7 +296,7 @@ export class Opponent extends PlayerObject {
         const count = this.cards.length;
         // TODO may be used to offset deck pos and player pos
         const cx = this.position.x;
-        const cy = this.position.y;
+        const cy = this.position.y + 0.01;
         const cz = this.position.z;
 
         const x = cx + ((count-1-i)*space) - ((count-1)*space) / 2;

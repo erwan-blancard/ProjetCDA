@@ -17,14 +17,17 @@
       rel="stylesheet"
       type="text/css"
       media="screen"
-      href="css/style.css"
+      href="/css/style.css"
     />
     <link
       rel="stylesheet"
       type="text/css"
       media="screen"
-      href="css/menu.css"
+      href="/css/menu.css"
     />
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/lobby.css'>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
       /* remove scrolling */
       html,
@@ -119,32 +122,23 @@
       <div id="create-lobby" class="view">
         <section>
           <div class="styled"><h1>Create Lobby</h1></div>
-          <section class="styled vlayout" style="padding: 1.5em">
+          <section class="styled vlayout" style="padding: 1.5em;">
             <div>
               <label for="lobby-password-input">Password:</label>
-              <input id="lobby-password-input" type="text" />
-              <input id="lobby-private-check" class="lock" type="checkbox" />
+              <input id="lobby-password-input" type="password" maxlength="9"/>
+              <input id="lobby-private-check" class="lock" type="checkbox"/>
             </div>
-            <button class="styled" id="create-lobby-validate-button">
-              <span>Create</span>
-            </button>
+            <button class="styled" id="create-lobby-validate-button"><span>Create</span></button>
           </section>
-          <button class="styled" id="create-lobby-back-button" tabindex="-1">
-            <span>Back</span>
-          </button>
+          <button class="styled" id="create-lobby-back-button"><span>Back</span></button>
         </section>
       </div>
 
       <div id="select-lobby" class="view">
         <section class="vlayout">
           <div class="styled"><h2>Select Lobby</h2></div>
-          <lobby-list
-            id="lobby-list"
-            style="height: 40vh; margin-bottom: 24px"
-          ></lobby-list>
-          <button class="styled" id="select-lobby-back-button" tabindex="-1">
-            <span>Back</span>
-          </button>
+          <lobby-list id="lobby-list" style="height: 40vh; margin-bottom: 24px;"></lobby-list>
+          <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
         </section>
       </div>
 
@@ -152,79 +146,22 @@
         <section>
           <div class="styled"><h1>Lobby</h1></div>
 
-          <div id="lobby"></div>
-
-          <div class="hlayout center">
-            <button
-              class="styled"
-              id="current-lobby-ready-button"
-              tabindex="-1"
-            >
-              <span>Ready !</span>
-            </button>
-            <button
-              class="styled"
-              id="current-lobby-leave-button"
-              tabindex="-1"
-            >
-              <span>Leave</span>
-            </button>
-          </div>
+          <lobby-view id="lobby"></lobby-view>
         </section>
       </div>
+        
     </div>
-    <div
-      id="friend-panel-backdrop"
-      style="
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.3);
-        z-index: 4;
-      "
-    ></div>
-    <div
-      id="friend-panel"
-      style="
-        display: none;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 15px;
-        width: 300px;
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        font-family: sans-serif;
-        z-index: 5;
-      "
-    >
-      <h3 style="margin-top: 0">Liste d'amis</h3>
-      <div id="friend-list" style="margin-bottom: 15px"></div>
-
-      <label for="add-friend-name">Ajouter un ami :</label>
-      <input
-        id="add-friend-name"
-        type="text"
-        placeholder="Pseudo"
-        style="width: 100%; margin-top: 5px"
-      />
-      <button id="add-friend-button" class="styled;">Ajouter</button>
-
-      <button id="close-friend-button" class="styled;">Fermer</button>
-      <div
-        id="add-friend-feedback"
-        style="margin-top: 5px; font-size: 0.9em"
-      ></div>
+    <div id="friend-panel-backdrop" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.3); z-index: 4;"></div>
+    <div id="friend-panel" style="display: none; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 15px; width: 300px; position: fixed; top: 80px; right: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); font-family: sans-serif; z-index: 5;">
+      <button id="close-friend-button" style="float:right;">Fermer</button>
+      <div id="friend-panel-username"></div>
+      <div id="friend-list"></div>
+      <input id="add-friend-name" type="text" placeholder="Ajouter un ami..." style="width: 70%;">
+      <button id="add-friend-button">Ajouter</button>
+      <div id="add-friend-feedback"></div>
     </div>
-    <script type="module" src="js/ui/friend_panel.js"></script>
   </body>
 </html>
+
 
 

@@ -1,5 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 
+use crate::server::game::card::CardId;
+
 use super::player::PlayerId;
 
 
@@ -27,6 +29,11 @@ pub struct PlayInfo {
 pub enum ActionType {
     Attack{amount: u32},
     Heal{amount: u32},
+    Draw{cards: Vec<CardId>},
+    Discard{cards: Vec<usize>},
+    Steal{cards: Vec<CardId>},    // Vol de cartes
+    Give{cards: Vec<CardId>},     // Don de cartes
+    Exchange{given: Vec<CardId>, taken: Vec<CardId>}, // Échange de cartes
 }
 
 

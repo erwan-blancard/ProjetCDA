@@ -8,9 +8,12 @@ import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
-import { CardKind } from './database';
+import { CardKind, TargetType } from './collection';
+import { Dice } from '../ui/dice';
+import gsap, { Power1 } from 'gsap';
+import { displayMessage } from '../ui/popup.js';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -48,6 +51,9 @@ export let current_player_turn;
 */
 export let session_info;
 
+/** @type {SelectHintBox | null} */
+export let selectHintBox;
+
 /** @type {CardPile | null} */
 export let cardPile;
 
@@ -57,11 +63,14 @@ export let serverConnexion;
 /** @type {CardTooltip | null} */
 export let cardTooltip;
 
+/** @type {Dice | null} */
+export let dice;
+
 /** @type {EventMgr | null} */
 export let eventMgr;
 
 /** @type {number | null} */
-export var winner_id = null;    // fix read only
+export let winner_id = null;
 
 
 export function initGame() {
@@ -110,6 +119,12 @@ export function initGame() {
     board.rotation.x = -Math.PI / 2;
     scene.add(board);
 
+    // target all hint
+    selectHintBox = new SelectHintBox(boardGeometry);
+    selectHintBox.rotation.x = -Math.PI / 2;
+    selectHintBox.position.set(0, 9, 0);
+    scene.add(selectHintBox);
+
     cardPile = new CardPile();
     scene.add(cardPile);
 
@@ -117,10 +132,6 @@ export function initGame() {
     PLAYER.position.set(0, 2, 5);
     const playerUI = new PlayerUI(PLAYER);
     playerUI.position.set(-4, 0, 0);
-
-    const card1 = new Card(0);
-    scene.add(card1);
-    PLAYER.addCard(card1);
 
     // Interactions
 
@@ -134,6 +145,8 @@ export function initGame() {
 
     cardTooltip = new CardTooltip(scene);
     cardTooltip.visible = false;
+
+    dice = new Dice(scene);
 
     renderSceneView();
 
@@ -217,6 +230,8 @@ export function onSessionInfoReceived(info) {
     if (opponents_profile.length < 1)
         throw new Error("Not enought opponents !");
 
+    PLAYER.name = my_profile.name;
+
     opponents_profile.forEach(profile => {
         const opponent = new Opponent(scene);
         const ui = new PlayerUI(opponent);
@@ -277,8 +292,40 @@ export function onPlayCardEvent(data) {
                 case ActionTypeDTO.HEAL:
                     events.push(new HealPlayerEvent(targetedPlayer, target.action.amount));
                     break;
+                case ActionTypeDTO.DRAW:
+                    target.action.cards.forEach(card_id => {
+                        events.push(new DrawCardEvent(targetedPlayer, card_id));
+                    });
+                    break;
+                case ActionTypeDTO.DISCARD:
+                    // sort indexes in descending order
+                    target.action.cards.sort((a, b) => a < b).forEach(card_index => {
+                        events.push(new DiscardCardEvent(targetedPlayer, card_index));
+                    });
+                    break;
+                case ActionTypeDTO.STEAL:
+                    // Pour chaque carte volée, retire la carte de la main de la cible et l'ajoute à la main du joueur qui a volé
+                    target.action.cards.forEach(card_id => {
+                        // On suppose que le joueur courant est le voleur
+                        const thief = player;
+                        // Retire la carte de la main de la cible (si présente)
+                        if (targetedPlayer.removeCardFromHand) {
+                            targetedPlayer.removeCardFromHand(card_id);
+                        }
+                        // Ajoute la carte à la main du voleur
+                        if (thief.addCardToHand) {
+                            thief.addCardToHand(card_id);
+                        }
+                        // Affiche un message pour le voleur et la victime
+                        if (thief === PLAYER) {
+                            displayMessage("Vous avez volé une carte à " + targetedPlayer.name + " !");
+                        } else if (targetedPlayer === PLAYER) {
+                            displayMessage("On vous a volé une carte !");
+                        }
+                    });
+                    break;
                 default:
-                    console.log(`No event defined for \"${target.action.type}\"`);
+                    console.log(`No event defined for "${target.action.type}"`);
                     break;
             }
         });
@@ -315,8 +362,11 @@ export function onGameEndEvent(data) {
 }
 
 
-export function displayGameEndScreen() {
-    displayPopup("Game End", "The game has ended. The winner is " + getPlayerById(winner_id).name + " !", "Next", () => {
+export function displayGameEndScreen(player_id) {
+    winner_id = player_id;
+    const winner = getPlayerById(winner_id);
+    const win_text = winner != null ? `The game has ended. The winner is ${winner.name} !` : "The game has ended in a draw !";
+    displayPopup(win_text, "Game End", "Next", () => {
         window.location.href = "index.html";
     });
 }
@@ -365,6 +415,8 @@ export function getOpponentPosition(index) {
  */
 export function updateCurrentPlayerTurn(who, turn_end=0) {
 
+    stopSelectionGlow();
+
     PLAYER.clearSelection();
     OPPONENTS.values().forEach(opponent => {
         opponent.clearSelection();
@@ -401,6 +453,15 @@ export function getIdByPlayer(player) {
         }
         return undefined;
     }
+}
+
+
+function stopSelectionGlow() {
+    PLAYER.stopGlowLoop();
+    OPPONENTS.values().forEach(opponent => {
+        opponent.stopGlowLoop();
+    });
+    selectHintBox.stopGlowLoop();
 }
 
 
@@ -459,28 +520,64 @@ function onPointerDown( event ) {
 
         raycaster.setFromCamera( pointer, camera );
 
-        const intersects = raycaster.intersectObjects( PLAYER.cards /* scene.children */, false );
+        const card_intersects = raycaster.intersectObjects( PLAYER.cards /* scene.children */, false );
 
-        if ( intersects.length > 0 ) {
+        if ( card_intersects.length > 0 ) {
 
-            const card = intersects[ 0 ].object;
+            const card = card_intersects[ 0 ].object;
 
             if (event.button == 0) {
                 PLAYER.toggleCardSelection(PLAYER.cards.indexOf(card));
+
+                stopSelectionGlow();
+
+                if (PLAYER.selected_card != null) {
+                    console.log(`SELECT CARD TARGET TYPE: ${PLAYER.selected_card.info.targets}`);
+                    switch (PLAYER.selected_card.info.targets) {
+                        case TargetType.SINGLE:
+                        case TargetType.MULTIPLE:
+                            OPPONENTS.values().forEach(opponent => {
+                                opponent.startGlowLoop();
+                            });
+                            break;
+                        case TargetType.SINGLE_AND_SELF:
+                        case TargetType.MULTIPLE_AND_SELF:
+                            PLAYER.startGlowLoop();
+                            OPPONENTS.values().forEach(opponent => {
+                                opponent.startGlowLoop();
+                            });
+                            break;
+                        case TargetType.SELF:
+                            PLAYER.startGlowLoop();
+                            break;
+                        case TargetType.ALL:
+                        case TargetType.ALL_AND_SELF:
+                            // TODO
+                            selectHintBox.startGlowLoop();
+                            break;
+                    }
+
+                }
             }
 
-        } else if (PLAYER.selected_card != null) {  // choose target, TODO handle multiple targets
+        } else {
+            // choose target, TODO handle multiple targets
+            handleTargetSelection();
+        }
+    }
 
-            if (PLAYER.selected_card.info.kind == CardKind.FOOD) {
-                const player_intersects = raycaster.intersectObject(PLAYER, false);
-                
-                // if player is selected, play FOOD card
-                if (player_intersects.length > 0) {
-                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
-                    eventMgr.pushEvent(new ChangeTurnEvent(null));
-                    serverConnexion.send_play_card_action(card_index, [] /* no target for food */);
-                }
-            } else {    /* must select target */
+}
+
+
+function handleTargetSelection() {
+    // raycaster is already setup
+
+    if (PLAYER.selected_card != null) {
+        
+        switch (PLAYER.selected_card.info.targets) {
+            // TODO handle MULTIPLE target type
+            case TargetType.SINGLE:     // select opponent to play the card
+            case TargetType.SINGLE_AND_SELF:
                 const opponents = [];
                 OPPONENTS.values().forEach(opponent => {
                     if (opponent.health > 0)
@@ -496,8 +593,50 @@ function onPointerDown( event ) {
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [getIdByPlayer(opponent)]);
                 }
-            }
+                break;
+            case TargetType.ALL:    // select hint box to play the card
+            case TargetType.ALL_AND_SELF:
+                const select_hint_intersects = raycaster.intersectObject(selectHintBox, false);
+            
+                // if hint box is selected, play card
+                if (select_hint_intersects.length > 0) {
+                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
+                    eventMgr.pushEvent(new ChangeTurnEvent(null));
+                    serverConnexion.send_play_card_action(card_index, [] /* targets are filled by server */);
+                }
+                break;
+            case TargetType.SELF:    // select self to play the card
+                const player_intersects = raycaster.intersectObject(PLAYER, false);
+            
+                // if player is selected, play card
+                if (player_intersects.length > 0) {
+                    const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
+                    eventMgr.pushEvent(new ChangeTurnEvent(null));
+                    serverConnexion.send_play_card_action(card_index, [] /* no targets needed */);
+                }
+                break;
         }
     }
+}
 
+
+class SelectHintBox extends THREE.Mesh {
+    /** @type {gsap.core.Timeline} */
+    glowTl = gsap.timeline();
+
+    constructor(geo) {
+        const mat = new THREE.MeshBasicMaterial( { color: 0xffffff, opacity: 0.0, transparent: true } );
+        super(geo, mat);
+    }
+
+    startGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+        this.glowTl.to(this.material, { opacity: 0.3, duration: 0.5, repeat: -1, yoyo: true, ease: Power1.easeInOut });
+    }
+
+    stopGlowLoop() {
+        this.glowTl.clear();
+        this.material.opacity = 0.0;
+    }
 }
