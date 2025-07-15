@@ -5,11 +5,15 @@ use lazy_static::lazy_static;
 use serde::Deserializer;
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
-use crate::server::game::card::{MultiActionCard, MultiHitCard, TargetBothCard, TargetType};
-use crate::server::game::modifiers::ModifierInfo;
-use crate::server::game::special_cards::{PearthCard, PlayersRollsDiceCard, PlayersRollsDiceCardAction};
+use super::modifiers::ModifierInfo;
 
-use super::card::{BasicCard, Card, CardId, Element, Kind, Stars};
+use super::cards::card::{BasicCard, Card, CardId, Element, Kind, Stars, TargetType};
+use super::cards::multi_action_card::MultiActionCard;
+use super::cards::multi_hit_card::MultiHitCard;
+use super::cards::pearth_card::PearthCard;
+use super::cards::players_rolls_dice_card::{PlayersRollsDiceCard, PlayersRollsDiceCardAction};
+use super::cards::target_both_card::TargetBothCard;
+
 
 lazy_static! {
     pub static ref CARD_DATABASE: Vec<Box<dyn Card>> = {

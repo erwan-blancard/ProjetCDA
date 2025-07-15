@@ -5,7 +5,7 @@ use chrono::serde::ts_seconds;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::server::game::card::{CardId, EffectId};
+use crate::server::game::cards::card::CardId;
 use crate::server::game::play_info::PlayAction;
 use crate::server::game::player::PlayerId;
 

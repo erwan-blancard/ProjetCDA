@@ -1,16 +1,8 @@
-use std::collections::HashMap;
-use std::fmt::{self, Debug, Display};
 use serde::Deserialize;
 
-use crate::server::game::card::TargetType;
-use crate::utils::clamp::clamp;
-
-use super::game::{Game, MAX_PLAYERS};
-use super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
-use super::modifiers::Modifier;
-use super::player::Player;
-use super::card::{Card, CardId, Element, Stars, Kind};
-
+use super::card::{Card, CardId, Element, Kind, Stars, TargetType};
+use super::super::game::Game;
+use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -32,7 +24,7 @@ impl PlayersRollsDiceCardActionType {
 
         match self {
             PlayersRollsDiceCardActionType::Attack => {
-                player.damage(amount, card.get_element(), card.get_damage_effect())
+                player.damage(amount, card.get_damage_effect())
             }
             PlayersRollsDiceCardActionType::Heal => {
                 player.heal(amount, card.get_heal_effect())
@@ -168,41 +160,5 @@ impl Card for PlayersRollsDiceCard {
             }
             Err(msg) => { Err(msg) }
         }
-    }
-}
-
-
-/// Card variant for Pearth card
-#[derive(Debug, Clone)]
-pub struct PearthCard {
-    pub id: CardId,
-    pub name: String,
-    pub element: Element,
-    pub stars: Stars,
-    pub kind: Kind,
-    pub desc: String,
-}
-
-impl Card for PearthCard {
-    fn get_id(&self) -> CardId { self.id }
-    fn get_name(&self) -> String { String::from(&self.name) }
-    fn get_description(&self) -> String { String::from(&self.desc) }
-    fn get_kind(&self) -> Kind { self.kind }
-    fn get_element(&self) -> Element { self.element }
-    fn get_stars(&self) -> Stars { self.stars }
-    fn get_target_type(&self) -> TargetType { TargetType::All }
-
-    fn play(&self, player_index: usize, _target_indices: Vec<usize>, game: &mut Game) -> Result<PlayInfo, String> {
-        let mut info: PlayInfo = PlayInfo::new();
-
-        let dicards = game.players.iter().map(|player| player.discard_cards.len()).sum::<usize>();
-
-        let mut action: PlayAction = PlayAction::new();
-        let action_target = game.players[player_index].heal(dicards as u32, self.get_heal_effect());
-        action.targets.push(action_target);
-
-        info.actions.push(action);
-
-        Ok(info)
     }
 }

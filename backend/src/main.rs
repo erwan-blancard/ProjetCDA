@@ -46,12 +46,13 @@ mod server {
         pub mod responses;
     }
     pub mod game {
-        pub mod card;
-        /// This module contains special cards that don't fit into the normal card system
-        pub mod special_cards;
+        /// module that contains the card variants definitions
+        pub mod cards;
         pub mod database;
         pub mod game;
+        pub mod eval;
         pub mod modifiers;
+        pub mod buffs;
         pub mod player;
         pub mod play_info;
     }

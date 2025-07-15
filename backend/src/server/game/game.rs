@@ -4,14 +4,12 @@ use chrono::{DateTime, Utc};
 use rand::seq::SliceRandom;
 use rand::rng;
 
-use crate::server::dto::responses::{GameStateForPlayer, OpponentState, PlayerProfile};
-use crate::server::game::card::CardId;
-use crate::server::game::play_info::PlayInfo;
-use crate::server::game::player::PlayerId;
-
-use super::card::{Card};
+use super::cards::card::{Card, CardId};
 use super::database;
-use super::player::Player;
+use super::player::{Player, PlayerId};
+use super::play_info::PlayInfo;
+
+use crate::server::dto::responses::{GameStateForPlayer, OpponentState, PlayerProfile};
 
 
 pub const MAX_PLAYERS: usize = 6;

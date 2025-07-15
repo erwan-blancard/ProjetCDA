@@ -12,7 +12,7 @@ use chrono::Utc;
 use tokio::{sync::{mpsc, oneshot}, time::interval};
 use uid::IdU64;
 
-use crate::{routes::game::Lobbies, server::{dto::responses::ServerResponse, game::{card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
+use crate::{routes::game::Lobbies, server::{dto::responses::ServerResponse, game::{cards::card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
 
 use super::{dto::responses::PlayerProfile, game::{game::Game, player::PlayerId}};
 

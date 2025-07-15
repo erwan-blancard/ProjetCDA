@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use serde_derive::{Deserialize, Serialize};
 
-use crate::server::game::card::CardId;
-
+use super::cards::card::CardId;
 use super::player::PlayerId;
 
 

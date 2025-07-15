@@ -133,6 +133,12 @@
     "attack": 0,
     "heal": 0,
     "draw": 5,
+    "buffs": [
+      {
+        "type": "PlayAllCardsBuffInfo",
+        "elements": ["Air"]
+      }
+    ],
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -271,10 +277,14 @@
     "kind": "Spell",
     "desc": "L'attaque des cartes d'élément Feu est doublée jusqu'à la fin de votre prochain tour.",
     "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 2,
+        "op": "Mul",
+        "elements": ["Fire"]
+      }
+    ]
   },
   {
     "name": "Canne à pêche",
@@ -306,10 +316,15 @@
     "kind": "Spell",
     "desc": "L'attaque de vos cartes d'élément Air est doublée pendant votre prochain tour. Piochez une carte.",
     "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
     "draw": 1,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 2,
+        "op": "Mul",
+        "elements": ["Air"]
+      }
+    ]
   },
   {
     "name": "Cascade",
@@ -331,9 +346,12 @@
     "desc": "Enlevez 12 points à votre adversaire. Votre attaque augmente de 5 points pendant votre prochain tour.",
     "type": "BasicCard",
     "attack": 12,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 5
+      }
+    ]
   },
   {
     "name": "Charbon",
@@ -342,10 +360,15 @@
     "kind": "Spell",
     "desc": "L'attaque de votre prochaine carte d'élément Feu est augmentée de 10 points. Piochez une carte.",
     "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
     "draw": 1,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 10,
+        "elements": ["Fire"],
+        "lifetime": "UntilUsed"
+      }
+    ]
   },
   {
     "name": "Chouffleur",
@@ -443,10 +466,12 @@
     "kind": "Food",
     "desc": "Récupérez 6 points. Pendant votre prochain tour, vos cartes cibleront tous vos adversaire à la fois.",
     "type": "BasicCard",
-    "attack": 0,
     "heal": 6,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "TargetAllBuff"
+      }
+    ]
   },
   {
     "name": "Eaux troubles",
@@ -455,10 +480,17 @@
     "kind": "Spell",
     "desc": "Pendant votre prochain tour, vos cartes cibleront tous vos adversaires à la fois et l'attaque de vos cartes d'élément Eau sera doublée.",
     "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "TargetAllBuff"
+      },
+      {
+        "type": "AttackBuff",
+        "value": 2,
+        "op": "Mul",
+        "elements": ["Water"]
+      }
+    ]
   },
   {
     "name": "Eclaboussure",
@@ -605,9 +637,12 @@
     "desc": "Enlevez 7 points à votre adversaire. Votre attaque augmente de 7 points pendant votre prochain tour.",
     "type": "BasicCard",
     "attack": 7,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 7
+      }
+    ]
   },
   {
     "name": "Flamboise",
@@ -616,10 +651,15 @@
     "kind": "Food",
     "desc": "Récupérez 7 points. L'attaque de votre prochaine carte d'élément Feu augmente de 7 points.",
     "type": "BasicCard",
-    "attack": 0,
     "heal": 7,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 7,
+        "elements": ["Fire"],
+        "lifetime": "UntilUsed"
+      }
+    ]
   },
   {
     "name": "Flammes folles",
@@ -651,9 +691,14 @@
     "kind": "Spell",
     "desc": "Piochez une carte Arme de votre pile de défausse. L'attaque de vos armes est doublée pendant votre prochain tour.",
     "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 2,
+        "op": "Mul",
+        "kinds": ["Weapon"]
+      }
+    ],
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -1012,10 +1057,13 @@
     "desc": "Enlevez 6 points à tous vos adversaire. Votre attaque augmente de 6 points pendant votre prochain tour.",
     "type": "BasicCard",
     "attack": 6,
-    "heal": 0,
-    "draw": 0,
     "targets": "All",
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 6
+      }
+    ]
   },
   {
     "name": "Séisme",
@@ -1194,10 +1242,13 @@
     "desc": "Enlevez 4 points à tous les joueurs vous y compris. Votre attaque augmente de 4 points pour le prochain tour.",
     "type": "TargetBothCard",
     "attack": 4,
-    "heal": 0,
-    "draw": 0,
     "targets": "All",
-    "note": "Complex effect: no simple modifier"
+    "buffs": [
+      {
+        "type": "AttackBuff",
+        "value": 4
+      }
+    ]
   },
   {
     "name": "Vagues déferlantes",

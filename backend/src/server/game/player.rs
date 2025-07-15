@@ -1,4 +1,6 @@
-use super::{card::{Card, EffectId, Element}, play_info::{ActionTarget, ActionType}};
+use crate::server::game::buffs::Buff;
+
+use super::{cards::card::{Card, EffectId}, play_info::{ActionTarget, ActionType}};
 
 const PLAYER_MAX_HEALTH: i32 = 100;
 
@@ -12,7 +14,7 @@ pub struct Player {
     pub health: i32,
     pub hand_cards: Vec<Box<dyn Card>>,
     pub discard_cards: Vec<Box<dyn Card>>,
-    pub casted_cards: Vec<Box<dyn Card>>,
+    pub buffs: Vec<Box<dyn Buff>>,
 }
 
 impl PartialEq for Player {
@@ -28,13 +30,11 @@ impl Player {
             health: PLAYER_MAX_HEALTH,
             hand_cards: Vec::new(),
             discard_cards: Vec::new(),
-            casted_cards: Vec::new(),
+            buffs: Vec::new(),
         }
     }
 
-    pub fn damage(&mut self, amount: u32, element: Element, effect: EffectId) -> ActionTarget {
-        // TODO check buffs
-        // TODO check element
+    pub fn damage(&mut self, amount: u32, effect: EffectId) -> ActionTarget {
         let effective_damage = amount as i32;
 
         if self.health - effective_damage < 0 {
@@ -43,11 +43,10 @@ impl Player {
             self.health -= effective_damage;
         }
         
-        ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage as u32 }, effect }   // FIXME effect
+        ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage as u32 }, effect }
     }
 
     pub fn heal(&mut self, amount: u32, effect: EffectId) -> ActionTarget {
-        // TODO check buffs
         let effective_heal = amount as i32;
         if self.health + effective_heal > PLAYER_MAX_HEALTH {
             self.health = PLAYER_MAX_HEALTH;
@@ -55,7 +54,7 @@ impl Player {
             self.health += effective_heal;
         }
 
-        ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal as u32 }, effect }   // FIXME effect
+        ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal as u32 }, effect }
     }
 
 }
