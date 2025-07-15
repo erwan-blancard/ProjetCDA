@@ -50,7 +50,7 @@
     "element": "Earth",
     "stars": "Three",
     "kind": "Spell",
-    "desc": "Piochez les 3 cartes.",
+    "desc": "Piochez 3 cartes.",
     "type": "BasicCard",
     "attack": 0,
     "heal": 0,
@@ -614,7 +614,7 @@
     "element": "Fire",
     "stars": "Two",
     "kind": "Food",
-    "desc": "Récupérez 7 points. L'attaque de votre prochaine carte d'élément Feu augmente de 7 points",
+    "desc": "Récupérez 7 points. L'attaque de votre prochaine carte d'élément Feu augmente de 7 points.",
     "type": "BasicCard",
     "attack": 0,
     "heal": 7,
@@ -1107,10 +1107,12 @@
     "kind": "Spell",
     "desc": "Enlevez à chacun de vos adversaires autant de points que de cartes présentes dans leurs piles de défausse respectives.",
     "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "attack_modifier": {
+      "type": "DiscardSizeModifier",
+      "discard_size_op": "Add",
+      "from_target": true
+    },
+    "targets": "All"
   },
   {
     "name": "Terrenesol",
@@ -1272,13 +1274,13 @@
     "element": "Air",
     "stars": "Two",
     "kind": "Spell",
-    "desc": "Tous les joueurs piochent 2 cartes. Vous d'abord puis les autres dans le sens des aiguilles d'une montre.",
+    "desc": "Tous les joueurs piochent 2 cartes.",
     "type": "TargetBothCard",
     "attack": 0,
     "heal": 0,
     "draw": 2,
     "targets": "All",
-    "note": "Complex effect: no simple modifier"
+    "note": "Original effect: Tous les joueurs piochent 2 cartes. Vous d'abord puis les autres dans le sens des aiguilles d'une montre."
   },
   {
     "name": "Zéphyr",
