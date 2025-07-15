@@ -1,6 +1,5 @@
 use actix_service::forward_ready;
-use actix_web::{body::EitherBody, dev::{Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, http::Method, Error, HttpMessage, HttpResponse};
-use diesel::expression::is_aggregate::No;
+use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, http::Method, Error, HttpMessage};
 use futures::future::{ok, Ready};
 use futures::future::LocalBoxFuture;
 use jsonwebtoken::{decode, encode, EncodingKey, DecodingKey, Validation, Algorithm};

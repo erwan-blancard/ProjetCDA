@@ -30,6 +30,7 @@ CREATE TABLE friends (
   status INT NOT NULL DEFAULT 0
 );
 
+-- NOT USED
 
 CREATE TYPE cosmetic_type AS ENUM ('other');
 CREATE TABLE cosmetics (

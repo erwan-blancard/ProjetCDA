@@ -22,9 +22,10 @@ export async function register_submit() {
     const email = document.getElementById("email-input").value;
     const password = document.getElementById("password-input").value;
     const confirm_password = document.getElementById("confirm-password-input").value;
+    const input_status = document.getElementById("input-status");
 
     if (password !== confirm_password) {
-        displayPopup("Passwords do not match", "Error");
+        input_status.textContent = "Passwords do not match";
         return;
     }
 
@@ -37,6 +38,11 @@ export async function register_submit() {
 
 
 export async function login(username, password) {
+    const input_status = document.getElementById("input-status");
+    // change input-status span if it exists
+    if (input_status)
+        input_status.textContent = "";
+    
     const payload = {
         "username": username,
         "password": password
@@ -59,12 +65,22 @@ export async function login(username, password) {
         // cookie with token should have been updated
         window.location.href = "/index.html";
     } catch (error) {
-        displayPopup(`An error occured when logging in: ${error.message}`, "Error");
+        // displayPopup(`An error occured when logging in: ${error.message}`, "Error");
+        if (input_status)
+            input_status.textContent = "Username or password is incorrect";
+        else
+            console.error(`An error occured when logging in: ${error.message}`);
     }
 }
 
 
 export async function register(username, email, password) {
+    const input_status = document.getElementById("input-status");
+    // change input-status span if it exists
+    if (input_status)
+        input_status.textContent = "";
+    
+
     const payload = {
         "username": username,
         "email": email,
@@ -89,7 +105,11 @@ export async function register(username, email, password) {
                     });
 
     } catch (error) {
-        displayPopup(`There was an error when creating the account: ${error.message}`, "Error");
+        // displayPopup(`There was an error when creating the account: ${error.message}`, "Error");
+        if (input_status)
+            input_status.textContent = `Error when creating the account: ${error.message}`;
+        else
+            console.error(`There was an error when creating the account: ${error.message}`);
     }
 }
 

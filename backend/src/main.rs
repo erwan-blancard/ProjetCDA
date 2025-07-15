@@ -9,7 +9,6 @@ use actix_web::middleware::{Logger, NormalizePath};
 use actix_cors::Cors;
 use diesel::PgConnection;
 use diesel::r2d2;
-use reqwest::Url;
 use server::handler;
 use server::server::GameServerHandle;
 use tokio::time::Instant;
@@ -62,7 +61,6 @@ mod email {
     pub mod mailer;
 }
 
-// type ApiUrl = Url;
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 use tokio::task::{spawn_local, JoinHandle};
@@ -72,12 +70,7 @@ use crate::email::mailer::Mailer;
 use crate::routes::game::{Lobbies, Lobby, LobbyId};
 use crate::routes::sse::Broadcaster;
 
-// use uid::Id as IdT;
 
-// #[derive(Copy, Clone, Eq, PartialEq, Deserialize, Serialize)]
-// struct T(());
-
-// type GameId = IdT<T>;
 type GameId = Uuid;
 
 type GameJoinHandle = JoinHandle<Result<(), std::io::Error>>;
@@ -180,7 +173,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(lobbies.clone()))
             .app_data(web::Data::new(server_handlers.clone()))
-            // .app_data(web::Data::new(api_url.clone()))
             .app_data(web::Data::from(Arc::clone(&broadcaster)))
             .app_data(web::Data::new(mailer.clone()))
             .wrap(cors)

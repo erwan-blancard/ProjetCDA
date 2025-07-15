@@ -30,13 +30,14 @@
             <section class="styled">
                 <div class="vlayout form">
                     <label for="username-input">Username:</label>
-                    <input id="username-input" type="text" name="Username" value="" required="required"/>
+                    <input id="username-input" type="text" name="Username" value="" required="required" maxlength="32"/>
                     <label for="email-input">Email:</label>
-                    <input id="email-input" type="email" name="Email" value="" required="required"/>
+                    <input id="email-input" type="email" name="Email" value="" required="required" maxlength="255"/>
                     <label for="password-input">Password:</label>
-                    <input id="password-input" type="password" name="Password" value="" required="required"/>
+                    <input id="password-input" type="password" name="Password" value="" required="required" maxlength="255"/>
                     <label for="confirm-password-input">Confirm Password:</label>
-                    <input id="confirm-password-input" type="password" name="Confirm Password" value="" required="required"/>
+                    <input id="confirm-password-input" type="password" name="Confirm Password" value="" required="required" maxlength="255"/>
+                    <span id="input-status" style="color: red; font-size: medium;"></span>
                     <p style="font-size: medium;">Already have an account ? <a href="/login.html">Log in</a></p>
                     <button id="form-submit" class="styled" onclick="register_submit()"><span>Create Account</span></button>
                 </div>

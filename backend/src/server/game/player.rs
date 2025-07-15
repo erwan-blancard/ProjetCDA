@@ -2,12 +2,7 @@ use super::{card::{Card, EffectId, Element}, play_info::{ActionTarget, ActionTyp
 
 const PLAYER_MAX_HEALTH: i32 = 100;
 
-// use uid::Id as IdT;
 
-// #[derive(Copy, Clone, Eq, PartialEq)]
-// struct T(());
-
-// pub type PlayerId = IdT<T>;
 pub type PlayerId = i32;
 
 #[derive(Debug)]
