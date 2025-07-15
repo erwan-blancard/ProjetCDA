@@ -1,13 +1,12 @@
-use std::error::Error;
+use std::time::Duration;
 
-use chrono::Utc;
-use diesel::expression::is_aggregate::No;
+use chrono::{DateTime, Utc};
 use rand::seq::SliceRandom;
 use rand::rng;
 
 use crate::server::dto::responses::{GameStateForPlayer, OpponentState, PlayerProfile};
-use crate::server::game::card::{CardId, Kind};
-use crate::server::game::play_info::{PlayAction, PlayInfo};
+use crate::server::game::card::CardId;
+use crate::server::game::play_info::PlayInfo;
 use crate::server::game::player::PlayerId;
 
 use super::card::{Card};
@@ -18,6 +17,7 @@ use super::player::Player;
 pub const MAX_PLAYERS: usize = 6;
 pub const INITIAL_HAND_AMOUNT: usize = 5;
 pub const DRAW_CARD_LIMIT: usize = 5;   // can't draw if player has more than / or this amount of cards
+pub const TURN_DURATION: Duration = Duration::from_secs(90);
 
 
 #[derive(Debug)]
@@ -40,6 +40,10 @@ pub struct Game {
     pub player_profiles: Vec<PlayerProfile>,
     pub pile: Vec<Box<dyn Card>>,
     pub current_player_turn: usize,
+    pub current_player_turn_end: DateTime<Utc>,
+    /// Estimated amount of time that it will take for the web app to show the actions to the user.
+    /// Is determined when playing a card, and reset when the turn is advanced.
+    pub estimated_turn_end_offset: Duration,
     pub turn_order: Order,
     pub state: GameState
 }
@@ -55,6 +59,8 @@ impl Game {
             player_profiles: player_profiles.clone(),
             pile: database::CARD_DATABASE.clone(),
             current_player_turn: 0,
+            current_player_turn_end: Utc::now(),
+            estimated_turn_end_offset: Duration::ZERO,
             turn_order: Order::Forward,
             state: GameState::PreGame,
         }
@@ -69,6 +75,8 @@ impl Game {
         for player in self.players.iter_mut() {
             Self::give_from_pile(pile, player, INITIAL_HAND_AMOUNT);
         }
+
+        self.current_player_turn_end = Utc::now() + TURN_DURATION;
 
         self.state = GameState::InGame;
     }
@@ -120,6 +128,13 @@ impl Game {
         }
     }
 
+    pub fn advance_turn(&mut self) {
+        self.current_player_turn = self.next_player_index();
+        self.current_player_turn_end = Utc::now() + TURN_DURATION + self.estimated_turn_end_offset;
+        // reset
+        self.estimated_turn_end_offset = Duration::ZERO;
+    }
+
     pub fn play_card(&mut self, player_id: PlayerId, card_index: usize, targets: Vec<PlayerId>) -> Result<PlayInfo, String> {
         if self.current_player_id() != player_id {
             return Err("Not player's current turn".to_string());
@@ -164,6 +179,8 @@ impl Game {
                 } else if remaining_players.len() == 0 {
                     self.state = GameState::EndGame { winner_id: self.current_player_id() };
                 }
+
+                self.estimated_turn_end_offset += play_info.get_estimated_time();
 
                 Ok(play_info)
             },
@@ -215,7 +232,7 @@ impl Game {
 
         Ok(GameStateForPlayer {
             current_player_turn: self.current_player_id(),
-            current_player_turn_end: Utc::now(),
+            current_player_turn_end: self.current_player_turn_end,
             health: player.health as u32,
             cards: player.hand_cards.iter()
                 .map(|card| card.get_id())

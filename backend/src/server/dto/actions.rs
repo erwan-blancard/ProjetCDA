@@ -13,6 +13,7 @@ pub enum UserAction {
     /// Dice rolls are handled by the server (no actual dice roll, the client only sees the result of the roll)
     PlayCard {card_index: usize, targets: Vec<PlayerId>},
     /// The user wants to draw a card
+    /// TODO REMOVE
     DrawCard {},
     SendChatMessage {message: String,},
 

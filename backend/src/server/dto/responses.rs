@@ -98,7 +98,9 @@ pub enum ServerResponse {
 
     /// notify client of turn change
     ChangeTurn {
-        player_id: PlayerId
+        player_id: PlayerId,
+        #[serde(with = "ts_seconds")]   // needed to serialize a DateTime with serde
+        turn_end: DateTime<Utc>
     },
 
     /// notify client that all discarded cards were collected to pile

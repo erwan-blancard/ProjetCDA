@@ -156,10 +156,22 @@ input[type='text'] {
 }
 
 
+/* Turn Timer */
+
+#turn-timer {
+    font-size: xx-large;
+    font-weight: bold;
+}
+
+
 /* MOBILE VIEW */
 @media (max-device-width: 720px) and (orientation: landscape) {
     body {
         font-size: smaller;
+    }
+
+    #turn-timer {
+        font-size: x-large;
     }
 }
 

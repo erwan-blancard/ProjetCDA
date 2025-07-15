@@ -44,6 +44,7 @@ export class DrawCardResponse {
 export class ChangeTurnResponse {
     constructor(data) {
         this.player_id = data.player_id;
+        this.turn_end = data.turn_end;
     }
 }
 

@@ -31,7 +31,12 @@ export let PLAYER;
 /** @type {Map<number, Opponent>} */
 export let OPPONENTS = new Map();
 
-export let current_player_turn;
+export let currentPlayerTurn;
+/** @type {number} */
+export let currentPlayerTurnEnd = 0;
+
+/** @type {HTMLElement | null} */
+let turnTimer = null;
 
 /**
 * @typedef {{
@@ -48,7 +53,7 @@ export let current_player_turn;
 * 
 * @type {SessionInfo | null}
 */
-export let session_info;
+export let sessionInfo;
 
 /** @type {SelectHintBox | null} */
 export let selectHintBox;
@@ -69,7 +74,7 @@ export let dice;
 export let eventMgr;
 
 /** @type {number | null} */
-export let winner_id = null;
+export let winnerId = null;
 
 
 export function initGame() {
@@ -150,6 +155,8 @@ export function initGame() {
     renderSceneView();
 
     eventMgr = new EventMgr();
+
+    turnTimer = document.getElementById("turn-timer");
 
     serverConnexion = new ServerConnexion();
 
@@ -239,7 +246,7 @@ export function onSessionInfoReceived(info) {
         OPPONENTS.set(profile.id, opponent);
     });
 
-    session_info = info;
+    sessionInfo = info;
 
     updateOpponentPositions();
 
@@ -250,6 +257,8 @@ export function onSessionInfoReceived(info) {
 
 /** @param {PlayCardResponse} data  */
 export function onPlayCardEvent(data) {
+    updateCurrentPlayerTurn(null);  // hide timer and disable interactions
+
     const events = [];
 
     const player = getPlayerById(data.player_id);
@@ -326,7 +335,7 @@ export function onDrawCardEvent(data) {
 /** @param {ChangeTurnResponse} data  */
 export function onChangeTurnEvent(data) {
     // updateCurrentPlayerTurn(getPlayerById(data.player_id));
-    eventMgr.pushEvent(new ChangeTurnEvent(getPlayerById(data.player_id)));
+    eventMgr.pushEvent(new ChangeTurnEvent(getPlayerById(data.player_id), data.turn_end));
 }
 
 /** @param {CollectDiscardCardsResponse} data  */
@@ -341,8 +350,8 @@ export function onGameEndEvent(data) {
 
 
 export function displayGameEndScreen(player_id) {
-    winner_id = player_id;
-    const winner = getPlayerById(winner_id);
+    winnerId = player_id;
+    const winner = getPlayerById(winnerId);
     const win_text = winner != null ? `The game has ended. The winner is ${winner.name} !` : "The game has ended in a draw !";
     displayPopup(win_text, "Game End", "Next", () => {
         window.location.href = "index.html";
@@ -400,21 +409,22 @@ export function updateCurrentPlayerTurn(who, turn_end=0) {
         opponent.clearSelection();
     });
 
-    if (who == PLAYER && current_player_turn != PLAYER) {
+    if (who == PLAYER && currentPlayerTurn != PLAYER) {
         
-    } else if (who != PLAYER && current_player_turn == PLAYER) {
+    } else if (who != PLAYER && currentPlayerTurn == PLAYER) {
         
         
         cardTooltip.visible = false;
     }
 
-    current_player_turn = who;
+    currentPlayerTurn = who;
+    currentPlayerTurnEnd = turn_end;
 
 }
 
 
 export function getPlayerById(player_id) {
-    if (player_id == session_info.id)
+    if (player_id == sessionInfo.id)
         return PLAYER;
     else
         return OPPONENTS.get(player_id);
@@ -423,7 +433,7 @@ export function getPlayerById(player_id) {
 
 export function getIdByPlayer(player) {
     if (player == PLAYER) {
-        return session_info.id;
+        return sessionInfo.id;
     } else {
         for (const [id, opp] of OPPONENTS.entries()) {
             if (opp == player)
@@ -443,6 +453,11 @@ function stopSelectionGlow() {
 }
 
 
+function updateTurnTimer() {
+    const now = Math.ceil(Date.now() / 1000);   // in seconds
+    const diff = currentPlayerTurnEnd - now;
+    turnTimer.textContent = currentPlayerTurnEnd > 0 ? (diff + 1 >= 0 ? diff + 1 : 0) : "";
+}
 
 function renderSceneView() {
     requestAnimationFrame(renderSceneView);
@@ -450,6 +465,8 @@ function renderSceneView() {
     labelRenderer.render( scene, camera );
     if (eventMgr)
         document.getElementById("event-counter").textContent = eventMgr.queueCount;
+    if (turnTimer)
+        updateTurnTimer();
 }
 
 function onWindowResize() {
@@ -463,7 +480,7 @@ function onWindowResize() {
 
 function onPointerMove( event ) {
 
-    if (current_player_turn == PLAYER && !eventMgr.isWaitingForEvents()) {
+    if (currentPlayerTurn == PLAYER && !eventMgr.isWaitingForEvents()) {
 
         pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 
@@ -492,7 +509,7 @@ function onPointerMove( event ) {
 
 function onPointerDown( event ) {
 
-    if (current_player_turn == PLAYER && !eventMgr.isWaitingForEvents()) {
+    if (currentPlayerTurn == PLAYER && !eventMgr.isWaitingForEvents()) {
 
         pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 

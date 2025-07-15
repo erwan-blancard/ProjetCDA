@@ -1,29 +1,28 @@
 use std::{
-    collections::{HashMap, HashSet},
-    io,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering},
-    },
+    collections::HashMap, io, pin::pin, time::Duration
 };
 
-use chrono::{DateTime, Utc};
-use rand::{rand_core::le, Rng as _};
-use serde_json::to_string;
-use tokio::sync::{mpsc, oneshot};
+use futures::lock::Mutex;
+use futures_util::{
+    StreamExt as _, // keep this line
+    future::{Either, select},
+};
+
+use chrono::Utc;
+use tokio::{sync::{mpsc, oneshot}, time::interval};
 use uid::IdU64;
 
-use crate::{database::models::Account, routes::game::{Lobbies, Lobby, LobbyId}, server::{dto::responses::ServerResponse, game::{card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
+use crate::{routes::game::Lobbies, server::{dto::responses::ServerResponse, game::{card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
 
-use super::{dto::responses::{GameStateForPlayer, PlayerProfile}, game::{game::Game, player::{Player, PlayerId}}};
-use super::dto::actions::UserAction;
+use super::{dto::responses::PlayerProfile, game::{game::Game, player::PlayerId}};
 
 
 /// Connection ID.
 pub type ConnId = u64;
 
 pub type Msg = String;
-pub type Token = String;
+
+const TURN_CHECK_INTERVAL: Duration = Duration::from_secs(1);
 
 
 /// A command received by the [`GameServer`] (sent by a [`GameServerHandle`])
@@ -73,16 +72,20 @@ enum Command {
 }
 
 
+/// Map of connection IDs to the player id and their message receivers.
+/// Intended to be wrapped in a Mutex.
+#[derive(Debug)]
+pub struct SessionsInner {
+    sessions: HashMap<ConnId, (PlayerId, mpsc::UnboundedSender<Msg>)>,
+}
+
+
 #[derive(Debug)]
 pub struct GameServer {
-    /// Map of connection IDs to their message receivers.
-    sessions: HashMap<ConnId, mpsc::UnboundedSender<Msg>>,
+    sessions: Mutex<SessionsInner>,
 
     /// list of accounts associated to players
     accounts: Vec<PlayerProfile>,
-
-    /// users must be authenticated when in this map
-    users: HashMap<PlayerId, ConnId>,
 
     game: Game,
 
@@ -106,10 +109,9 @@ impl GameServer {
 
         (
             Self {
-                sessions: HashMap::new(),
+                sessions: Mutex::new(SessionsInner { sessions: HashMap::new() }),
                 game: Game::new(&players),
                 accounts: players,
-                users: HashMap::new(),
                 cmd_rx,
                 game_id,
                 lobbies,
@@ -124,7 +126,7 @@ impl GameServer {
         let msg = msg.into();
         let msg = ServerResponse::Message { message: msg };
 
-        for (conn_id, tx) in &self.sessions {
+        for (conn_id, (_, tx)) in &self.sessions.lock().await.sessions {
             if conn_id != &conn {
                 let _ = msg.send_unbounded(tx);
             }
@@ -132,37 +134,34 @@ impl GameServer {
     }
 
     async fn notify_game_started(&self) {
-        for (player_id, conn_id) in self.users.clone() {
-            let tx = self.sessions.get(&conn_id).unwrap();
-            let status = self.game.status_for_player(player_id).unwrap();
+        for (_, (player_id, tx)) in &self.sessions.lock().await.sessions {
+            let status = self.game.status_for_player(*player_id).unwrap();
 
             let _ = status.to_server_response().send_unbounded(tx);
         }
+        
     }
 
     async fn notify_game_end(&self, winner_id: PlayerId) {
-        for (_, conn_id) in self.users.clone() {
-            let tx = self.sessions.get(&conn_id).unwrap();
+        for (_, (_, tx)) in &self.sessions.lock().await.sessions {
             let resp = ServerResponse::GameEnd { winner_id };
             let _ = resp.send_unbounded(tx);
         }
     }
 
     async fn send_game_state(&self, player_id: PlayerId) {
+        let sessions = &self.sessions.lock().await.sessions;
+
+        let tx = &sessions.iter().find(|(_, (id, _))| *id == player_id).unwrap().1.1;
+
         let state = self.game.status_for_player(player_id).unwrap();
-        let conn_id = self.users.get(&player_id).unwrap();
-        let _ = state.to_server_response().send_unbounded(self.sessions.get(&conn_id).unwrap());
+        let _ = state.to_server_response().send_unbounded(tx);
     }
 
     async fn advance_turn(&mut self) {
         match self.game.state {
             GameState::EndGame { winner_id } => {
                 self.notify_game_end(winner_id).await;
-
-                self.sessions.clear();
-
-                // close handler channel
-                self.cmd_rx.close();
                 
                 // Reset ready status in the associated lobby
                 {
@@ -177,21 +176,19 @@ impl GameServer {
             _ => {}
         }
 
-        self.game.current_player_turn = self.game.next_player_index();
+        self.game.advance_turn();
         self.notify_change_turn().await;
 
         let current_player_id = self.game.current_player_id();
         let mut card_count = self.game.players[self.game.current_player_turn].hand_cards.len();
-
-        println!("player card count: {}, cards in pile: {}, condition: {}", card_count, self.game.pile.len(), card_count < DRAW_CARD_LIMIT && self.game.pile.len() < DRAW_CARD_LIMIT - card_count);
 
         // collect discard cards if needed
         if card_count < DRAW_CARD_LIMIT && self.game.pile.len() < DRAW_CARD_LIMIT - card_count {
             self.game.collect_discard_cards();
             self.game.shuffle_pile();
             let resp = ServerResponse::CollectDiscardCards { cards_in_pile: self.game.pile.len() as u32 };
-            for (_, conn_id) in self.users.clone() {
-                let tx = self.sessions.get(&conn_id).unwrap();
+
+            for (_, (_, tx)) in &self.sessions.lock().await.sessions {
                 let _ = resp.send_unbounded(tx);
             }
         }
@@ -200,23 +197,20 @@ impl GameServer {
         while card_count < DRAW_CARD_LIMIT {
             let card_id = self.game.draw_card(current_player_id).unwrap();
             card_count += 1;
-            for (&pid, &conn_id) in &self.users {
-                if let Some(tx) = self.sessions.get(&conn_id) {
-                    let resp = ServerResponse::DrawCard {
-                        player_id: current_player_id,
-                        card_id: if pid == current_player_id { card_id } else { -1 },
-                    };
-                    let _ = resp.send_unbounded(tx);
-                }
+
+            for (_, (pid, tx)) in &self.sessions.lock().await.sessions {
+                let resp = ServerResponse::DrawCard {
+                    player_id: current_player_id,
+                    card_id: if *pid == current_player_id { card_id } else { -1 },
+                };
+                let _ = resp.send_unbounded(tx);
             }
         }
     }
 
     async fn notify_change_turn(&self) {
-        let resp = ServerResponse::ChangeTurn { player_id: self.game.current_player_id() };
-        for (_, conn_id) in self.users.clone() {
-            let tx = self.sessions.get(&conn_id).unwrap();
-
+        let resp = ServerResponse::ChangeTurn { player_id: self.game.current_player_id(), turn_end: self.game.current_player_turn_end };
+        for (_, (_, tx)) in &self.sessions.lock().await.sessions {
             let _ = resp.send_unbounded(tx);
         }
     }
@@ -226,8 +220,13 @@ impl GameServer {
         log::info!("Someone joined");
 
         // stop connection associated with this player id (if any)
-        if let Some(conn_id) = self.users.get(&player_id) {
-            self.disconnect(*conn_id).await;
+        let maybe_conn_id = {
+            let sessions = &self.sessions.lock().await.sessions;
+            sessions.iter().find(|(_, (id, _))| *id == player_id).map(|(id, _)| *id)
+        };
+
+        if let Some(conn_id) = maybe_conn_id {
+            self.disconnect(conn_id).await;
         }
 
         // notify all users in same session
@@ -235,8 +234,11 @@ impl GameServer {
 
         // register session with random connection ID
         let id = IdU64::<ConnId>::new().get();
-        self.sessions.insert(id, tx);
-        self.users.insert(player_id, id);
+
+        {
+            let sessions = &mut self.sessions.lock().await.sessions;
+            sessions.insert(id, (player_id, tx));
+        }
 
         // send id back
         id
@@ -244,9 +246,10 @@ impl GameServer {
 
     /// Unregister connection from room map and broadcast disconnection message.
     async fn disconnect(&mut self, conn_id: ConnId) {
+        let sessions = &mut self.sessions.lock().await.sessions;
 
         // remove sender
-        if self.sessions.remove(&conn_id).is_some() {
+        if sessions.remove(&conn_id).is_some() {
             println!("Session {conn_id:?} disconnected");
             // extra stuff
         }
@@ -257,142 +260,178 @@ impl GameServer {
             let _ = ready_tx.send(());
         }
 
-        while let Some(cmd) = self.cmd_rx.recv().await {
-            match cmd {
-                Command::Connect { player_id, conn_tx, res_tx } => {
-                    let conn_id = self.connect(player_id, conn_tx).await;
-                    let _ = res_tx.send(conn_id);
+        // interval used to check if a player misses a turn
+        let mut interval = interval(TURN_CHECK_INTERVAL);
+        
+        // Extract the receiver from self to avoid borrow conflicts
+        // FIXME: this is a hack to avoid borrow conflicts, self.cmd_rx is replace with a new, useless one
+        let mut cmd_rx = std::mem::replace(&mut self.cmd_rx, mpsc::unbounded_channel().1);
 
-                    match self.game.state {
-                        // not yet started
-                        GameState::PreGame => {
-                            self.game.begin();
-                            self.notify_game_started().await;
+        loop {
+            // check if game is over
+            match self.game.state {
+                GameState::EndGame { .. } => { break; } // exit loop to stop the server
+                _ => {}
+            }
+
+            let tick = pin!(interval.tick());
+            let msg_rx = pin!(cmd_rx.recv());
+
+            match select(msg_rx, tick).await {
+
+                Either::Left((Some(cmd), _)) => {
+                    match cmd {
+                        Command::Connect { player_id, conn_tx, res_tx } => {
+                            let conn_id = self.connect(player_id, conn_tx).await;
+                            let _ = res_tx.send(conn_id);
+        
+                            match self.game.state {
+                                // not yet started
+                                GameState::PreGame => {
+                                    self.game.begin();
+                                    self.notify_game_started().await;
+                                }
+                                GameState::InGame => {
+                                    self.send_game_state(player_id).await;
+                                }
+                                // finished
+                                // should not happen as we exit the recv loop
+                                GameState::EndGame { winner_id: _ } => {
+                                    self.disconnect(conn_id).await;
+                                    // exit loop
+                                    break;
+                                }
+                            }
                         }
-                        GameState::InGame => {
+        
+                        Command::Disconnect { conn } => {
+                            self.disconnect(conn).await;
+                        }
+        
+                        Command::SessionInfo { res_tx } => {
+                            let players = self.game.player_profiles.clone();
+                            let _ = res_tx.send(players);
+                        }
+        
+                        Command::PlayCard { player_id, card_index, targets, res_tx } => {
+                            // match self.game.state {
+                            //     // should not happen as we exit the recv loop
+                            //     GameState::EndGame { .. } => {
+                            //         let _ = res_tx.send(Err("Game is over".to_string()));
+                            //         // exit loop
+                            //         break;
+                            //     }
+                            //     _ => {}
+                            // }
+        
+                            // get card id before it is removed from hand
+                            let card_id = self.game.players
+                                .iter()
+                                .find(|p| p.id == player_id)
+                                .and_then(|p| p.hand_cards.get(card_index))
+                                .map(|c| c.get_id());
+        
+                            let result = self.game.play_card(player_id, card_index, targets.clone());
+                            let ok = result.is_ok();
+                            let _ = res_tx.send(result.clone());
+        
+                            if ok {
+                                let play_info = result.unwrap();
+                                for (_, (_, tx)) in &self.sessions.lock().await.sessions {
+                                    let resp = ServerResponse::PlayCard {
+                                        player_id,
+                                        card_id: card_id.unwrap_or(-1),
+                                        hand_index: card_index as u32,
+                                        actions: play_info.actions.clone(),
+                                    };
+                                    let _ = resp.send_unbounded(tx);
+                                }
+                                self.advance_turn().await;
+                            } else {
+                                // send game state to player when error
+                                println!("Error playing card: {:?}", result.clone().err().unwrap());
+                                self.send_game_state(player_id).await;
+                            }
+                        }
+        
+                        Command::DrawCard { player_id, res_tx } => {
+                            // match self.game.state {
+                            //     // should not happen as we exit the recv loop
+                            //     GameState::EndGame { .. } => {
+                            //         let _ = res_tx.send(Err("Game is over".to_string()));
+                            //         // exit loop
+                            //         break;
+                            //     }
+                            //     _ => {}
+                            // }
+                            
+                            let result = self.game.draw_card(player_id);
+                            let ok = result.is_ok();
+                            let card_id = result.clone().unwrap_or(-1);
+                            let _ = res_tx.send(result.clone());
+        
+                            if ok {
+                                for (_, (pid, tx)) in &self.sessions.lock().await.sessions {
+                                    let resp = ServerResponse::DrawCard {
+                                        player_id,
+                                        card_id: if *pid == player_id { card_id } else { -1 },
+                                    };
+                                    let _ = resp.send_unbounded(tx);
+                                }
+                                self.advance_turn().await;
+                            } else {
+                                // send game state to player when error
+                                println!("Error drawing card: {:?}", result.clone().err().unwrap());
+                                self.send_game_state(player_id).await;
+                            }
+                        }
+        
+                        Command::Message { conn, msg, res_tx } => {
+                            self.send_chat_message_to_handlers(conn, msg).await;
+                            let _ = res_tx.send(());
+                        }
+        
+                        Command::GameStateForPlayer { player_id, res_tx } => {
                             self.send_game_state(player_id).await;
+                            let _ = res_tx.send(());
                         }
-                        // finished
-                        // should not happen as we exit the recv loop
-                        GameState::EndGame { winner_id: _ } => {
-                            self.disconnect(conn_id).await;
+        
+                        Command::Kill { res_tx } => {
+                            log::info!("Received kill command");
+                            let _ = res_tx.send(());
                             // exit loop
                             break;
                         }
                     }
                 }
 
-                Command::Disconnect { conn } => {
-                    self.disconnect(conn).await;
-                }
-
-                Command::SessionInfo { res_tx } => {
-                    let players = self.game.player_profiles.clone();
-                    let _ = res_tx.send(players);
-                }
-
-                Command::PlayCard { player_id, card_index, targets, res_tx } => {
-                    // match self.game.state {
-                    //     // should not happen as we exit the recv loop
-                    //     GameState::EndGame { .. } => {
-                    //         let _ = res_tx.send(Err("Game is over".to_string()));
-                    //         // exit loop
-                    //         break;
-                    //     }
-                    //     _ => {}
-                    // }
-
-                    // get card id before it is removed from hand
-                    let card_id = self.game.players
-                        .iter()
-                        .find(|p| p.id == player_id)
-                        .and_then(|p| p.hand_cards.get(card_index))
-                        .map(|c| c.get_id());
-
-                    let result = self.game.play_card(player_id, card_index, targets.clone());
-                    let ok = result.is_ok();
-                    let _ = res_tx.send(result.clone());
-
-                    if ok {
-                        let play_info = result.unwrap();
-                        for (&_, &conn_id) in &self.users {
-                            if let Some(tx) = self.sessions.get(&conn_id) {
-                                let resp = ServerResponse::PlayCard {
-                                    player_id,
-                                    card_id: card_id.unwrap_or(-1),
-                                    hand_index: card_index as u32,
-                                    actions: play_info.actions.clone(),
-                                };
-                                let _ = resp.send_unbounded(tx);
-                            }
-                        }
-                        self.advance_turn().await;
-                    } else {
-                        // send game state to player when error
-                        println!("Error playing card: {:?}", result.clone().err().unwrap());
-                        self.send_game_state(player_id).await;
-                    }
-                }
-
-                Command::DrawCard { player_id, res_tx } => {
-                    // match self.game.state {
-                    //     // should not happen as we exit the recv loop
-                    //     GameState::EndGame { .. } => {
-                    //         let _ = res_tx.send(Err("Game is over".to_string()));
-                    //         // exit loop
-                    //         break;
-                    //     }
-                    //     _ => {}
-                    // }
-                    
-                    let result = self.game.draw_card(player_id);
-                    let ok = result.is_ok();
-                    let card_id = result.clone().unwrap_or(-1);
-                    let _ = res_tx.send(result.clone());
-
-                    if ok {
-                        for (&pid, &conn_id) in &self.users {
-                            if let Some(tx) = self.sessions.get(&conn_id) {
-                                let resp = ServerResponse::DrawCard {
-                                    player_id,
-                                    card_id: if pid == player_id { card_id } else { -1 },
-                                };
-                                let _ = resp.send_unbounded(tx);
-                            }
-                        }
-                        self.advance_turn().await;
-                    } else {
-                        // send game state to player when error
-                        println!("Error drawing card: {:?}", result.clone().err().unwrap());
-                        self.send_game_state(player_id).await;
-                    }
-                }
-
-                Command::Message { conn, msg, res_tx } => {
-                    self.send_chat_message_to_handlers(conn, msg).await;
-                    let _ = res_tx.send(());
-                }
-
-                Command::GameStateForPlayer { player_id, res_tx } => {
-                    self.send_game_state(player_id).await;
-                    let _ = res_tx.send(());
-                }
-
-                Command::Kill { res_tx } => {
-                    log::info!("Received kill command");
-                    self.sessions.clear();
-                    let _ = res_tx.send(());
-                    self.cmd_rx.close();
-                    // exit loop
+                // cmd_rx is closed
+                Either::Left((None, _)) => {
                     break;
                 }
-            }
 
-            match self.game.state {
-                GameState::EndGame { .. } => { break; } // exit loop to stop the server
-                _ => {}
-            }
+                Either::Right((_, _tick)) => {
+                    // check if current player missed his turn
+                    match self.game.state {
+                        GameState::InGame => {
+                            if self.game.current_player_turn_end < Utc::now() {
+                                self.advance_turn().await;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
 
+            }
+        }
+
+        {
+            let sessions = &mut self.sessions.lock().await.sessions;
+            sessions.clear();
+        }
+
+        if !cmd_rx.is_closed() {
+            cmd_rx.close();
         }
 
         log::info!("GameServer worker stopped (game ended)");

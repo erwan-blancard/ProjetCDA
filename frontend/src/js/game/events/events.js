@@ -219,12 +219,13 @@ export class PutCardInPile extends GameEvent {
 
 export class ChangeTurnEvent extends PlayerEvent {
 
-    constructor(player) {
+    constructor(player, turn_end=0) {
         super(player);
+        this.turn_end = turn_end;
         this.timeout = 150;
     }
 
-    async run() { GAME.updateCurrentPlayerTurn(this.player); }
+    async run() { GAME.updateCurrentPlayerTurn(this.player, this.turn_end); }
 
 }
 
