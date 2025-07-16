@@ -239,6 +239,7 @@ export class PlayerBuffsUpdateEvent extends PlayerEvent {
     }
 
     async run() {
+        GAME.buffTooltip.visible = false;
         if (this.player)
             this.player.updateBuffs(this.buffs);
     }
@@ -312,6 +313,8 @@ export class GameUpdateEvent extends GameEvent {
 
     async run() {
         const data = this.upd_data;
+
+        GAME.buffTooltip.visible = false;
 
         try {
             GAME.PLAYER.health = data.health;

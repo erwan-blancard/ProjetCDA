@@ -160,14 +160,15 @@ export function matchingCardsDesc(elements, kinds, stars) {
             stars_with_text.push(`${star} Stars`);
     });
 
-    return strjoin([strjoin(elements, ", "), strjoin(kinds, ", "), strjoin(stars_with_text, ", ")], ", ");
+    return strjoin([strjoin(elements, ", "), strjoin(kinds, ", "), strjoin(stars_with_text, ", ")], ", ", true);
 }
 
 
 export class BuffInfoDTO {
     static ATTACK_BUFF = "AttackBuff";
     static ATTACK_BUFF_DESC_TEMPLATE(value, op, elements, kinds, stars, lifetime) {
-        return `${evalOpSymbol(op)}${value} attack for ${matchingCardsDesc(elements, kinds, stars)}cards, ${buffLifeTimeDesc(lifetime)}`;
+        const desc = matchingCardsDesc(elements, kinds, stars);
+        return `${evalOpSymbol(op)}${value} attack for ${(desc ? desc + " " : "")}cards ${buffLifeTimeDesc(lifetime)}`;
     }
     static TARGET_ALL_BUFF = "TargetAllBuff";
     static TARGET_ALL_BUFF_DESC_TEMPLATE() {
@@ -175,11 +176,12 @@ export class BuffInfoDTO {
     }
     static PLAY_ALL_CARDS_BUFF = "PlayAllCardsBuff";
     static PLAY_ALL_CARDS_BUFF_DESC_TEMPLATE(elements, kinds, stars) {
-        return `Play all of your ${matchingCardsDesc(elements, kinds, stars)}cards at once on the next turn`;
+        const desc = matchingCardsDesc(elements, kinds, stars);
+        return `Play all of your ${(desc ? desc + " " : "")}cards at once on the next turn`;
     }
 
     constructor(data) {
-        this.buff = data.type;
+        this.buff_type = data.type;
         switch (data.type) {
             case BuffInfoDTO.ATTACK_BUFF:
                 this.value = data.value;

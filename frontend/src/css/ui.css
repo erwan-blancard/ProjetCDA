@@ -164,6 +164,58 @@ input[type='text'] {
 }
 
 
+/* Buff Tooltip */
+
+.buff-tooltip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.1em;
+    margin: 1em 0.2em 1em 0.2em;
+    border: solid 0.2em whitesmoke;
+    border-radius: 0.4em;
+    background-color: #404060;
+}
+
+.buff-tooltip-desc {
+    min-width: 6em;
+    max-width: 12em;
+    min-height: 3em;
+    margin: 0.3em;
+    padding: 0.2em;
+    background-color: whitesmoke;
+    border: solid 0.2em #000000;
+    border-radius: 0.4em;
+}
+
+
+/* Buffs */
+
+.buff-AttackBuff {
+    background-image: url("/assets/buff_icons/attack_buff.svg");
+    background-size: cover;
+    width: 2em;
+    height: 2em;
+}
+
+.buff-TargetAllBuff {
+    /* FIXME create icon */
+    background-image: url("/assets/buff_icons/attack_buff.svg");
+    background-size: cover;
+    width: 2em;
+    height: 2em;
+}
+
+.buff-PlayAllCardsBuff {
+    /* FIXME create icon */
+    background-image: url("/assets/buff_icons/attack_buff.svg");
+    background-size: cover;
+    width: 2em;
+    height: 2em;
+}
+
+
 /* MOBILE VIEW */
 @media (max-device-width: 720px) and (orientation: landscape) {
     body {

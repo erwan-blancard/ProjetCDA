@@ -66,14 +66,22 @@ export function sleep(ms) {
 
 
 /**
- * @param {Array<string>} strarr
+ * @param {Array<string>} strings
  * @param {string} sep
 */
-export function strjoin(strarr, sep) {
+export function strjoin(strings, sep, skip_empty=false) {
     let result = "";
+    let strarr = strings;
+
+    if (skip_empty) {
+        strarr = strarr.filter(i => Boolean(i));
+    }
+
     for (let i = 0; i < strarr.length; i++) {
-        result += strarr[i];
-        if (i+1 < strarr.length) result += sep;
+        if (!(!strarr[i] && skip_empty)) {
+            result += strarr[i];
+            if (i+1 < strarr.length) result += sep;
+        }
     }
     return result;
 }

@@ -1,6 +1,7 @@
 import { PlayerObject, Player, Opponent } from "../game/player";
 import { CSS2DObject } from 'three-stdlib'
 import { BuffInfoDTO } from "../server/dto";
+import { BoxGeometry, Mesh, MeshBasicMaterial } from "three";
 
 
 export const UI_DIV_CLS = "player-ui";
@@ -133,11 +134,15 @@ export class PlayerUI extends CSS2DObject {
     onBuffsChanged() {
         const buffs = this.player.buffs;
 
-        this.remove(this.buffObjs);
+        // clear previous buff info objs
+        this.buffObjs.forEach(obj => {
+            obj.removeFromParent();
+        });
+        this.buffObjs.length = 0;
 
         for (let i = 0; i < buffs.length; i++) {
             const buffObj = new BuffInfo(buffs[i]);
-            buffObj.position.x -= 2;
+            buffObj.position.x -= 1;
             buffObj.position.z += (0.5 * i);
             this.add(buffObj);
             this.buffObjs.push(buffObj);
@@ -151,15 +156,25 @@ export class PlayerUI extends CSS2DObject {
 export class BuffInfo extends CSS2DObject {
     /** @type {BuffInfoDTO} */
     info;
+    hoverObj;
 
     constructor(info) {
         const element = document.createElement("p");
         super(element);
+        // used to target buff info objects with raycaster -> TODO enum of layers ?
+        this.layers.set(1);
         this.update(info);
+
+        const box = new BoxGeometry(1.0, 0.0, 1.0);
+        const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.0, transparent: true } );
+        this.hoverObj = new Mesh(box, mat);
+        this.hoverObj.layers.set(1);
+        this.hoverObj.position.z += 0.5;    // center on element
+        this.add(this.hoverObj);
     }
 
     update(info) {
         this.info = info;
-        this.element.innerText = this.info.buff[0]; // first char
+        this.element.className = "buff-"+this.info.buff_type;
     }
 }

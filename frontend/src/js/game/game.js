@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Card, CardPile, getCardTexturePathById, OpponentCard } from './cards';
 import { ServerConnexion } from '../server/server_connection';
 import { Opponent, Player } from './player';
-import { PlayerUI } from '../ui/player_ui';
+import { BuffInfo, PlayerUI } from '../ui/player_ui';
 import { CSS2DRenderer, OrbitControls } from 'three-stdlib';
 import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
@@ -13,6 +13,7 @@ import { displayPopup } from '../ui/popup';
 import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
 import gsap, { Power1 } from 'gsap';
+import { BuffTooltip } from '../ui/buff_tooltip';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -24,6 +25,8 @@ export let renderer;
 export let labelRenderer;
 
 export let raycaster = new THREE.Raycaster();
+export let buffRaycaster = new THREE.Raycaster();
+buffRaycaster.layers.set(1);
 export let pointer = new THREE.Vector2();
 
 /** @type {Player | null} */
@@ -67,6 +70,9 @@ export let serverConnexion;
 /** @type {CardTooltip | null} */
 export let cardTooltip;
 
+/** @type {BuffTooltip | null} */
+export let buffTooltip;
+
 /** @type {Dice | null} */
 export let dice;
 
@@ -103,6 +109,7 @@ export function initGame() {
     // camera.lookAt(new THREE.Vector3(0, 3, 3));
     camera.position.set(0, 10, 2);
     camera.lookAt(new THREE.Vector3(0, 0, 1));
+    camera.layers.enable(1);
 
     // lights
 
@@ -149,6 +156,9 @@ export function initGame() {
 
     cardTooltip = new CardTooltip(scene);
     cardTooltip.visible = false;
+
+    buffTooltip = new BuffTooltip(scene);
+    buffTooltip.visible = false;
 
     dice = new Dice(scene);
 
@@ -487,18 +497,17 @@ function onWindowResize() {
 
 
 function onPointerMove( event ) {
+    pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 
     if (currentPlayerTurn == PLAYER && !eventMgr.isWaitingForEvents()) {
 
-        pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
-
         raycaster.setFromCamera( pointer, camera );
 
-        const intersects = raycaster.intersectObjects( PLAYER.cards, false );
+        const card_intersects = raycaster.intersectObjects( PLAYER.cards, false );
 
-        if ( intersects.length > 0 ) {
+        if ( card_intersects.length > 0 ) {
 
-            const card = intersects[ 0 ].object;
+            const card = card_intersects[ 0 ].object;
 
             // hover
 
@@ -511,6 +520,28 @@ function onPointerMove( event ) {
         } else {
             cardTooltip.visible = false;
         }
+    }
+
+    buffRaycaster.setFromCamera( pointer, camera );
+
+    let buff_intersects = buffRaycaster.intersectObjects( scene.children, true );
+
+    if ( buff_intersects.length > 0 ) {
+
+        const buff_child = buff_intersects[ 0 ].object;
+        const buff = buff_child.parent;
+        const player = buff.parent.parent;
+        let pos = new THREE.Vector3();
+        buff_child.getWorldPosition(pos);
+
+        if (buffTooltip.buff != buff)
+            buffTooltip.update(buff);
+
+        buffTooltip.position.set(pos.x, pos.y, pos.z + (player == PLAYER ? -2 : 1.5));
+        buffTooltip.visible = true;
+
+    } else {
+        buffTooltip.visible = false;
     }
 }
 
