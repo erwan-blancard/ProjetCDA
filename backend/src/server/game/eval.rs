@@ -1,8 +1,8 @@
 use std::{fmt::Debug};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// enum that represents the calculation to perform for 2 values
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum EvalOp { Add, Sub, Mul, PowB, PowA }
 
 impl EvalOp {

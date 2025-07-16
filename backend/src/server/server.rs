@@ -12,7 +12,7 @@ use chrono::Utc;
 use tokio::{sync::{mpsc, oneshot}, time::interval};
 use uid::IdU64;
 
-use crate::{routes::game::Lobbies, server::{dto::responses::ServerResponse, game::{cards::card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
+use crate::{routes::game::Lobbies, server::{dto::responses::ServerResponse, game::{buffs::BuffVariant, cards::card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
 
 use super::{dto::responses::PlayerProfile, game::{game::Game, player::PlayerId}};
 
@@ -337,14 +337,25 @@ impl GameServer {
         
                             if ok {
                                 let play_info = result.unwrap();
+
+                                let resp = ServerResponse::PlayCard {
+                                    player_id,
+                                    card_id: card_id.unwrap_or(-1),
+                                    hand_index: card_index as u32,
+                                    actions: play_info.actions.clone(),
+                                };
+                                // list of buffs of the player
+                                let buffs_resp = ServerResponse::PlayerBuffStatus {
+                                    player_id,
+                                    buffs: self.game.players[self.game.current_player_turn]
+                                        .buffs.iter()
+                                        .map(|b| b.as_variant())
+                                        .collect()
+                                };
+                                // send responses to clients
                                 for (_, (_, tx)) in &self.sessions.lock().await.sessions {
-                                    let resp = ServerResponse::PlayCard {
-                                        player_id,
-                                        card_id: card_id.unwrap_or(-1),
-                                        hand_index: card_index as u32,
-                                        actions: play_info.actions.clone(),
-                                    };
                                     let _ = resp.send_unbounded(tx);
+                                    let _ = buffs_resp.send_unbounded(tx);
                                 }
                                 self.advance_turn().await;
                             } else {

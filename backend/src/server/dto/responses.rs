@@ -5,6 +5,7 @@ use chrono::serde::ts_seconds;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::UnboundedSender;
 
+use crate::server::game::buffs::{Buff, BuffVariant};
 use crate::server::game::cards::card::CardId;
 use crate::server::game::play_info::PlayAction;
 use crate::server::game::player::PlayerId;
@@ -24,6 +25,7 @@ pub struct OpponentState {
     pub health: u32,
     pub card_count: u32,
     pub discard_cards: Vec<CardId>,
+    pub buffs: Vec<BuffVariant>
 }
 
 
@@ -35,6 +37,7 @@ pub struct GameStateForPlayer {
     pub health: u32,
     pub cards: Vec<CardId>,
     pub discard_cards: Vec<CardId>,
+    pub buffs: Vec<BuffVariant>,
     pub opponents: Vec<OpponentState>,
     pub cards_in_pile: u32
 }
@@ -47,6 +50,7 @@ impl GameStateForPlayer {
             health: self.health,
             cards: self.cards.clone(),
             discard_cards: self.discard_cards.clone(),
+            buffs: self.buffs.clone(),
             opponents: self.opponents.clone(),
             cards_in_pile: self.cards_in_pile
         }
@@ -75,6 +79,7 @@ pub enum ServerResponse {
         health: u32,
         cards: Vec<CardId>,
         discard_cards: Vec<CardId>,
+        buffs: Vec<BuffVariant>,
         opponents: Vec<OpponentState>,
         cards_in_pile: u32
     },
@@ -106,6 +111,12 @@ pub enum ServerResponse {
     /// notify client that all discarded cards were collected to pile
     CollectDiscardCards {
         cards_in_pile: u32,
+    },
+
+    /// send list of active buffs for the player
+    PlayerBuffStatus {
+        player_id: PlayerId,
+        buffs: Vec<BuffVariant>
     },
 
     /// notify client of game end

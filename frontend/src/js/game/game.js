@@ -6,9 +6,9 @@ import { PlayerUI } from '../ui/player_ui';
 import { CSS2DRenderer, OrbitControls } from 'three-stdlib';
 import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
-import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from '../server/dto';
+import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, PlayerBuffStatusResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
 import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
@@ -182,6 +182,9 @@ export function initGame() {
     serverConnexion.addEventListener("changeturn", ev => {
         onChangeTurnEvent(ev.detail);
     })
+    serverConnexion.addEventListener("playerbuffstatus", ev => {
+        onPlayerBuffStatusEvent(ev.detail);
+    })
     serverConnexion.addEventListener("collectdiscardcards", ev => {
         onCollectDiscardCardsEvent(ev.detail);
     })
@@ -336,6 +339,11 @@ export function onDrawCardEvent(data) {
 export function onChangeTurnEvent(data) {
     // updateCurrentPlayerTurn(getPlayerById(data.player_id));
     eventMgr.pushEvent(new ChangeTurnEvent(getPlayerById(data.player_id), data.turn_end));
+}
+
+/** @param {PlayerBuffStatusResponse} data  */
+export function onPlayerBuffStatusEvent(data) {
+    eventMgr.pushEvent(new PlayerBuffsUpdateEvent(getPlayerById(data.player_id), data.buffs));
 }
 
 /** @param {CollectDiscardCardsResponse} data  */

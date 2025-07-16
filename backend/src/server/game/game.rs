@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
@@ -8,6 +9,7 @@ use super::cards::card::{Card, CardId};
 use super::database;
 use super::player::{Player, PlayerId};
 use super::play_info::PlayInfo;
+use super::buffs::BuffLifeTime;
 
 use crate::server::dto::responses::{GameStateForPlayer, OpponentState, PlayerProfile};
 
@@ -146,6 +148,8 @@ impl Game {
         let len = targets.len();
         println!("Targets: {}", len);
 
+        // get indices of targets sent by client
+        // if card target type is All, it will be ignored by the card
         let mut target_indices = Vec::with_capacity(targets.len());
         for id in targets {
             let idx = self.players
@@ -161,9 +165,16 @@ impl Game {
 
         // play the card and return play info
         match card.play(player_index, target_indices, self) {
-            Ok(play_info) => {
-                // remove card from hand and put it in discard pile
+            Ok((play_info, buffs_used)) => {
+                // remove used buffs
+                self.remove_player_buffs_used(player_index, buffs_used);
+
                 let card = self.players[player_index].hand_cards.remove(card_index);
+                // grant card buffs to player
+                for buff in card.get_buffs() {
+                    self.players[player_index].buffs.push(buff);
+                }
+                // remove card from hand and put it in discard pile
                 self.players[player_index].discard_cards.push(card);
 
                 // check if game is over
@@ -208,6 +219,32 @@ impl Game {
         Ok(self.players[player_index].hand_cards[card_index].get_id())
     }
 
+    fn remove_player_buffs_used(&mut self, player_index: usize, buffs_used: HashSet<usize>) {
+        let mut buffs_to_remove: Vec<usize> = Vec::new();
+
+        let player = &mut self.players[player_index];
+        for (idx, buff) in player.buffs.iter().enumerate() {
+            match buff.get_lifetime() {
+                BuffLifeTime::UntilNextTurnEnd => {
+                    buffs_to_remove.push(idx);
+                }
+                BuffLifeTime::UntilUsed => {
+                    // remove if used
+                    if buffs_used.get(&idx).is_some() {
+                        buffs_to_remove.push(idx);
+                    }
+                }
+            }
+        }
+
+        buffs_to_remove.sort();
+        buffs_to_remove.reverse();
+
+        for &idx in buffs_to_remove.iter() {
+            player.buffs.remove(idx);
+        }
+    }
+
     pub fn status_for_player(&self, player_id: PlayerId) -> Result<GameStateForPlayer, String> {
         let player_index = self.players
             .iter()
@@ -224,6 +261,9 @@ impl Game {
                 card_count: opp.hand_cards.len() as u32,
                 discard_cards: opp.discard_cards.iter()
                     .map(|card| card.get_id())
+                    .collect(),
+                buffs: opp.buffs.iter()
+                    .map(|b| b.as_variant())
                     .collect()
             })
             .collect();
@@ -237,6 +277,9 @@ impl Game {
                 .collect(),
             discard_cards: player.discard_cards.iter()
                 .map(|card| card.get_id())
+                .collect(),
+            buffs: player.buffs.iter()
+                .map(|b| b.as_variant())
                 .collect(),
             opponents: opp_states,
             cards_in_pile: self.pile.len() as u32

@@ -63,3 +63,17 @@ export async function login_guard(silent=true) {
 export function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+
+/**
+ * @param {Array<string>} strarr
+ * @param {string} sep
+*/
+export function strjoin(strarr, sep) {
+    let result = "";
+    for (let i = 0; i < strarr.length; i++) {
+        result += strarr[i];
+        if (i+1 < strarr.length) result += sep;
+    }
+    return result;
+}

@@ -1,5 +1,6 @@
 import { PlayerObject, Player, Opponent } from "../game/player";
 import { CSS2DObject } from 'three-stdlib'
+import { BuffInfoDTO } from "../server/dto";
 
 
 export const UI_DIV_CLS = "player-ui";
@@ -29,6 +30,9 @@ export class PlayerUI extends CSS2DObject {
     /** @type HTMLElement */
     discardLabel;
 
+    /** @type {Array<CSS2DObject>} */
+    buffObjs = [];
+
     constructor(player) {
         const uiDiv = document.createElement("div");
         uiDiv.className = UI_DIV_CLS;
@@ -51,6 +55,10 @@ export class PlayerUI extends CSS2DObject {
         this.player.addEventListener("discardcountchange", () => {
             this.onDiscardCountChanged();
         });
+
+        this.player.addEventListener("buffschange", () => {
+            this.onBuffsChanged();
+        })
     }
 
     createUIElements(uiDiv) {
@@ -122,4 +130,36 @@ export class PlayerUI extends CSS2DObject {
         this.discardLabel.textContent = this.player.discard_cards.length;
     }
 
+    onBuffsChanged() {
+        const buffs = this.player.buffs;
+
+        this.remove(this.buffObjs);
+
+        for (let i = 0; i < buffs.length; i++) {
+            const buffObj = new BuffInfo(buffs[i]);
+            buffObj.position.x -= 2;
+            buffObj.position.z += (0.5 * i);
+            this.add(buffObj);
+            this.buffObjs.push(buffObj);
+        }
+        
+    }
+
+}
+
+
+export class BuffInfo extends CSS2DObject {
+    /** @type {BuffInfoDTO} */
+    info;
+
+    constructor(info) {
+        const element = document.createElement("p");
+        super(element);
+        this.update(info);
+    }
+
+    update(info) {
+        this.info = info;
+        this.element.innerText = this.info.buff[0]; // first char
+    }
 }

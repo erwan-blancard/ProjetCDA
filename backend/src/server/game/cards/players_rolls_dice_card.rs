@@ -1,8 +1,13 @@
+use std::collections::HashSet;
+
 use serde::Deserialize;
+
+use crate::server::game::cards::card::check_apply_attack_buffs;
 
 use super::card::{Card, CardId, Element, Kind, Stars, TargetType};
 use super::super::game::Game;
 use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
+use super::super::buffs::Buff;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -19,11 +24,12 @@ pub enum PlayersRollsDiceCardAction {
 pub enum PlayersRollsDiceCardActionType { Attack, Heal, Draw, }
 
 impl PlayersRollsDiceCardActionType {
-    fn process_action(&self, amount: u32, player_index: usize, card: &dyn Card, game: &mut Game) -> ActionTarget {
+    fn process_action(&self, amount: u32, player_index: usize, card: &dyn Card, game: &mut Game, buffs_used: &mut HashSet<usize>) -> ActionTarget {
         let player = &mut game.players[player_index];
 
         match self {
             PlayersRollsDiceCardActionType::Attack => {
+                let amount = check_apply_attack_buffs(amount, &player.buffs, card.get_element(), card.get_kind(), card.get_stars(), buffs_used);
                 player.damage(amount, card.get_damage_effect())
             }
             PlayersRollsDiceCardActionType::Heal => {
@@ -57,12 +63,13 @@ pub struct PlayersRollsDiceCard {
     pub heal: bool,
     pub draw: bool,
     pub dice_action: PlayersRollsDiceCardAction,
+    pub buffs: Vec<Box<dyn Buff>>
 }
 
 impl PlayersRollsDiceCardAction {
 
     // dice_rolls contains the dice rolls of the player (0) and its targets (1..n)
-    fn process_dice_action(&self, card: &dyn Card, action_type: PlayersRollsDiceCardActionType, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_rolls: &mut Vec<u32>) -> Result<(), String> {
+    fn process_dice_action(&self, card: &dyn Card, action_type: PlayersRollsDiceCardActionType, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_rolls: &mut Vec<u32>, buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         match self {
             PlayersRollsDiceCardAction::AffectsAllPlayers => {
                 let mut action: PlayAction = PlayAction::new();
@@ -70,7 +77,7 @@ impl PlayersRollsDiceCardAction {
                 for idx in 0..dice_rolls.len() {
                     let action_target = action_type.process_action(dice_rolls[idx],
                         if idx == 0 { player_index } else { target_indices[idx - 1] },
-                        card, game);
+                        card, game, buffs_used);
                     action.targets.push(action_target);
                 }
 
@@ -91,7 +98,7 @@ impl PlayersRollsDiceCardAction {
                 for idx in min_dice_roll_indexes {
                     let action_target = action_type.process_action(amount,
                         if idx == 0 { player_index } else { target_indices[idx - 1] } ,
-                        card, game);
+                        card, game, buffs_used);
                     action.targets.push(action_target);
                 }
 
@@ -113,7 +120,11 @@ impl Card for PlayersRollsDiceCard {
     fn get_stars(&self) -> Stars { self.stars }
     fn get_target_type(&self) -> TargetType { self.target_type }
 
-    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<PlayInfo, String> {
+    fn get_buffs(&self) -> Vec<Box<dyn Buff>> { self.buffs.clone() }
+
+    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<(PlayInfo, HashSet<usize>), String> {
+        let mut buffs_used: HashSet<usize> = HashSet::new();
+
         let targets = target_indices.iter().map(|i| &game.players[*i]).collect();
         match self.validate_targets(&targets) {
             Ok(_) => {
@@ -149,14 +160,14 @@ impl Card for PlayersRollsDiceCard {
                 }
 
                 if self.attack {
-                    self.dice_action.process_dice_action(self, PlayersRollsDiceCardActionType::Attack, &mut info, game, player_index, &target_indices, &mut dice_rolls)?;
+                    self.dice_action.process_dice_action(self, PlayersRollsDiceCardActionType::Attack, &mut info, game, player_index, &target_indices, &mut dice_rolls, &mut buffs_used)?;
                 } else if self.heal {
-                    self.dice_action.process_dice_action(self, PlayersRollsDiceCardActionType::Heal, &mut info, game, player_index, &target_indices, &mut dice_rolls)?;
+                    self.dice_action.process_dice_action(self, PlayersRollsDiceCardActionType::Heal, &mut info, game, player_index, &target_indices, &mut dice_rolls, &mut buffs_used)?;
                 } else if self.draw {
-                    self.dice_action.process_dice_action(self, PlayersRollsDiceCardActionType::Draw, &mut info, game, player_index, &target_indices, &mut dice_rolls)?;
+                    self.dice_action.process_dice_action(self, PlayersRollsDiceCardActionType::Draw, &mut info, game, player_index, &target_indices, &mut dice_rolls, &mut buffs_used)?;
                 }
 
-                Ok(info)
+                Ok((info, buffs_used))
             }
             Err(msg) => { Err(msg) }
         }

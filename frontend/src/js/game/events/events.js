@@ -230,6 +230,21 @@ export class ChangeTurnEvent extends PlayerEvent {
 }
 
 
+export class PlayerBuffsUpdateEvent extends PlayerEvent {
+
+    constructor(player, buffs) {
+        super(player);
+        this.buffs = buffs;
+        this.timeout = 0;
+    }
+
+    async run() {
+        if (this.player)
+            this.player.updateBuffs(this.buffs);
+    }
+}
+
+
 export class CollectDiscardCardsEvent extends GameEvent {
     constructor(cards_in_pile) {
         super();
@@ -302,6 +317,7 @@ export class GameUpdateEvent extends GameEvent {
             GAME.PLAYER.health = data.health;
             GAME.PLAYER.updateHandCards(data.cards);
             GAME.PLAYER.updateDiscardCards(data.discard_cards);
+            GAME.PLAYER.updateBuffs(data.buffs);
 
             // update opponents
             data.opponents.forEach(opponent_data => {
@@ -310,6 +326,7 @@ export class GameUpdateEvent extends GameEvent {
                     opponent.health = opponent_data.health;
                     opponent.setCardCount(opponent_data.card_count);
                     opponent.updateDiscardCards(opponent_data.discard_cards);
+                    opponent.updateBuffs(opponent_data.buffs);
                 }
             });
 

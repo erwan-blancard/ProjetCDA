@@ -113,7 +113,7 @@ pub async fn game_ws(
                         println!("Sending response (player_id: {}): {:?}", player_id, resp);
                         resp.send(&mut session).await.unwrap();
                     }
-                    Err(_) => { panic!("Invalid ServerResponse received !") }
+                    Err(_) => { panic!("Invalid ServerResponse received !\nraw response: {}", json_msg) }
                 }
                 // log::info!("chat_msg: {chat_msg:?}");
                 // // session.text(serde_json::to_string(&chat_message).unwrap()).await.unwrap();

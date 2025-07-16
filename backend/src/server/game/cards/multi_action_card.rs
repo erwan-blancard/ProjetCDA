@@ -1,9 +1,13 @@
+use std::collections::HashSet;
+
 use super::card::{Card, CardId, Element, Kind, Stars, TargetType};
 use super::super::modifiers::Modifier;
+use super::super::buffs::{Buff, BuffType};
 use super::super::game::{Game, MAX_PLAYERS};
 use super::super::player::Player;
 use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
 
+use crate::server::game::cards::card::check_apply_attack_buffs;
 use crate::utils::clamp::clamp;
 
 
@@ -24,6 +28,7 @@ pub struct MultiActionCard {
     pub heal_modifiers: Vec<Option<Box<dyn Modifier>>>,
     pub draws: Vec<u32>,
     pub draw_modifiers: Vec<Option<Box<dyn Modifier>>>,
+    pub buffs: Vec<Box<dyn Buff>>
 }
 
 impl MultiActionCard {
@@ -34,6 +39,8 @@ impl MultiActionCard {
     fn get_attack_modifier_for_action(&self, action_idx: usize) -> Option<Box<dyn Modifier>> { self.attack_modifiers.get(action_idx).map_or(None, |m| m.clone()) }
     fn get_heal_modifier_for_action(&self, action_idx: usize) -> Option<Box<dyn Modifier>> { self.heal_modifiers.get(action_idx).map_or(None, |m| m.clone()) }
     fn get_draw_modifier_for_action(&self, action_idx: usize) -> Option<Box<dyn Modifier>> { self.draw_modifiers.get(action_idx).map_or(None, |m| m.clone()) }
+
+    fn get_buffs(&self) -> Vec<Box<dyn Buff>> { self.buffs.clone() }
 
     fn validate_targets_for_action(&self, action_idx: usize, targets: &Vec<&Player>) -> Result<(), String> {
         println!("Validate targets: target type is {:?}", self.get_target_type_for_action(action_idx));
@@ -61,7 +68,7 @@ impl MultiActionCard {
         }
     }
 
-    fn handle_attack_for_action(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, action_idx: usize) -> Result<(), String> {
+    fn handle_attack_for_action(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, action_idx: usize, buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         if self.get_attack_for_action(action_idx) > 0 || self.get_attack_modifier_for_action(action_idx).is_some() {
             for &target_index in target_indices {
                 let mut attack_action: PlayAction = PlayAction::new();
@@ -90,6 +97,8 @@ impl MultiActionCard {
                     *dice_roll_used = true;
                 }
 
+                let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
+
                 let action_target = target.damage(amount, self.get_damage_effect());
                 attack_action.targets.push(action_target);
                 info.actions.push(attack_action);
@@ -99,7 +108,7 @@ impl MultiActionCard {
         Ok(())
     }
 
-    fn handle_heal_for_action(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, action_idx: usize) -> Result<(), String> {
+    fn handle_heal_for_action(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, action_idx: usize, _buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         let player = &mut game.players[player_index];
 
         if self.get_heal_for_action(action_idx) > 0 || self.get_heal_modifier_for_action(action_idx).is_some() {
@@ -126,7 +135,7 @@ impl MultiActionCard {
         Ok(())
     }
 
-    fn handle_draw_for_action(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, action_idx: usize) -> Result<(), String> {
+    fn handle_draw_for_action(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, action_idx: usize, _buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         let player = &mut game.players[player_index];
 
         if self.get_draw_for_action(action_idx) > 0 || self.get_draw_modifier_for_action(action_idx).is_some() {
@@ -170,12 +179,13 @@ impl Card for MultiActionCard {
     fn get_element(&self) -> Element { self.element }
     fn get_stars(&self) -> Stars { self.stars }
 
-    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<PlayInfo, String> {
+    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<(PlayInfo, HashSet<usize>), String> {
         let mut info: PlayInfo = PlayInfo::new();
+        let mut buffs_used: HashSet<usize> = HashSet::new();
 
         for action_idx in 0..self.actions {
             let target_indices = {
-                if self.get_target_type_for_action(action_idx) == TargetType::All {
+                if self.get_target_type_for_action(action_idx) == TargetType::All || game.players[player_index].buffs.iter().any(|b| b.get_type() == BuffType::TargetAll) {
                     game.players.iter().enumerate().filter(|(i, _)| *i != player_index).map(|(i, _)| i).collect()
                 } else { target_indices.clone() }
             };
@@ -186,15 +196,15 @@ impl Card for MultiActionCard {
                     let dice_roll = rand::random_range(0..6) + 1;   // dice roll value to give to modifiers
                     let mut dice_roll_used = false;
 
-                    self.handle_attack_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx)?;
-                    self.handle_heal_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx)?;
-                    self.handle_draw_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx)?;
+                    self.handle_attack_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx, &mut buffs_used)?;
+                    self.handle_heal_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx, &mut buffs_used)?;
+                    self.handle_draw_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx, &mut buffs_used)?;
                 }
                 Err(msg) => { return Err(msg); }
             };
 
         }
 
-        Ok(info)
+        Ok((info, buffs_used))
     }
 }

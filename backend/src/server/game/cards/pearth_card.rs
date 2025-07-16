@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::card::{Card, CardId, Element, Kind, Stars, TargetType};
 use super::super::game::Game;
 use super::super::play_info::{PlayAction, PlayInfo};
@@ -22,7 +24,7 @@ impl Card for PearthCard {
     fn get_stars(&self) -> Stars { self.stars }
     fn get_target_type(&self) -> TargetType { TargetType::All }
 
-    fn play(&self, player_index: usize, _target_indices: Vec<usize>, game: &mut Game) -> Result<PlayInfo, String> {
+    fn play(&self, player_index: usize, _target_indices: Vec<usize>, game: &mut Game) -> Result<(PlayInfo, HashSet<usize>), String> {
         let mut info: PlayInfo = PlayInfo::new();
 
         let dicards = game.players.iter().map(|player| player.discard_cards.len()).sum::<usize>();
@@ -33,6 +35,6 @@ impl Card for PearthCard {
 
         info.actions.push(action);
 
-        Ok(info)
+        Ok((info, HashSet::new()))
     }
 }

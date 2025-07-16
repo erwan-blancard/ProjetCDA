@@ -6,6 +6,7 @@ use serde::Deserializer;
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
 use super::modifiers::ModifierInfo;
+use super::buffs::BuffVariant;
 
 use super::cards::card::{BasicCard, Card, CardId, Element, Kind, Stars, TargetType};
 use super::cards::multi_action_card::MultiActionCard;
@@ -111,6 +112,8 @@ struct CardInfo {
     kind: Kind,
     #[serde(default)]
     desc: String,
+    #[serde(default)]
+    buffs: Vec<BuffVariant>,
     #[serde(flatten)]
     variant: CardVariant
 }
@@ -133,6 +136,7 @@ impl CardInfo {
                     heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
                     draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
                     target_type: data.targets,
+                    buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
                 })
             },
             CardVariant::MultiHitCard(data) => {
@@ -148,6 +152,7 @@ impl CardInfo {
                     draw: data.draw,
                     heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
                     draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
+                    buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
                 })
             },
             CardVariant::TargetBothCard(data) => {
@@ -165,6 +170,7 @@ impl CardInfo {
                     heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
                     draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
                     target_type: data.targets,
+                    buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
                 })
             }
             CardVariant::MultiActionCard(data) => {
@@ -183,6 +189,7 @@ impl CardInfo {
                     heal_modifiers: data.heal_modifiers.clone().into_iter().map(|m| m.map(|m| m.into_boxed())).collect(),
                     draw_modifiers: data.draw_modifiers.clone().into_iter().map(|m| m.map(|m| m.into_boxed())).collect(),
                     target_types: data.targets.clone(),
+                    buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
                 })
             }
             CardVariant::PlayersRollsDiceCard(data) => {
@@ -198,6 +205,7 @@ impl CardInfo {
                     draw: data.draw,
                     target_type: data.targets,
                     dice_action: data.dice_action,
+                    buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
                 })
             }
             CardVariant::PearthCard => {

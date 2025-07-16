@@ -1,6 +1,7 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from "three";
 import { Card, CardPile, OpponentCard } from "./cards";
 import gsap, { Power1 } from 'gsap';
+import { BuffInfoDTO } from "../server/dto";
 
 
 // common attributes and methods for Player and Opponent
@@ -18,6 +19,9 @@ export class PlayerObject extends Mesh {
     selected_card;
     /** @type {THREE.Scene} */
     scene;
+
+    /** @type {Array<BuffInfoDTO>} */
+    buffs = [];
 
     /** @type {gsap.core.Timeline} */
     glowTl = gsap.timeline();
@@ -180,6 +184,11 @@ export class PlayerObject extends Mesh {
         }
     }
 
+    updateBuffs(buffs) {
+        this.buffs = buffs;
+        this.emitBuffsChange();
+    }
+
     emitHealthChange() {
         this.dispatchEvent({type: "healthchange"});
     }
@@ -190,6 +199,10 @@ export class PlayerObject extends Mesh {
 
     emitDiscardCountChange() {
         this.dispatchEvent({type: "discardcountchange"})
+    }
+
+    emitBuffsChange() {
+        this.dispatchEvent({type: "buffschange"})
     }
 
     startGlowLoop() {

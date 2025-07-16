@@ -1,5 +1,10 @@
+use std::collections::HashSet;
+
+use crate::server::game::cards::card::check_apply_attack_buffs;
+
 use super::card::{Card, CardId, Element, Kind, Stars, TargetType};
 use super::super::modifiers::Modifier;
+use super::super::buffs::Buff;
 use super::super::game::Game;
 use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
 
@@ -20,6 +25,7 @@ pub struct TargetBothCard {
     pub heal_modifier: Option<Box<dyn Modifier>>,
     pub draw: u32,
     pub draw_modifier: Option<Box<dyn Modifier>>,
+    pub buffs: Vec<Box<dyn Buff>>
 }
 
 impl Card for TargetBothCard {
@@ -37,7 +43,9 @@ impl Card for TargetBothCard {
     fn get_stars(&self) -> Stars { self.stars }
     fn get_target_type(&self) -> TargetType { self.target_type }
 
-    fn handle_attack(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool) -> Result<(), String> {
+    fn get_buffs(&self) -> Vec<Box<dyn Buff>> { self.buffs.clone() }
+
+    fn handle_attack(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         if self.get_attack() > 0 || self.get_attack_modifier().is_some() {
             let mut attack_self_action: PlayAction = PlayAction::new();
 
@@ -56,6 +64,9 @@ impl Card for TargetBothCard {
                 attack_self_action.player_dice_id = player_dice_id;
                 *dice_roll_used = true;
             }
+
+            // apply attack buffs
+            let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
 
             let action_target = player.damage(amount, self.get_damage_effect());
             attack_self_action.targets.push(action_target);
@@ -90,6 +101,9 @@ impl Card for TargetBothCard {
                     *dice_roll_used = true;
                 }
 
+                // apply attack buffs
+                let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
+
                 let action_target = target.damage(amount, self.get_damage_effect());
                 attack_action.targets.push(action_target);
                 info.actions.push(attack_action);
@@ -99,7 +113,7 @@ impl Card for TargetBothCard {
         Ok(())
     }
 
-    fn handle_heal(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool) -> Result<(), String> {
+    fn handle_heal(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, _buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         if self.get_heal() > 0 || self.get_heal_modifier().is_some() {
             for &target_index in target_indices {
                 let mut heal_target_action: PlayAction = PlayAction::new();
@@ -159,7 +173,7 @@ impl Card for TargetBothCard {
         Ok(())
     }
 
-    fn handle_draw(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool) -> Result<(), String> {        
+    fn handle_draw(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, _buffs_used: &mut HashSet<usize>) -> Result<(), String> {        
         if self.get_draw() > 0 || self.get_draw_modifier().is_some() {
             for &target_index in target_indices {
                 // use split_at_mut() to prevent warnings about mutable borrows

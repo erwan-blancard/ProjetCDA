@@ -1,11 +1,13 @@
+use std::collections::HashSet;
 use std::fmt::{self, Debug, Display};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::utils::clamp::clamp;
 
 use super::super::game::{Game, MAX_PLAYERS};
 use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
 use super::super::modifiers::Modifier;
+use super::super::buffs::{Buff, BuffType};
 use super::super::player::Player;
 
 
@@ -13,7 +15,7 @@ use super::super::player::Player;
 pub type EffectId = String;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Element {
     Fire,
     Air,
@@ -21,14 +23,14 @@ pub enum Element {
     Water,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Kind {
     Spell,
     Weapon,
     Food,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Stars {
     One,
     Two,
@@ -71,33 +73,37 @@ pub type CardId = i32;
 pub trait Card: Sync + Send + Debug + CardClone {
 
     // common play impl
-    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<PlayInfo, String> {
+    /// Returns a PlayInfo struct describing the actions made when playing the card + a set of indices of used buffs
+    fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<(PlayInfo, HashSet<usize>), String> {
+        // keep track of the buffs that were used
+        let mut buffs_used: HashSet<usize> = HashSet::new();
+
         let targets = target_indices.iter().map(|i| &game.players[*i]).collect();
         match self.validate_targets(&targets) {
             Ok(_) => {
                 let mut info: PlayInfo = PlayInfo::new();
                 
                 let target_indices = {
-                    if self.get_target_type() == TargetType::All {
-                        game.players.iter().enumerate().filter(|(i, _)| *i != player_index).map(|(i, _)| i).collect()
+                    if self.get_target_type() == TargetType::All || game.players[player_index].buffs.iter().any(|b| b.get_type() == BuffType::TargetAll) {
+                        game.players.iter().enumerate().filter(|(i, _)| *i != player_index).map(|(i, _)| i).collect() 
                     } else { target_indices }
                 };
 
                 let dice_roll = rand::random_range(0..6) + 1;   // dice roll value to give to modifiers
                 let mut dice_roll_used = false;
 
-                self.handle_attack(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used)?;
-                self.handle_heal(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used)?;
-                self.handle_draw(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used)?;
+                self.handle_attack(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, &mut buffs_used)?;
+                self.handle_heal(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, &mut buffs_used)?;
+                self.handle_draw(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, &mut buffs_used)?;
 
-                Ok(info)
+                Ok((info, buffs_used))
             }
             Err(msg) => { Err(msg) }
         }
     }
 
     // basic attack impl
-    fn handle_attack(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool) -> Result<(), String> {
+    fn handle_attack(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         if self.get_attack() > 0 || self.get_attack_modifier().is_some() {
             for &target_index in target_indices {
                 let mut attack_action: PlayAction = PlayAction::new();
@@ -126,6 +132,9 @@ pub trait Card: Sync + Send + Debug + CardClone {
                     *dice_roll_used = true;
                 }
 
+                // apply attack buffs
+                let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
+
                 let action_target = target.damage(amount, self.get_damage_effect());
                 attack_action.targets.push(action_target);
                 info.actions.push(attack_action);
@@ -136,7 +145,7 @@ pub trait Card: Sync + Send + Debug + CardClone {
     }
 
     // basic heal impl, heal current player
-    fn handle_heal(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool) -> Result<(), String> {
+    fn handle_heal(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, _buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         let player = &mut game.players[player_index];
 
         if self.get_heal() > 0 || self.get_heal_modifier().is_some() {
@@ -164,7 +173,7 @@ pub trait Card: Sync + Send + Debug + CardClone {
     }
 
     // basic draw impl, draw cards for current player
-    fn handle_draw(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool) -> Result<(), String> {
+    fn handle_draw(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, _target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, _buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         let player = &mut game.players[player_index];
 
         if self.get_draw() > 0 || self.get_draw_modifier().is_some() {
@@ -212,6 +221,9 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn get_element(&self) -> Element { Element::Fire }
     fn get_stars(&self) -> Stars { Stars::One }
     fn get_target_type(&self) -> TargetType { TargetType::Single }
+
+    /// Buffs are granted after the card is played
+    fn get_buffs(&self) -> Vec<Box<dyn Buff>> { Vec::with_capacity(0) }
 
     fn get_damage_effect(&self) -> EffectId {
         match self.get_element() {
@@ -294,6 +306,7 @@ pub struct BasicCard {
     pub heal_modifier: Option<Box<dyn Modifier>>,
     pub draw: u32,
     pub draw_modifier: Option<Box<dyn Modifier>>,
+    pub buffs: Vec<Box<dyn Buff>>
 }
 
 impl Card for BasicCard {
@@ -310,4 +323,23 @@ impl Card for BasicCard {
     fn get_element(&self) -> Element { self.element }
     fn get_stars(&self) -> Stars { self.stars }
     fn get_target_type(&self) -> TargetType { self.target_type }
+    fn get_buffs(&self) -> Vec<Box<dyn Buff>> { self.buffs.clone() }
+}
+
+
+pub fn check_apply_attack_buffs(amount: u32, buffs: &Vec<Box<dyn Buff>>, card_element: Element, card_kind: Kind, card_stars: Stars, buffs_used: &mut HashSet<usize>) -> u32 {
+    let mut amount = amount;
+    for (idx, buff) in buffs.iter().enumerate() {
+        match buff.get_type() {
+            BuffType::Attack { value: _, op: _, elements: _, kinds: _, stars: _ } => {
+                if buff.is_applicable(card_element, card_kind, card_stars) {
+                    amount = buff.compute(amount);
+                    buffs_used.insert(idx);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    amount
 }
