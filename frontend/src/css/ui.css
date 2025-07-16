@@ -12,7 +12,7 @@
     display: flex;
 }
 
-#ui :not(section) {
+#ui .clickable {
     pointer-events: auto;
 }
 
@@ -32,6 +32,11 @@
     display: flex;
     flex-direction: column;
     align-self: flex-end;
+    pointer-events: none;
+}
+
+#chatform {
+    pointer-events: all;
 }
 
 input[type='text'] {
@@ -97,5 +102,76 @@ input[type='text'] {
 
 .player-discard-icon::before {
     content: "🃏 ";
+}
+
+
+/* Card Tooltip */
+
+
+.card-tooltip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.1em;
+    margin: 1em 0.2em 1em 0.2em;
+    border: solid 0.2em whitesmoke;
+    border-radius: 0.4em;
+    background-color: #404060;
+}
+
+.card-tooltip-name {
+    min-width: 2em;
+    margin: 0.2em;
+    padding: 0.1em;
+    color: white;
+}
+
+.card-tooltip-desc {
+    min-width: 6em;
+    max-width: 12em;
+    min-height: 3em;
+    margin: 0.3em;
+    padding: 0.2em;
+    background-color: whitesmoke;
+    border: solid 0.2em #000000;
+    border-radius: 0.4em;
+}
+
+
+/* Dice Anim */
+
+.dice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.dice-player-name {
+    font-size: x-large;
+    border-radius: 0.4em;
+    background-color: whitesmoke;
+    padding: 0.2em 0.4em;
+}
+
+
+/* Turn Timer */
+
+#turn-timer {
+    font-size: xx-large;
+    font-weight: bold;
+}
+
+
+/* MOBILE VIEW */
+@media (max-device-width: 720px) and (orientation: landscape) {
+    body {
+        font-size: smaller;
+    }
+
+    #turn-timer {
+        font-size: x-large;
+    }
 }
 

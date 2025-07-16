@@ -5,6 +5,7 @@ use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInte
 use actix_web::{delete, error, patch, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, post};
 use tokio::spawn;
+use tokio::sync::oneshot;
 use uuid::Uuid;
 use serde_derive::{Serialize, Deserialize};
 
@@ -52,7 +53,7 @@ impl Lobby {
     pub fn all_users_ready(&self) -> bool {
         self.users.iter()
             .map(|id| self.users_ready.get(id).is_some())
-            .any(|is_some| is_some)
+            .all(|is_some| is_some)
     }
 
     pub fn info(&self) -> LobbyInfo {
@@ -79,7 +80,11 @@ pub struct CreateLobbyInfo {
 
 
 fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> Option<LobbyId> {
+    println!("acc id: {}", account_id);
     for (lobby_id, lobby) in lobbies.iter() {
+        for user_id in lobby.users.iter() {
+            println!("id {}", user_id);
+        }
         if lobby.users.get(&account_id).is_some() {
             return Some(lobby_id.clone());
         }
@@ -91,7 +96,8 @@ fn get_lobby_id_for_user(account_id: i32, lobbies: &HashMap<LobbyId, Lobby>) -> 
 async fn create_game_session(
     lobby: &mut Lobby,
     game_handlers: web::Data<GameHandlers>,
-    pool: web::Data<DbPool>
+    pool: web::Data<DbPool>,
+    lobbies: web::Data<Lobbies>,
 ) -> Result<GameId, Error> {
     let user_ids: Vec<i32> = lobby.users
         .iter().cloned().collect();
@@ -110,11 +116,16 @@ async fn create_game_session(
 
     let mut game_handlers = game_handlers.lock().unwrap();
 
-    // create server proccess
-    let (game_server, handle) = GameServer::new(players);
-    let proccess = spawn(game_server.run());
-    
+    // create server process
     let game_id: GameId = Uuid::new_v4();
+
+    // wait for ready signal
+    let (ready_tx, ready_rx) = oneshot::channel();
+
+    let (game_server, handle) = GameServer::new(players, game_id, lobbies.get_ref().clone(), ready_tx);
+    let proccess = spawn(game_server.run());
+    ready_rx.await.map_err(error::ErrorInternalServerError)?;    // wait for ready signal
+
     game_handlers.insert(game_id, (proccess, handle));
 
     Ok(game_id)
@@ -207,8 +218,10 @@ async fn get_current_lobby(
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
                              .clone();
-    
+
+    log::info!("ROUTE /lobby/current");
     let lobbies = lobbies.lock().unwrap();
+    log::info!("ROUTE /lobby/current -> lock acquired");
 
     if let Some(lobby_id) = get_lobby_id_for_user(account_id, &lobbies) {
         Ok(HttpResponse::Found().json(lobbies.get(&lobby_id)))
@@ -294,8 +307,12 @@ async fn join_lobby(
     }
 
     if let Some(lobby) = lobbies.get_mut(&json.lobby_id) {
+        if lobby.users.len() + 1 > MAX_PLAYERS {
+            return Err(ErrorBadRequest("Lobby is full !"));
+        }
+
         if lobby.is_private() && json.password.is_none() {
-            return Err(ErrorForbidden("Lobby is private !"))
+            return Err(ErrorForbidden("Lobby is private !"));
         } else if lobby.is_private() && json.password.is_some() {
             let json_passwd = json.password.clone().unwrap();
             let lobby_passwd = lobby.password.clone().unwrap();
@@ -339,15 +356,15 @@ async fn lobby_set_ready(
                              .unwrap()
                              .clone();
     
-    let mut lobbies = lobbies.lock().unwrap();
+    let mut lobbies_map = lobbies.lock().unwrap();
 
-    let lobby_id = get_lobby_id_for_user(account_id, &lobbies);
+    let lobby_id = get_lobby_id_for_user(account_id, &lobbies_map);
 
     if let Some(lobby_id) = lobby_id {
 
-        let lobby = lobbies.get_mut(&lobby_id).unwrap();
+        let lobby = lobbies_map.get_mut(&lobby_id).unwrap();
 
-        if lobby.all_users_ready() {
+        if lobby.all_users_ready() && lobby.users.len() > 1 {
             return Err(ErrorConflict("Can't update because all users are ready !"));
         }
 
@@ -356,10 +373,9 @@ async fn lobby_set_ready(
 
         broadcaster.notify_lobby_user_ready(lobby, account_id, false).await;
 
-        if lobby.all_users_ready() {
+        if lobby.all_users_ready() && lobby.users.len() > 1 {
             // create game
-            
-            match create_game_session(lobby, game_handlers, pool).await {
+            match create_game_session(lobby, game_handlers, pool, lobbies.clone()).await {
                 Ok(game_id) => { lobby.game_id = Some(game_id); },
                 Err(_) => { return Err(error::ErrorInternalServerError("Could not create game session")); }
             }
@@ -448,7 +464,10 @@ async fn get_current_game_session_info(
                              .unwrap()
                              .clone();
     
+
+    log::info!("ROUTE /game/current");
     let game_handlers = game_handlers.lock().unwrap();
+    log::info!("ROUTE /game/current -> lock acquired");
 
     // convert to tokio stream to be able to use async filters
     // let handlers = tokio_stream::iter(game_handlers.values());
@@ -456,18 +475,20 @@ async fn get_current_game_session_info(
     let mut info: Option<GameSessionInfo> = None;
 
     for (game_id, (_, handler)) in game_handlers.iter() {
-        let players = handler.get_session_info().await;
-        
-        log::info!("Players: ");
-        for prf in players.iter() {
-            log::info!("-> {} ({})", prf.name, prf.id);
-        }
+        log::info!("ROUTE /game/current -> checking handler (closed: {})", handler.is_closed());
+        if !handler.is_closed() {
+            log::info!("ROUTE /game/current -> handler is not closed");
+            let players = handler.get_session_info().await;
+            log::info!("ROUTE /game/current -> players gathered");
 
-        if players.iter().any(|prf| prf.id == account_id) {
-            info = Some(GameSessionInfo { game_id: *game_id, players });
-            break;
+            if players.iter().any(|prf| prf.id == account_id) {
+                info = Some(GameSessionInfo { game_id: *game_id, players });
+                break;
+            }
         }
     }
+
+    log::info!("ROUTE /game/current -> after info gathering");
 
     if let Some(info) = info {
         for prf in info.players.iter() {
@@ -508,14 +529,26 @@ async fn list_game_sessions(game_handlers: web::Data<GameHandlers>) -> actix_web
 
 
 #[delete("/game/kill/{game_id}")]
-async fn kill_session(path: web::Path<(GameId,)>, game_handlers: web::Data<GameHandlers>) -> actix_web::Result<impl Responder> {
+async fn kill_session(path: web::Path<(GameId,)>, game_handlers: web::Data<GameHandlers>, lobbies: web::Data<Lobbies>) -> actix_web::Result<impl Responder> {
     let (game_id,) = path.into_inner();
-    let game_handlers = game_handlers.lock().unwrap();
+    let mut game_handlers = game_handlers.lock().unwrap();
 
     if let Some((process, handler)) = game_handlers.get(&game_id) {
         if !handler.is_closed() {
             handler.kill_server().await;
             process.abort();
+
+            // Reset ready status in the associated lobby
+            {
+                let mut lobbies_map = lobbies.lock().unwrap();
+                let maybe_lobby = lobbies_map.iter_mut().find(|(_, lobby)| lobby.game_id == Some(game_id));
+                if let Some((_lobby_id, lobby)) = maybe_lobby {
+                    lobby.users_ready.clear();
+                }
+            }
+
+            // remove the handler from the map
+            game_handlers.remove(&game_id);
 
             Ok(HttpResponse::Ok().finish())
         } else {
@@ -524,7 +557,6 @@ async fn kill_session(path: web::Path<(GameId,)>, game_handlers: web::Data<GameH
     } else {
         Err(ErrorNotFound("Game not found"))
     }
-
 }
 
 
@@ -535,6 +567,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(get_current_lobby)
         .service(get_lobby_info)
         .service(join_lobby)
+        .service(leave_current_lobby)
 
         .service(get_game_session_info)
         .service(get_current_game_session_info)

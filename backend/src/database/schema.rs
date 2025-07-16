@@ -100,11 +100,23 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    password_reset_tokens (id) {
+        id -> Int4,
+        account_id -> Int4,
+        #[max_length = 36]
+        token -> VarChar,
+        expires_at -> Timestamp,
+        used -> Bool,
+    }
+}
+
 diesel::joinable!(account_stats -> accounts (account_id));
 diesel::joinable!(collection_cards -> accounts (account_id));
 diesel::joinable!(collection_cards -> cards (card_id));
 diesel::joinable!(collection_cosmetics -> accounts (account_id));
 diesel::joinable!(collection_cosmetics -> cosmetics (cosmetic_id));
+diesel::joinable!(password_reset_tokens -> accounts (account_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     account_stats,
@@ -114,4 +126,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     collection_cosmetics,
     cosmetics,
     friends,
+    password_reset_tokens,
 );

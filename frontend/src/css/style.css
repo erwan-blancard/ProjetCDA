@@ -66,6 +66,7 @@ button.styled {
     min-height: 2em;
     transition: 0.05s;
     margin: 1em;
+    nav-index: -1;
 }
 
 button.styled > *, button.styled::before, button.styled::after {
@@ -106,7 +107,7 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
-.styled:has(h1) { padding-left: 4em; padding-right: 4em; margin-bottom: 1.5em; }
+.styled:has(h1) { padding-left: 3em; padding-right: 3em; margin-bottom: 1.5em; }
 .styled:has(h2) { padding-left: 2em; padding-right: 2em; margin-bottom: 1em; }
 .styled:has(h3) { padding-left: 1em; padding-right: 1em; margin-bottom: 0.5em; }
 
@@ -136,103 +137,6 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     height: 100%;
 }
 
-
-/* Lobby */
-
-
-.lobby-entry {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    background-color: #f6f6f6;
-    font-size: small;
-}
-
-.lobby-entry button { visibility: hidden; transition-duration: 0s; /* prevent dissapear being animated */ }
-.lobby-entry:hover button { visibility: visible; }
-
-.lobby-entry ul {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.4em;
-    list-style-type: none;
-    overflow: scroll;
-    padding: 0;
-
-    overflow: scroll;
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-
-.lobby-entry ul > li {
-    background-color: white;
-    border: 1px solid lightgray;
-    border-radius: 2em;
-    max-width: 6em;
-    padding: 0.2em 0.5em 0.2em 0.5em;
-
-    vertical-align: middle;
-    display: table-cell;
-    
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip ellipsis;
-}
-
-.lobby-entry .sub {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    /* padding: 0em 1em 0em 1em; */
-}
-
-.lobby-list {
-    min-width: 50vw;
-    max-width: 90vw;
-}
-
-.lobby-list-container {
-    overflow: scroll;
-    /* list-style-type: none; */
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    background-color: #f6f6f6;
-}
-
-.lobby-list .lobby-entry {
-    border: 1px solid #ddd;
-    margin-top: -1px; /* Prevent double borders */
-    padding: 12px;
-    display: block;
-}
-
-.lobby-list-controls {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.4em;
-
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
-
-    background-color: #f6f6f6;
-    border: 1px solid #ddd;
-}
-
-.lobby-list-controls button {
-    width: 2em;
-}
-
-.lobby-list-status {
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    line-height: 2em;
-    background-color: #f6f6f6;
-}
 
 .lock[type=checkbox] {
     appearance: none;
@@ -278,6 +182,37 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
+.sidepanel {
+    width: 0px;
+    height: 100vh;
+    top: 0px;
+    left: 0px;
+    overflow-x: hidden;
+    position: fixed;
+    z-index: 100;
+    transition: 0.3s;
+    background-color: whitesmoke;
+}
+
+.sidepanel .close-panel {
+    position: absolute;
+    top: 0;
+}
+
+.sidepanel a {
+  padding: 8px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #4b4b4b;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidepanel a:hover {
+  color: #000000;
+}
+
+
 /* Animations */
 
 
@@ -310,13 +245,6 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
-/* TOUCHSCREEN */
-@media (pointer: coarse) {
-    .lobby-entry button { visibility: visible; }    /* always visible */
-    
-}
-
-
 /* MOBILE VIEW */
 @media all and ((max-width: 480px) or (max-height: 480px)) {
     body {
@@ -326,13 +254,6 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     input[type=checkbox] {
         min-width: initial;
         min-height: initial;
-    }
-}
-
-/* MOBILE VIEW (width only) */
-@media all and (max-width: 480px) {
-    .lobby-entry {
-        font-size: x-small;
     }
 }
 

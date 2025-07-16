@@ -8,7 +8,7 @@ const MAX_LOBBY_USERS = 6;
 
 export class LobbyEntry extends HTMLElement {
     /** @type LobbyEntryDTO */
-    lobbyEntry;
+    lobbyEntryDTO;
     userListElement;
     subElement;
     statusElement;
@@ -18,7 +18,7 @@ export class LobbyEntry extends HTMLElement {
 
     constructor(lobbyEntryDTO) {
         super();
-        this.lobbyEntry = lobbyEntryDTO;
+        this.lobbyEntryDTO = lobbyEntryDTO;
         this.className = "lobby-entry";
 
         this.userListElement = document.createElement("ul");
@@ -31,7 +31,6 @@ export class LobbyEntry extends HTMLElement {
 
         this.joinButton = document.createElement("button");
         this.joinButton.className = "styled";
-        this.joinButton.onclick = () => { this.on_join_clicked() };
 
         const joinButtonSpan = document.createElement("span");
         joinButtonSpan.textContent = "Join";
@@ -43,40 +42,14 @@ export class LobbyEntry extends HTMLElement {
         this.appendChild(this.userListElement);
         this.appendChild(this.subElement);
 
-        this.update(this.lobbyEntry);
-    }
-
-    async on_join_clicked() {
-        if (this.lobbyJoinedCallback != null) {
-
-            this.joinButton.disabled = true;
-            if (this.lobbyEntry.password) {
-                displayInput("Password:", "Entry Lobby Password", "Join", true, async (inputElement) => {
-
-                    const lobby = await join_lobby(this.lobbyEntry.lobby_id, inputElement.value);
-                    if (lobby != null) {
-                        this.lobbyJoinedCallback(lobby);
-                    } else {
-                        this.joinButton.disabled = false;
-                    }
-
-                });
-            } else {
-                const lobby = await join_lobby(this.lobbyEntry.lobby_id);
-                if (lobby != null) {
-                    this.lobbyJoinedCallback(lobby);
-                } else {
-                    this.joinButton.disabled = false;
-                }
-            }
-        }
+        this.update(this.lobbyEntryDTO);
     }
 
     update(lobbyEntryDTO) {
-        this.lobbyEntry = lobbyEntryDTO;
+        this.lobbyEntryDTO = lobbyEntryDTO;
         
         // clear users
-        for (let i = 0; i < this.userListElement.children.length; i++) {
+        for (let i = this.userListElement.children.length-1; i >= 0; i--) {
             this.userListElement.removeChild(this.userListElement.children[i]);
         }
 
@@ -108,6 +81,7 @@ export class LobbyList extends HTMLElement {
     #pageCount = 1;
     #busy = false;
 
+    busyCallback = null;
     lobbyJoinedCallback = null;
 
     constructor() {
@@ -141,6 +115,13 @@ export class LobbyList extends HTMLElement {
 
         this.#updateControls();
         this.#updateView();
+    }
+
+    get busy() { return this.#busy; }
+    set busy(value) {
+        this.#busy = value;
+        if (this.busyCallback != null)
+            this.busyCallback(value);
     }
 
     #updateControls() {
@@ -179,7 +160,7 @@ export class LobbyList extends HTMLElement {
     to display it on the list */
     push(lobbyEntryDTO) {
         const lobby_entry = new LobbyEntry(lobbyEntryDTO);
-        lobby_entry.lobbyJoinedCallback = this.lobbyJoinedCallback;
+        lobby_entry.joinButton.onclick = async () => { this.onJoinClicked(lobby_entry); };
         this.#lobbyListEntries.push(lobby_entry);
         this.#lobbyListElement.appendChild(lobby_entry);
         
@@ -214,8 +195,9 @@ export class LobbyList extends HTMLElement {
     }
 
     async refreshPage() {
-        this.#busy = true;
+        this.busy = true;
         this.clear();
+        this.#updateView();
         this.#updateControls();
 
         const lobbies_info = await list_lobbies(this.#currentPage);
@@ -229,7 +211,8 @@ export class LobbyList extends HTMLElement {
             });
         }
 
-        this.#busy = false;
+        this.busy = false;
+        this.#updateView();
         this.#updateControls();
     }
 
@@ -246,6 +229,47 @@ export class LobbyList extends HTMLElement {
             this.#currentPage += 1;
 
             this.refreshPage();
+        }
+    }
+
+    async onJoinClicked(lobbyEntry) {
+        if (this.lobbyJoinedCallback != null && !this.#busy) {
+
+            this.busy = true;
+            this.#updateControls();
+
+            // disable join buttons
+            this.#lobbyListEntries.forEach(entry => {
+                entry.joinButton.disabled = true;
+            });
+
+            if (lobbyEntry.lobbyEntryDTO.password) {
+                displayInput("Password:", "Enter Lobby Password", "Join", true, async (inputElement) => {
+
+                    const lobby = await join_lobby(lobbyEntry.lobbyEntryDTO.lobby_id, inputElement.value);
+                    if (lobby != null) {
+                        this.lobbyJoinedCallback(lobby);
+                    } else {
+                        lobbyEntry.joinButton.disabled = false;
+                    }
+
+                });
+            } else {
+                const lobby = await join_lobby(lobbyEntry.lobbyEntryDTO.lobby_id);
+                if (lobby != null) {
+                    this.lobbyJoinedCallback(lobby);
+                } else {
+                    lobbyEntry.joinButton.disabled = false;
+                }
+            }
+
+            // re-enable join buttons
+            this.#lobbyListEntries.forEach(entry => {
+                entry.joinButton.disabled = false;
+            });
+
+            this.busy = true;
+            this.#updateControls();
         }
     }
 

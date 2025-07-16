@@ -18,12 +18,12 @@ export class ViewMgr {
             disableInteractions(view);
         });
 
-        if (this.primaryViews.length >= 1) {
-            this.currentPrimaryView = 0;
-            const view = this.primaryViews[this.currentPrimaryView];
-            enableInteractions(view);
-            showElementAnimated(view);
-        }
+        // if (this.primaryViews.length >= 1) {
+        //     this.currentPrimaryView = 0;
+        //     const view = this.primaryViews[this.currentPrimaryView];
+        //     enableInteractions(view);
+        //     showElementAnimated(view);
+        // }
     }
 
     setPrimaryView(view) {
@@ -63,37 +63,6 @@ export class ViewMgr {
         setTimeout(() => {
             showElementAnimated(new_view);
         }, SHOW_HIDE_DELAY * 1000);
-    }
-
-    /**
-     * Function used to show (animated) an element that is not in the view list.
-     * It may be used for elements such as side panels.
-    */
-    showPanel(element, fromRight=false) {
-        const startFrom = fromRight ? element.offsetWidth : -element.offsetWidth;
-        gsap.timeline({defaults: {duration: SHOW_HIDE_DELAY},
-            onComplete: () => { enableInteractions(element); },
-            onStart: () => { disableInteractions(element); }}).fromTo(element,
-                {
-                    offsetLeft: startFrom
-                }, {
-                    offsetLeft: 0
-                });
-    }
-
-    /**
-     * Function used to hide (animated) an element that is not in the view list.
-     * It may be used for elements such as side panels.
-    */
-    hidePanel(element, fromRight=false) {
-        const startFrom = fromRight ? element.offsetWidth : -element.offsetWidth;
-        gsap.timeline({defaults: {duration: SHOW_HIDE_DELAY},
-            onStart: () => { disableInteractions(element); }}).fromTo(element,
-                {
-                    offsetLeft: startFrom
-                }, {
-                    offsetLeft: 0
-                });
     }
 
 }

@@ -1,3 +1,5 @@
+import { ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, MessageResponse, PlayCardResponse, SessionInfoResponse } from "./dto"
+
 // these types must match the UserActions in the gameserver
 export const PLAY_CARD_ACTION_KEY = "PlayCard"
 export const DRAW_CARD_ACTION_KEY = "DrawCard"
@@ -6,6 +8,11 @@ export const SEND_CHAT_MESSAGE_ACTION_KEY = "SendChatMessage"
 export const CHAT_MESSAGE_RESP_KEY = "Message"
 export const GAME_STATUS_RESP_KEY = "GameStatus"
 export const SESSION_INFO_RESP_KEY = "SessionInfo"
+export const PLAY_CARD_RESP_KEY = "PlayCard"
+export const DRAW_CARD_RESP_KEY = "DrawCard"
+export const CHANGE_TURN_RESP_KEY = "ChangeTurn"
+export const COLLECT_DISCARD_CARDS_RESP_KEY = "CollectDiscardCards"
+export const GAME_END_RESP_KEY = "GameEnd"
 
 
 export class ServerConnexion extends EventTarget {
@@ -67,12 +74,6 @@ export class ServerConnexion extends EventTarget {
         return this.#socket != null;
     }
 
-    send_chat_message(message) {
-        if (this.is_connected()) {
-            this.#send_message_action(message);
-        }
-    }
-
     #process_received_data(data) {
         console.log("Data received: " + data);
 
@@ -81,18 +82,54 @@ export class ServerConnexion extends EventTarget {
         const resp_type = json_data["type"];
         switch (resp_type) {
             case CHAT_MESSAGE_RESP_KEY:
-                this.#emitNewChatMessageEvent(json_data["message"]);
+                this.dispatchEvent(new CustomEvent("chatmessage", { detail:
+                    new MessageResponse(json_data)
+                }))
                 break;
         
             case GAME_STATUS_RESP_KEY:
-                this.#emitGameStateUpdateEvent(json_data["state"]);
+                this.dispatchEvent(new CustomEvent("gameupdate", { detail: 
+                    new GameStatusResponse(json_data)
+                }))
                 break;
         
             case SESSION_INFO_RESP_KEY:
                 this.#session_info = { id: json_data["id"], players: json_data["players"] };
-                this.#emitSessionInfo();
+                this.dispatchEvent(new CustomEvent("sessioninfo", { detail:
+                    new SessionInfoResponse(json_data)
+                }))
+                break;
+            
+            case PLAY_CARD_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("playcard", { detail:
+                    new PlayCardResponse(json_data)
+                }))
+                break;
+            
+            case DRAW_CARD_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("drawcard", { detail:
+                    new DrawCardResponse(json_data)
+                }))
+                break;
+            
+            case CHANGE_TURN_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("changeturn", { detail:
+                    new ChangeTurnResponse(json_data)
+                }))
                 break;
         
+            case COLLECT_DISCARD_CARDS_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("collectdiscardcards", { detail:
+                    new CollectDiscardCardsResponse(json_data)
+                }))
+                break;
+            
+            case GAME_END_RESP_KEY:
+                this.dispatchEvent(new CustomEvent("gameend", { detail:
+                    new GameEndResponse(json_data)
+                }))
+                break;
+
             default:
                 console.log("Unrecognized response type:", resp_type)
                 break;
@@ -101,33 +138,15 @@ export class ServerConnexion extends EventTarget {
 
     // events
 
-    #emitGameStateUpdateEvent(json_data) {
-        this.dispatchEvent(new CustomEvent("gameupdate", { detail: 
-            json_data
-         }))
-    }
-
-    #emitNewChatMessageEvent(message) {
-        this.dispatchEvent(new CustomEvent("chatmessage", { detail:
-            { message: message }
-        }))
-    }
-
     #emitConnectionChangeEvent() {
         this.dispatchEvent(new CustomEvent("connectionchange", { detail:
             { status: this.is_connected() }
         }))
     }
 
-    #emitSessionInfo() {
-        this.dispatchEvent(new CustomEvent("sessioninfo", { detail:
-            this.#session_info
-        }))
-    }
-
     // actions
 
-    #send_message_action(message) {
+    send_chat_message(message) {
         const action = {
             "type": SEND_CHAT_MESSAGE_ACTION_KEY,
             "message": message
@@ -135,15 +154,16 @@ export class ServerConnexion extends EventTarget {
         this.#socket.send(JSON.stringify(action));
     }
 
-    #send_play_card_action(card_id) {
+    send_play_card_action(card_index, targets) {
         const action = {
             "type": PLAY_CARD_ACTION_KEY,
-            "card_id": card_id
+            "card_index": card_index,
+            "targets": targets
         };
         this.#socket.send(JSON.stringify(action));
     }
 
-    #send_draw_card_action() {
+    send_draw_card_action() {
         const action = {
             "type": DRAW_CARD_ACTION_KEY
         };

@@ -12,6 +12,8 @@
     
     <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/menu.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script type="module" src='/js/api/auth.js'></script>
     <style>
         .form {
@@ -28,10 +30,12 @@
         <section class="styled">
             <div class="vlayout form">
                 <label for="username-input">Username:</label>
-                <input id="username-input" type="text" value="" required="required"/>
+                <input id="username-input" type="text" value="" required="required" maxlength="32"/>
                 <label for="password-input">Password:</label>
-                <input id="password-input" type="password" name="Password" value="" required="required"/>
+                <input id="password-input" type="password" name="Password" value="" required="required" maxlength="255"/>
+                <span id="input-status" style="color: red; font-size: medium;"></span>
                 <p style="font-size: medium;">No account yet ? <a href="/register.html">Create an account</a></p>
+                <a href="/forgot-password.html" style="font-size: medium;">Forgot your password ?</a>
                 <button id="form-submit" class="styled" onclick="login_submit()"><span>Login</span></button>
             </div>
         </section>

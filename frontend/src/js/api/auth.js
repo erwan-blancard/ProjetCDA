@@ -3,11 +3,46 @@ import { displayPopup } from "../ui/popup";
 
 export async function login_submit() {
     const button = document.getElementById("form-submit");
-    button.disabled = true;
 
     const username = document.getElementById("username-input").value;
     const password = document.getElementById("password-input").value;
 
+    button.disabled = true;
+
+    await login(username, password);
+
+    button.disabled = false;
+}
+
+
+export async function register_submit() {
+    const button = document.getElementById("form-submit");
+
+    const username = document.getElementById("username-input").value;
+    const email = document.getElementById("email-input").value;
+    const password = document.getElementById("password-input").value;
+    const confirm_password = document.getElementById("confirm-password-input").value;
+    const input_status = document.getElementById("input-status");
+
+    if (password !== confirm_password) {
+        input_status.textContent = "Passwords do not match";
+        return;
+    }
+
+    button.disabled = true;
+
+    await register(username, email, password);
+
+    button.disabled = false;
+}
+
+
+export async function login(username, password) {
+    const input_status = document.getElementById("input-status");
+    // change input-status span if it exists
+    if (input_status)
+        input_status.textContent = "";
+    
     const payload = {
         "username": username,
         "password": password
@@ -30,20 +65,21 @@ export async function login_submit() {
         // cookie with token should have been updated
         window.location.href = "/index.html";
     } catch (error) {
-        displayPopup(`An error occured when logging in: ${error.message}`, "Error");
+        // displayPopup(`An error occured when logging in: ${error.message}`, "Error");
+        if (input_status)
+            input_status.textContent = "Username or password is incorrect";
+        else
+            console.error(`An error occured when logging in: ${error.message}`);
     }
-
-    button.disabled = false;
 }
 
 
-export async function register_submit() {
-    const button = document.getElementById("form-submit");
-    button.disabled = true;
-
-    const username = document.getElementById("username-input").value;
-    const email = document.getElementById("email-input").value;
-    const password = document.getElementById("password-input").value;
+export async function register(username, email, password) {
+    const input_status = document.getElementById("input-status");
+    // change input-status span if it exists
+    if (input_status)
+        input_status.textContent = "";
+    
 
     const payload = {
         "username": username,
@@ -69,10 +105,12 @@ export async function register_submit() {
                     });
 
     } catch (error) {
-        displayPopup(`There was an error when creating the account: ${error.message}`, "Error");
+        // displayPopup(`There was an error when creating the account: ${error.message}`, "Error");
+        if (input_status)
+            input_status.textContent = `Error when creating the account: ${error.message}`;
+        else
+            console.error(`There was an error when creating the account: ${error.message}`);
     }
-
-    button.disabled = false;
 }
 
 

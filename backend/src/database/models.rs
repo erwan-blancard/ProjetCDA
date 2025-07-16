@@ -22,8 +22,6 @@ pub struct Account {
 pub struct FilteredAccount {
     pub id: i32,
     pub username: String,
-    pub email: String,
-    pub premium: bool,
     pub suspended: bool,
 }
 
@@ -52,4 +50,16 @@ pub struct Friend {
     pub account1: i32,
     pub account2: i32,
     pub status: i32,
+}
+
+
+#[derive(Queryable, Selectable, Insertable, Serialize)]
+#[diesel(table_name = super::schema::password_reset_tokens)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct PasswordResetToken {
+    pub id: i32,
+    pub account_id: i32,
+    pub token: String,
+    pub expires_at: NaiveDateTime,
+    pub used: bool,
 }

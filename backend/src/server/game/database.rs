@@ -5,6 +5,10 @@ use lazy_static::lazy_static;
 use serde::Deserializer;
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
+use crate::server::game::card::{MultiActionCard, MultiHitCard, TargetBothCard, TargetType};
+use crate::server::game::modifiers::ModifierInfo;
+use crate::server::game::special_cards::{PearthCard, PlayersRollsDiceCard, PlayersRollsDiceCardAction};
+
 use super::card::{BasicCard, Card, CardId, Element, Kind, Stars};
 
 lazy_static! {
@@ -18,6 +22,11 @@ lazy_static! {
 #[serde(tag = "type")]
 enum CardVariant {
     BasicCard(BasicCardData),
+    MultiHitCard(MultiHitCardData),
+    TargetBothCard(BasicCardData),    // same fields as BasicCard
+    MultiActionCard(MultiActionCardData),
+    PlayersRollsDiceCard(PlayersRollsDiceCardData),
+    PearthCard,
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,10 +38,65 @@ struct BasicCardData {
     #[serde(default)]
     draw: u32,
     #[serde(default)]
-    dice: bool
+    attack_modifier: Option<ModifierInfo>,
+    #[serde(default)]
+    heal_modifier: Option<ModifierInfo>,
+    #[serde(default)]
+    draw_modifier: Option<ModifierInfo>,
+    #[serde(default)]
+    targets: TargetType,
 }
 
 
+#[derive(Debug, Deserialize)]
+struct MultiHitCardData {
+    attacks: Vec<u32>,
+    #[serde(default)]
+    heal: u32,
+    #[serde(default)]
+    draw: u32,
+    #[serde(default)]
+    heal_modifier: Option<ModifierInfo>,
+    #[serde(default)]
+    draw_modifier: Option<ModifierInfo>,
+}
+
+
+#[derive(Debug, Deserialize)]
+struct MultiActionCardData {
+    actions: usize,
+    #[serde(default)]
+    targets: Vec<TargetType>,
+    #[serde(default)]
+    attacks: Vec<u32>,
+    #[serde(default)]
+    heals: Vec<u32>,
+    #[serde(default)]
+    draws: Vec<u32>,
+    #[serde(default)]
+    attack_modifiers: Vec<Option<ModifierInfo>>,
+    #[serde(default)]
+    heal_modifiers: Vec<Option<ModifierInfo>>,
+    #[serde(default)]
+    draw_modifiers: Vec<Option<ModifierInfo>>,
+}
+
+
+#[derive(Debug, Deserialize)]
+struct PlayersRollsDiceCardData {
+    #[serde(default)]
+    attack: bool,
+    #[serde(default)]
+    heal: bool,
+    #[serde(default)]
+    draw: bool,
+    #[serde(default)]
+    targets: TargetType,
+    dice_action: PlayersRollsDiceCardAction,
+}
+
+
+/// Common card data
 #[derive(Debug, Deserialize)]
 struct CardInfo {
     #[serde(default)]
@@ -51,8 +115,96 @@ impl CardInfo {
     fn make_card(&self) -> Box<dyn Card> {
         match &self.variant {
             CardVariant::BasicCard(data) => {
-                Box::new(BasicCard {id: self.id, name: self.name.clone(), element: self.element, stars: self.stars, kind: self.kind, desc: self.desc.clone(),
-                     attack: data.attack, heal: data.heal, draw: data.draw, dice: data.dice})
+                Box::new(BasicCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                    attack: data.attack,
+                    heal: data.heal,
+                    draw: data.draw,
+                    attack_modifier: data.attack_modifier.clone().map(|m| m.into_boxed()),
+                    heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                    draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
+                    target_type: data.targets,
+                })
+            },
+            CardVariant::MultiHitCard(data) => {
+                Box::new(MultiHitCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                    attacks: data.attacks.clone(),
+                    heal: data.heal,
+                    draw: data.draw,
+                    heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                    draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
+                })
+            },
+            CardVariant::TargetBothCard(data) => {
+                Box::new(TargetBothCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                    attack: data.attack,
+                    heal: data.heal,
+                    draw: data.draw,
+                    attack_modifier: data.attack_modifier.clone().map(|m| m.into_boxed()),
+                    heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                    draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
+                    target_type: data.targets,
+                })
+            }
+            CardVariant::MultiActionCard(data) => {
+                Box::new(MultiActionCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                    actions: data.actions,
+                    attacks: data.attacks.clone(),
+                    heals: data.heals.clone(),
+                    draws: data.draws.clone(),
+                    attack_modifiers: data.attack_modifiers.clone().into_iter().map(|m| m.map(|m| m.into_boxed())).collect(),
+                    heal_modifiers: data.heal_modifiers.clone().into_iter().map(|m| m.map(|m| m.into_boxed())).collect(),
+                    draw_modifiers: data.draw_modifiers.clone().into_iter().map(|m| m.map(|m| m.into_boxed())).collect(),
+                    target_types: data.targets.clone(),
+                })
+            }
+            CardVariant::PlayersRollsDiceCard(data) => {
+                Box::new(PlayersRollsDiceCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                    attack: data.attack,
+                    heal: data.heal,
+                    draw: data.draw,
+                    target_type: data.targets,
+                    dice_action: data.dice_action,
+                })
+            }
+            CardVariant::PearthCard => {
+                Box::new(PearthCard {
+                    id: self.id,
+                    name: self.name.clone(),
+                    element: self.element,
+                    stars: self.stars,
+                    kind: self.kind,
+                    desc: self.desc.clone(),
+                })
             }
         }
     }

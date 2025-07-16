@@ -58,3 +58,8 @@ export async function login_guard(silent=true) {
     }
     
 }
+
+
+export function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

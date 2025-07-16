@@ -82,7 +82,7 @@ export async function get_current_game_info() {
             if (response.status == 404)
                 throw new Error("No current session !");
             else
-                throw new Error("Could not get current session info !");
+                throw new Error(`Unexpected response code ${response.status}`);
 
         return new GameSessionInfoDTO(await response.json());
     } catch (error) {

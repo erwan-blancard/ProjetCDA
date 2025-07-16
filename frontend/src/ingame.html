@@ -11,7 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
     
     <link rel='stylesheet' type='text/css' media='screen' href='/css/style.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/ui.css'>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <!-- <script type="importmap">
         {
           "imports": {
@@ -34,9 +36,19 @@
       <section class="connection">
         <p>Status: <span id="connection-status">Not connected</span></p>
       </section>
+
+      <!-- test -->
+      <section style="position: absolute; top: 24px;">
+        <p>Events: <span id="event-counter">0</span></p>
+      </section>
+
+      <div style="position: absolute; top: 0px; left: 0px; width: 100vw; display: flex; justify-content: center;">
+        <span id="turn-timer"></span>
+      </div>
+
       <section class="chat">
         <div id="log"></div>
-        <form id="chatform" style="pointer-events: none;">
+        <form id="chatform">
           <input type="text" id="text" autocomplete="off" />
           <input type="submit" id="send" />
         </form>

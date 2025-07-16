@@ -1,4 +1,8 @@
+use std::time::Duration;
+
 use serde_derive::{Deserialize, Serialize};
+
+use crate::server::game::card::CardId;
 
 use super::player::PlayerId;
 
@@ -27,17 +31,49 @@ pub struct PlayInfo {
 pub enum ActionType {
     Attack{amount: u32},
     Heal{amount: u32},
+    Draw{cards: Vec<CardId>},
+    Discard{cards: Vec<usize>},
 }
 
+
+impl ActionType {
+    pub fn get_estimated_time(&self) -> Duration {
+        match self {
+            // default event duration in web app
+            _ => Duration::from_millis(250)
+        }
+    }
+}
+
+
+impl PlayAction {
+    pub fn new() -> Self {
+        Self { dice_roll: 0, player_dice_id: -1, targets: Vec::new() }
+    }
+
+    pub fn get_estimated_time(&self) -> Duration {
+        let time = {
+            // if dice roll is used
+            if self.dice_roll > 0 {
+                Duration::from_millis(120 * 6 + 1000)
+            } else { Duration::ZERO }
+        };
+
+        time + self.targets.iter()
+            .map(|target| target.action.get_estimated_time())
+            .sum::<Duration>()
+    }
+}
 
 impl PlayInfo {
     pub fn new() -> Self {
         Self { actions: Vec::new() }
     }
-}
 
-impl PlayAction {
-    pub fn new() -> Self {
-        Self { dice_roll: 0, player_dice_id: -1, targets: Vec::new() }
+    /// Estimated amount of time that it will take for the web app to show the actions to the user.
+    pub fn get_estimated_time(&self) -> Duration {
+        self.actions.iter()
+            .map(|action| action.get_estimated_time())
+            .sum()
     }
 }

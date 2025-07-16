@@ -1,159 +1,741 @@
 [
   {
-    "name": "Boule de feu",
+    "name": "Airicot",
+    "element": "Air",
+    "stars": "Three",
+    "kind": "Food",
+    "desc": "Récupérez 15 points.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 15,
+    "draw": 0
+  },
+  {
+    "name": "Airtichaut",
+    "element": "Air",
+    "stars": "One",
+    "kind": "Food",
+    "desc": "Donnez toutes vos cartes à un autre joueur. Pour chaque carte donnée, récupérez 5 points",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Arc-En-Ciel",
+    "element": "Air",
+    "stars": "Five",
+    "kind": "Weapon",
+    "desc": "Lancez un dé. Enlevez autant à votre adversaire, piochez autant de cartes et récupérez autant de points que le nombre indiqué par le dé.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    },
+    "heal_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    },
+    "draw_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    }
+  },
+  {
+    "name": "Archéologie",
+    "element": "Earth",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Piochez 3 cartes.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 3,
+    "note": "Original effect: Consultez la pioche. Piochez les 2 premières cartes d'élément Terre que vous trouvez"
+  },
+  {
+    "name": "Aspiration",
+    "element": "Air",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Volez les cartes d'élément Air de tous les joueurs. Pour chaque carte Air volée, récupérez 5 points.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Attaque aérienne",
+    "element": "Air",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Enlevez 10 points à votre adversaire. Volez une carte à votre adversaire. Donnez une carte à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 10,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Attaque aqueuse",
+    "element": "Water",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Enlevez 10 points à votre adversaire. Lancez un dé. Enlevez le nombre indiqué par le dé à tous vos adversaires.",
+    "type": "MultiActionCard",
+    "actions": 2,
+    "attacks": [10, 0],
+    "target_types": ["Single", "All"],
+    "attack_modifiers": [
+      null,
+      {
+        "type": "DiceRollModifier",
+        "dice_op": "Add"
+      }
+    ]
+  },
+  {
+    "name": "Attaque ardente",
+    "element": "Fire",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Enlevez 10 points à votre adversaire. Votre attaque augmente de 6 points pendant votre prochain tour.",
+    "type": "BasicCard",
+    "attack": 10,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Attaque terrestre",
+    "element": "Earth",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Enlevez 10 points à votre adversaire. Piochez une carte dans la pile de défausse de votre choix.",
+    "type": "BasicCard",
+    "attack": 10,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Avis de tempête",
+    "element": "Air",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Piochez 5 cartes. Durant votre prochain tour, jouez toutes vos cartes d'élément Air présentes dans votre main.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 5,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Balle de feu",
     "element": "Fire",
     "stars": "Two",
     "kind": "Spell",
-    "desc": "Inflige 4 points de dégâts.",
-    "type": "BasicCard",
-    "attack": 4,
+    "desc": "Enlevez 2 points à votre adversaire. Enlevez 2 points à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [2, 2],
     "heal": 0,
-    "draw": 0,
-    "dice": false
-  },
-  {
-    "name": "Pomme",
-    "element": "Earth",
-    "stars": "Two",
-    "kind": "Food",
-    "desc": "Récupérez 6 points.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 6,
-    "draw": 0,
-    "dice": false
-  },
-  {
-    "name": "Pêche",
-    "element": "Water",
-    "stars": "Two",
-    "kind": "Food",
-    "desc": "Récupérez 4 points. Piochez 1 carte.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 4,
-    "draw": 1,
-    "dice": false
-  },
-  {
-    "name": "Arbalète",
-    "element": "Air",
-    "stars": "Four",
-    "kind": "Weapon",
-    "desc": "Enlevez 9 points de vie à votre adversaire. Piochez 1 carte.",
-    "type": "BasicCard",
-    "attack": 9,
-    "heal": 0,
-    "draw": 1,
-    "dice": false
+    "draw": 0
   },
   {
     "name": "Bille de feu",
     "element": "Fire",
     "stars": "One",
     "kind": "Spell",
-    "desc": "Enlevez 1 point de vie à votre adversaire.",
+    "desc": "Enlevez 1 point à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 1,
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Bombe à eau",
+    "element": "Water",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Chaque joueur lance le dé. Additionnez les nombres obtenus aux lancers. Enlevez la somme au(x) joueur(s) ayant fait le lancer le plus bas.",
+    "type": "PlayersRollsDiceCard",
+    "attack": true,
+    "targets": "All",
+    "dice_action": "AffectsMinRollPlayersRollsSum"
+  },
+  {
+    "name": "Bougie",
+    "element": "Fire",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Enlevez 3 points à votre adversaire. Regardez les cartes présentes dans sa main.",
+    "type": "BasicCard",
+    "attack": 3,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Boule de feu",
+    "element": "Fire",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Enlevez 4 points à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 4,
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Bourrasque",
+    "element": "Air",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Enlevez 15 points à tous les joueurs y compris vous. Chaque joueur défausse toutes ses cartes en main.",
+    "type": "TargetBothCard",
+    "attack": 15,
+    "heal": 0,
+    "draw": 0,
+    "targets": "All",
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Brasier",
+    "element": "Fire",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à votre adversaire 8 points plus le nombre indiqué par le dé.",
+    "type": "BasicCard",
+    "attack": 8,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    }
+  },
+  {
+    "name": "Bulle d'air",
+    "element": "Air",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à votre adversaire le nombre indiqué par le dé. Piochez une carte.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 1,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    }
+  },
+  {
+    "name": "Bulle de feu",
+    "element": "Fire",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à votre adversaire 1 point plus le nombre indiqué par le dé.",
     "type": "BasicCard",
     "attack": 1,
     "heal": 0,
     "draw": 0,
-    "dice": false
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    }
   },
   {
     "name": "Bulle",
     "element": "Water",
     "stars": "One",
     "kind": "Spell",
-    "desc": "Lancé un dé. Enlevez le résultat du dé à votre adversaire.",
+    "desc": "Lancez un dé. Enlevez à votre adversaire le nombre indiqué par le dé.",
     "type": "BasicCard",
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "dice": true
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    }
   },
   {
-    "name": "Pioche",
-    "element": "Earth",
+    "name": "Canicule",
+    "element": "Fire",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "L'attaque des cartes d'élément Feu est doublée jusqu'à la fin de votre prochain tour.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Canne à pêche",
+    "element": "Water",
+    "stars": "One",
+    "kind": "Weapon",
+    "desc": "Enlevez 2 points à votre adversaire. Volez lui une carte, si c'est une carte d'élément Eau, rejouez Canne à Pêche.",
+    "type": "BasicCard",
+    "attack": 2,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Canne",
+    "element": "Water",
     "stars": "Two",
     "kind": "Weapon",
-    "desc": "Enlevez 6 points de vie à votre adversaire. Piochez 1 carte.",
+    "desc": "Enlevez 5 points à votre adversaire.",
     "type": "BasicCard",
-    "attack": 6,
+    "attack": 5,
     "heal": 0,
-    "draw": 1,
-    "dice": false
+    "draw": 0
   },
   {
-    "name": "Pomme d'amour",
+    "name": "Canon à air",
+    "element": "Air",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "L'attaque de vos cartes d'élément Air est doublée pendant votre prochain tour. Piochez une carte.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 1,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Cascade",
+    "element": "Water",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Enlevez 8 points à votre adversaire. Piochez une carte, si c'est une carte d'élément Eau, jouez la sur ce tour.",
+    "type": "BasicCard",
+    "attack": 8,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Chalumeau",
+    "element": "Fire",
+    "stars": "Four",
+    "kind": "Weapon",
+    "desc": "Enlevez 12 points à votre adversaire. Votre attaque augmente de 5 points pendant votre prochain tour.",
+    "type": "BasicCard",
+    "attack": 12,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Charbon",
+    "element": "Fire",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "L'attaque de votre prochaine carte d'élément Feu est augmentée de 10 points. Piochez une carte.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 1,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Chouffleur",
+    "element": "Air",
+    "stars": "Two",
+    "kind": "Food",
+    "desc": "Lancez un dé. Multipliez le nombre de cartes que vous avez en main par le nombre obtenu par le lancer de dé. Récupérez le résultat.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "heal_modifier": {
+        "type": "HandAndDiceModifier",
+        "op": "Mul"
+    }
+  },
+  {
+    "name": "Courant d'air",
+    "element": "Air",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Enlevez 2 points à votre adversaire. Volez lui une carte dans sa main.",
+    "type": "BasicCard",
+    "attack": 2,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Cyclone",
+    "element": "Air",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Multipliez le nombre indiqué par le dé par le nombre de cartes que vous avez en main. Enlevez le résultat à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+        "type": "HandAndDiceModifier",
+        "op": "Mul"
+    }
+  },
+  {
+    "name": "Dagues à l'âme",
+    "element": "Water",
+    "stars": "Four",
+    "kind": "Weapon",
+    "desc": "Enlevez 6 points à votre adversaire. Enlevez 6 points à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [6, 6],
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Déflagration",
+    "element": "Fire",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Enlevez 15 points à votre adversaire. Lancez un dé, si il indique 6, rejouez Déflagration",
+    "type": "BasicCard",
+    "attack": 15,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Détérrage",
+    "element": "Earth",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Piochez 2 cartes de la pile de défausse de votre choix.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 2,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Dragon de feu",
+    "element": "Fire",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Enlevez 9 points à votre adversaire. Piochez une carte, si la carte est d'élément feu, rejouez Dragon de Feu.",
+    "type": "BasicCard",
+    "attack": 9,
+    "heal": 0,
+    "draw": 1,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Eaurange",
+    "element": "Water",
+    "stars": "One",
+    "kind": "Food",
+    "desc": "Récupérez 6 points. Pendant votre prochain tour, vos cartes cibleront tous vos adversaire à la fois.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 6,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Eaux troubles",
+    "element": "Water",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Pendant votre prochain tour, vos cartes cibleront tous vos adversaires à la fois et l'attaque de vos cartes d'élément Eau sera doublée.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Eclaboussure",
+    "element": "Water",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à votre adversaire autant de points que le nombre indiqué par le dé. Enlevez 3 points à tous les autres joueurs.",
+    "type": "MultiActionCard",
+    "actions": 2,
+    "targets": ["Single", "All"],
+    "attacks": [0, 3],
+    "attack_modifiers": [
+      {
+        "type": "DiceRollModifier",
+        "dice_op": "Add"
+      },
+      null
+    ]
+  },
+  {
+    "name": "Enterrement",
+    "element": "Earth",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Défaussez autant de cartes que vous voulez. Pour chaque carte défaussée, enlevez 5 points à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Eventail",
+    "element": "Air",
+    "stars": "Four",
+    "kind": "Weapon",
+    "desc": "Enlevez à votre adversaire 3 fois le nombre de cartes que vous avez en main.",
+    "type": "BasicCard",
+    "attack": 3,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+        "type": "HandSizeModifier",
+        "hand_size_op": "Mul"
+    }
+  },
+  {
+    "name": "Extincteur",
+    "element": "Fire",
+    "stars": "Five",
+    "kind": "Weapon",
+    "desc": "Enlevez 15 points à votre adversaire. Il devra défausser toutes ses cartes d'élément Feu.",
+    "type": "BasicCard",
+    "attack": 15,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Feu d'artifice",
+    "element": "Fire",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Lancez 4 fois le dé. Additionnez les lancers. Enlevez le résultat à votre adversaire.",
+    "type": "MultiActionCard",
+    "actions": 4,
+    "attack_modifiers": [
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" }
+    ],
+    "note": "Not accurate but good enough"
+  },
+  {
+    "name": "Feu de détresse",
+    "element": "Fire",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Défaussez votre main.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Feu de forêt",
+    "element": "Fire",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Enlevez 16 points à votre adversaire. Il devra défausser toutes ses cartes en main n'étant pas d'élément Feu.",
+    "type": "BasicCard",
+    "attack": 16,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Feuraise",
+    "element": "Fire",
+    "stars": "One",
+    "kind": "Food",
+    "desc": "Lancez un dé. Récupérez le nombre indiqué par le dé. Si vous obtenez 5 ou 6, rejouez Feuraise.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "heal_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    },
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Feurise",
+    "element": "Fire",
+    "stars": "Three",
+    "kind": "Food",
+    "desc": "Lancez deux fois le dé. Multipliez les deux nombres obtenus. Récupérez le résultat.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Flambeau",
+    "element": "Fire",
+    "stars": "Three",
+    "kind": "Weapon",
+    "desc": "Enlevez 9 points à votre adversaire. Donnez cette carte au joueur situé à votre droite. Piochez une carte.",
+    "type": "BasicCard",
+    "attack": 9,
+    "heal": 0,
+    "draw": 1,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Flambée",
+    "element": "Fire",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Enlevez 7 points à votre adversaire. Votre attaque augmente de 7 points pendant votre prochain tour.",
+    "type": "BasicCard",
+    "attack": 7,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Flamboise",
     "element": "Fire",
     "stars": "Two",
     "kind": "Food",
-    "desc": "Vous ainsi qu'un autre joueur récupérez 12 points de vie.",
+    "desc": "Récupérez 7 points. L'attaque de votre prochaine carte d'élément Feu augmente de 7 points.",
     "type": "BasicCard",
     "attack": 0,
-    "heal": 12,
+    "heal": 7,
     "draw": 0,
-    "dice": false
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Flammes folles",
+    "element": "Fire",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Lancez 2 fois le dé. Multipliez les 2 nombres obtenus. Enlevez ce résultat à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
     "name": "Fléchettes",
     "element": "Air",
     "stars": "One",
     "kind": "Weapon",
-    "desc": "Enlevez 3 points de vie à votre adversaire. Piochez 1 carte.",
+    "desc": "Enlevez 3 points à votre adversaire.",
     "type": "BasicCard",
     "attack": 3,
     "heal": 0,
-    "draw": 1,
-    "dice": false
+    "draw": 0
   },
   {
-    "name": "Grain de poussière",
-    "element": "Earth",
-    "stars": "One",
+    "name": "Force forge",
+    "element": "Fire",
+    "stars": "Four",
     "kind": "Spell",
-    "desc": "Enlevez 0 point de vie à votre adversaire.",
+    "desc": "Piochez une carte Arme de votre pile de défausse. L'attaque de vos armes est doublée pendant votre prochain tour.",
     "type": "BasicCard",
     "attack": 0,
     "heal": 0,
-    "draw": 1,
-    "dice": false
-  },
-  {
-    "name": "Noix de coco",
-    "element": "Water",
-    "stars": "Four",
-    "kind": "Food",
-    "desc": "Récupérez 4 points et enlevez 9 points de vie à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 9,
-    "heal": 4,
     "draw": 0,
-    "dice": false
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Epuisette",
+    "name": "Goutte",
     "element": "Water",
-    "stars": "Two",
-    "kind": "Weapon",
-    "desc": "Enlevez 2 points à votre adversaire. Piochez 2 carte.",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Tant que vous obtenez un nombre pair, enlevez 2 points à votre adversaire et rejouez la carte Goutte.",
     "type": "BasicCard",
-    "attack": 2,
+    "attack": 0,
     "heal": 0,
-    "draw": 2,
-    "dice": false
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Bouteille d'eau",
+    "name": "Gouttelettes",
     "element": "Water",
-    "stars": "Three",
-    "kind": "Weapon",
-    "desc": "Récupérez 8 points. Enlevez 4 points à votre adversaire. Piochez 2 carte.",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Tant que vous n'obtenez pas le chiffre 1, enlevez 1 point à votre adversaire et rejouez la carte Gouttelettes.",
     "type": "BasicCard",
-    "attack": 4,
-    "heal": 8,
-    "draw": 2,
-    "dice": false
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Gravats",
+    "element": "Earth",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Défaussez votre main. Enlevez autant de points à votre adversaire que le nombre de cartes présentes dans votre pile de défausse.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+        "type": "DiscardSizeModifier",
+        "discard_size_op": "Add"
+    },
+    "note": "Complex effect: not fully handled by simple modifier"
+  },
+  {
+    "name": "Inondation",
+    "element": "Water",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Enlevez 13 points à tous les joueurs y compris vous même. Tous les joueurs défaussent leurs cartes n'étant pas d'élément Eau",
+    "type": "TargetBothCard",
+    "attack": 13,
+    "heal": 0,
+    "draw": 0,
+    "targets": "All",
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Jet de sable",
+    "element": "Earth",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à votre adversaire le nombre indiqué par le dé. Il passera son prochain tour.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    },
+    "note": "Complex effect: not fully handled by simple modifier"
+  },
+  {
+    "name": "Labourage",
+    "element": "Earth",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Enlevez 7 points à votre adversaire. Échangez une carte de votre main avec une carte de la pile de défausse de votre adversaire.",
+    "type": "BasicCard",
+    "attack": 7,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
     "name": "Lance de flammes",
@@ -164,187 +746,551 @@
     "type": "BasicCard",
     "attack": 18,
     "heal": 0,
-    "draw": 0,
-    "dice": false
+    "draw": 0
   },
   {
-    "name": "Terrassement",
-    "element": "Earth",
-    "stars": "Five",
-    "kind": "Spell",
-    "desc": "Enlevez 15 points de vie à votre adversaire. Piochez 2 cartes.",
-    "type": "BasicCard",
-    "attack": 15,
-    "heal": 0,
-    "draw": 2,
-    "dice": false
-  },
-  {
-    "name": "Vague vampirique",
-    "element": "Water",
-    "stars": "Five",
-    "kind": "Spell",
-    "desc": "Enlevez 12 points de vie à votre adversaire. Récupérez 6 points.",
-    "type": "BasicCard",
-    "attack": 12,
-    "heal": 6,
-    "draw": 0,
-    "dice": false
-  },
-  {
-    "name": "Rafale",
+    "name": "Légère brise",
     "element": "Air",
-    "stars": "Five",
+    "stars": "One",
     "kind": "Spell",
-    "desc": "Enlevez 14 points de vie à votre adversaire. Piochez 3 cartes.",
+    "desc": "Enlevez 1 point à votre adversaire. Piochez 2 cartes.",
     "type": "BasicCard",
-    "attack": 14,
+    "attack": 1,
     "heal": 0,
-    "draw": 3,
-    "dice": false
+    "draw": 2
   },
   {
-    "name": "Boule de boue",
-    "element": "Earth",
-    "stars": "Two",
+    "name": "Liquidation",
+    "element": "Water",
+    "stars": "Three",
     "kind": "Spell",
-    "desc": "Enlevez 3 points de vie à votre adversaire. Piochez 1 carte.",
+    "desc": "Enlevez 8 points à votre adversaire. Annulez lui tous ses effets ( augmentation d'attaque ... )",
+    "type": "BasicCard",
+    "attack": 8,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Marteau piqueur",
+    "element": "Earth",
+    "stars": "Five",
+    "kind": "Weapon",
+    "desc": "Enlevez 4 points à votre adversaire. Enlevez 3 points à votre adversaire. Enlevez 2 points à votre adversaire. Enlevez 1 point à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [4, 3, 2, 1],
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Mertille",
+    "element": "Water",
+    "stars": "Three",
+    "kind": "Food",
+    "desc": "Lancez 7 fois le dé. Récupérez la somme des 7 lancers de dé.",
+    "type": "MultiActionCard",
+    "actions": 7,
+    "heal_modifiers": [
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"}
+    ]
+  },
+  {
+    "name": "Mistral",
+    "element": "Air",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Enlevez à votre adversaire le double du nombre de cartes présentes dans sa main.",
+    "type": "BasicCard",
+    "attack": 2,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+        "type": "HandSizeModifier",
+        "hand_size_op": "Mul",
+        "from_target": true
+    }
+  },
+  {
+    "name": "Nettoyage",
+    "element": "Water",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Chaque joueur lance un dé. Chaque joueur doit défausser autant de cartes de sa main que le nombre indiqué par son lancer de dé.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Ouragan",
+    "element": "Air",
+    "stars": "Three",
+    "kind": "Weapon",
+    "desc": "Lancez un dé. Enlevez à chacun de vos adversaires le nombre indiqué par le dé plus le nombre de cartes qu'il possède dans sa main.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "HandAndDiceModifier",
+      "op": "Add",
+      "hand_from_target": true
+    },
+    "targets": "All"
+  },
+  {
+    "name": "Pelle",
+    "element": "Earth",
+    "stars": "One",
+    "kind": "Weapon",
+    "desc": "Enlevez 3 points à votre adversaire. Piochez une carte de sa pile de défausse.",
     "type": "BasicCard",
     "attack": 3,
     "heal": 0,
-    "draw": 1,
-    "dice": false
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Cimeterre",
+    "name": "Pioche",
+    "element": "Earth",
+    "stars": "Two",
+    "kind": "Weapon",
+    "desc": "Enlevez 6 points à votre adversaire. Piochez une carte.",
+    "type": "BasicCard",
+    "attack": 6,
+    "heal": 0,
+    "draw": 1
+  },
+  {
+    "name": "Pistolet à eau",
+    "element": "Water",
+    "stars": "Three",
+    "kind": "Weapon",
+    "desc": "Enlevez 4 points à votre adversaire. Enlevez 2 points à votre adversaire. Enlevez 1 point à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [4, 2, 1],
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Pluie diluvienne",
+    "element": "Water",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Lancez autant de fois le dé que le nombre indiqué par le dé. Faites la somme de tous les lancers de dé. Enlevez ou récupérez le résultat.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Poire de terre",
+    "element": "Earth",
+    "stars": "Three",
+    "kind": "Food",
+    "desc": "Récupérez autant de points que le nombre de cartes défaussées par tous les joueurs.",
+    "type": "PearthCard"
+  },
+  {
+    "name": "Pomme de terre",
+    "element": "Earth",
+    "stars": "Two",
+    "kind": "Food",
+    "desc": "Récupérez le double du nombre de cartes présentes dans votre pile de défausse.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 2,
+    "draw": 0,
+    "heal_modifier": {
+        "type": "DiscardSizeModifier",
+        "discard_size_op": "Mul"
+    }
+  },
+  {
+    "name": "Poussière",
+    "element": "Earth",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire. Enlevez 0 points à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [0, 0, 0, 0, 0, 0],
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Râteau",
     "element": "Earth",
     "stars": "Four",
     "kind": "Weapon",
-    "desc": "Enlevez 11 points de vie à votre adversaire. ",
+    "desc": "Enlevez 11 points à votre adversaire. Placez l'ensemble de la pile de sa défausse sur la votre.",
     "type": "BasicCard",
     "attack": 11,
     "heal": 0,
     "draw": 0,
-    "dice": false
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Galette",
+    "name": "Raz de marée",
+    "element": "Water",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à tous vos adversaires 5 fois le nombre indiqué par le dé.",
+    "type": "BasicCard",
+    "attack": 5,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Mul"
+    },
+    "targets": "All"
+  },
+  {
+    "name": "Récolte",
+    "element": "Earth",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Piochez toutes les cartes Aliment de votre pile de défausse.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Rift",
+    "element": "Earth",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Piochez autant de cartes que de cartes présentes dans votre pile de défausse.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "draw_modifier": {
+      "type": "DiscardSizeModifier",
+      "discard_size_op": "Add"
+    }
+  },
+  {
+    "name": "Puisage",
+    "element": "Water",
+    "stars": "One",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Tant que vous obtenez un nombre pair, piochez une carte et rejouez Puisage.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Sarbacane",
+    "element": "Air",
+    "stars": "Three",
+    "kind": "Weapon",
+    "desc": "Enlevez 8 points à votre adversaire. Volez lui une carte.",
+    "type": "BasicCard",
+    "attack": 8,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Secousse",
+    "element": "Earth",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Enlevez 6 points à tous vos adversaire. Votre attaque augmente de 6 points pendant votre prochain tour.",
+    "type": "BasicCard",
+    "attack": 6,
+    "heal": 0,
+    "draw": 0,
+    "targets": "All",
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Séisme",
+    "element": "Earth",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à tous les joueurs ( y compris vous ) , le carré du nombre indiqué par le dé.",
+    "type": "TargetBothCard",
+    "attack": 2,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "PowA"
+    },
+    "targets": "All"
+  },
+  {
+    "name": "Shuriken",
+    "element": "Air",
+    "stars": "Two",
+    "kind": "Weapon",
+    "desc": "Enlevez 4 points à votre adversaire. Replacez ensuite cette carte dans votre main.",
+    "type": "BasicCard",
+    "attack": 4,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Sismarteau",
+    "element": "Earth",
+    "stars": "Three",
+    "kind": "Weapon",
+    "desc": "Enlevez 6 points à votre adversaire. Enlevez 3 points à votre adversaire.",
+    "type": "MultiHitCard",
+    "attacks": [6, 3],
+    "heal": 0,
+    "draw": 0
+  },
+  {
+    "name": "Souffle de feu",
+    "element": "Fire",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à votre adversaire le nombre indiqué par le dé. Replacez Souffle de Feu dans votre main.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    },
+    "note": "Complex effect: not fully handled by simple modifier"
+  },
+  {
+    "name": "Spéléologie",
+    "element": "Earth",
+    "stars": "Five",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Récupérez autant de cartes que le nombre indiqué par le dé dans les piles de défausses que vous souhaitez.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Splashteque",
+    "element": "Water",
+    "stars": "Two",
+    "kind": "Food",
+    "desc": "Lancez un dé. Tous les joueurs y compris vous récupèrent 6 fois le nombre indiqué par le dé.",
+    "type": "TargetBothCard",
+    "attack": 0,
+    "heal": 6,
+    "draw": 0,
+    "heal_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Mul"
+    },
+    "targets": "All"
+  },
+  {
+    "name": "Terrain glissant",
+    "element": "Earth",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Enlevez à chacun de vos adversaires autant de points que de cartes présentes dans leurs piles de défausse respectives.",
+    "type": "BasicCard",
+    "attack_modifier": {
+      "type": "DiscardSizeModifier",
+      "discard_size_op": "Add",
+      "from_target": true
+    },
+    "targets": "All"
+  },
+  {
+    "name": "Terrenesol",
     "element": "Earth",
     "stars": "One",
     "kind": "Food",
-    "desc": "Récupérez 2 points. Piochez 2 cartes ",
+    "desc": "Récupérez 8 points. Piochez une carte de la pile de défausse de votre adversaire.",
     "type": "BasicCard",
     "attack": 0,
-    "heal": 2,
-    "draw": 2,
-    "dice": false
+    "heal": 8,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Levant",
-    "element": "Air",
-    "stars": "Three",
+    "name": "Tir de terre",
+    "element": "Earth",
+    "stars": "Four",
     "kind": "Spell",
-    "desc": "Enlevez 6 points de vie à votre adversaire. Piochez 1 carte ",
+    "desc": "Piochez une carte de la pile de la défausse de votre adversaire. Jouez là sur ce tour, son attaque est doublée.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Torche",
+    "element": "Fire",
+    "stars": "Two",
+    "kind": "Weapon",
+    "desc": "Enlevez 6 points à votre adversaire. Piochez une carte. Si la carte piochée est d'élément Feu, replacez Torche dans votre main.",
     "type": "BasicCard",
     "attack": 6,
     "heal": 0,
     "draw": 1,
-    "dice": false
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Tessen",
+    "name": "Tornade",
     "element": "Air",
-    "stars":"Four",
-    "kind": "Weapon",
-    "desc": "Enlevez 9 points de vie à votre adversaire. Piochez 2 cartes ",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Enlevez 8 points à votre adversaire. Volez toutes les cartes d'élément Air présentes dans sa main.",
     "type": "BasicCard",
-    "attack": 9,
+    "attack": 8,
     "heal": 0,
-    "draw": 2,
-    "dice": false
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Kiwi",
-    "element": "Air",
-    "stars": "Three",
-    "kind": "Food",
-    "desc": "Récupérez 4 points. Piochez 1 carte ",
+    "name": "Tourbillon",
+    "element": "Water",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Défaussez autant de cartes que vous le souhaitez. Pour chaque carte défaussée, enlevez 4 points à tous vos adversaires.",
     "type": "BasicCard",
     "attack": 0,
-    "heal": 4,
-    "draw": 1,
-    "dice": false
+    "heal": 0,
+    "draw": 0,
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Feu furieux",
-    "element": "Fire",
+    "name": "Tremblement",
+    "element": "Earth",
     "stars": "Five",
     "kind": "Spell",
-    "desc": "Enlevez 12 points de vie à votre adversaire. ",
-    "type": "BasicCard",
-    "attack": 12,
+    "desc": "Enlevez 15 points à TOUS les joueurs.",
+    "type": "TargetBothCard",
+    "attack": 15,
     "heal": 0,
     "draw": 0,
-    "dice": false
+    "targets": "All"
   },
   {
-    "name": "Fusil",
-    "element": "Air",
-    "stars": "Five",
-    "kind": "Weapon",
-    "desc": "Enlevez 19 points à votre adversaire. Piochez 1 carte." ,
-    "type": "BasicCard",
-    "attack": 19,
-    "heal": 0,
-    "draw": 1,
-    "dice": false
-  },
-  {
-    "name": "Figue",
-    "element": "Fire",
+    "name": "Tremblottement",
+    "element": "Earth",
     "stars": "Two",
-    "kind": "Food",
-    "desc": "Récupérez 6 points" ,
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 6,
+    "kind": "Spell",
+    "desc": "Enlevez 4 points à tous les joueurs vous y compris. Votre attaque augmente de 4 points pour le prochain tour.",
+    "type": "TargetBothCard",
+    "attack": 4,
+    "heal": 0,
     "draw": 0,
-    "dice": false
+    "targets": "All",
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Baine",
+    "name": "Vagues déferlantes",
     "element": "Water",
     "stars": "Four",
     "kind": "Spell",
-    "desc": "Enlevez 9 points de vie à votre adversaire. " ,
+    "desc": "Enlevez 9 points à votre adversaire. Volez lui une carte dans sa main. Si c'est une carte d'élément Eau, replacez Vague Déferlante dans votre main.",
     "type": "BasicCard",
     "attack": 9,
     "heal": 0,
     "draw": 0,
-    "dice": false
+    "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Foene",
+    "name": "Vagues folles",
     "element": "Water",
     "stars": "Five",
-    "kind": "Weapon",
-    "desc": "Enlevez 11 points de vie à votre adversaire. Piochez 2 cartes" ,
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez à tous vos adversaires le carré du nombre indiqué par le dé.",
     "type": "BasicCard",
-    "attack": 11,
+    "attack": 2,
     "heal": 0,
-    "draw": 2,
-    "dice": false
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "PowA"
+    },
+    "targets": "All"
   },
   {
-    "name": "Noix",
-    "element": "Water",
+    "name": "Vent contraire",
+    "element": "Air",
     "stars": "One",
-    "kind": "Food",
-    "desc": "Récupérez 1 point. Piochez 1 carte", 
+    "kind": "Spell",
+    "desc": "Piochez une carte. Inversez le sens de jeu.",
     "type": "BasicCard",
     "attack": 0,
-    "heal": 1,
+    "heal": 0,
     "draw": 1,
-    "dice": false
+    "note": "Complex effect: no simple modifier"
+  },
+  {
+    "name": "Vent de fraîcheur",
+    "element": "Air",
+    "stars": "Three",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Piochez autant de cartes que le nombre indiqué par le dé.",
+    "type": "BasicCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 0,
+    "draw_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Add"
+    }
+  },
+  {
+    "name": "Vent de panique",
+    "element": "Air",
+    "stars": "Four",
+    "kind": "Spell",
+    "desc": "Lancez un dé. Enlevez 3 fois le nombre indiqué par le dé à votre adversaire.",
+    "type": "BasicCard",
+    "attack": 3,
+    "heal": 0,
+    "draw": 0,
+    "attack_modifier": {
+      "type": "DiceRollModifier",
+      "dice_op": "Mul"
+    }
+  },
+  {
+    "name": "Ventilation",
+    "element": "Air",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Tous les joueurs piochent 2 cartes.",
+    "type": "TargetBothCard",
+    "attack": 0,
+    "heal": 0,
+    "draw": 2,
+    "targets": "All",
+    "note": "Original effect: Tous les joueurs piochent 2 cartes. Vous d'abord puis les autres dans le sens des aiguilles d'une montre."
+  },
+  {
+    "name": "Zéphyr",
+    "element": "Air",
+    "stars": "Two",
+    "kind": "Spell",
+    "desc": "Enlevez 5 points à votre adversaire. Piochez une carte.",
+    "type": "BasicCard",
+    "attack": 5,
+    "heal": 0,
+    "draw": 1
   }
 ]

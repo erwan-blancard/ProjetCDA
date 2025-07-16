@@ -1,13 +1,8 @@
-use super::{card::{Card, EffectId, Element}, game::Game, play_info::{ActionTarget, ActionType}};
+use super::{card::{Card, EffectId, Element}, play_info::{ActionTarget, ActionType}};
 
 const PLAYER_MAX_HEALTH: i32 = 100;
 
-// use uid::Id as IdT;
 
-// #[derive(Copy, Clone, Eq, PartialEq)]
-// struct T(());
-
-// pub type PlayerId = IdT<T>;
 pub type PlayerId = i32;
 
 #[derive(Debug)]
@@ -18,6 +13,11 @@ pub struct Player {
     pub hand_cards: Vec<Box<dyn Card>>,
     pub discard_cards: Vec<Box<dyn Card>>,
     pub casted_cards: Vec<Box<dyn Card>>,
+}
+
+impl PartialEq for Player {
+    fn eq(&self, other: &Self) -> bool { self == other }
+    fn ne(&self, other: &Self) -> bool { self != other }
 }
 
 impl Player {
@@ -32,34 +32,30 @@ impl Player {
         }
     }
 
-    // pub fn play_card(&self, card: &impl Card, targets: &mut Vec<Player>, game: &mut Game) -> Result<PlayInfo, String> {
-    //     card.play(self, targets, game)
-    // }
-
-    pub fn damage(&mut self, amount: u32, element: Element, effect: EffectId, game: &Game) -> ActionTarget {
+    pub fn damage(&mut self, amount: u32, element: Element, effect: EffectId) -> ActionTarget {
         // TODO check buffs
         // TODO check element
-        let mut effective_damage = amount;
+        let effective_damage = amount as i32;
 
-        if self.health - i32::try_from(effective_damage).unwrap() < 0 {
-            effective_damage = 0;
+        if self.health - effective_damage < 0 {
+            self.health = 0;
         } else {
-            self.health -= i32::try_from(effective_damage).unwrap();
+            self.health -= effective_damage;
         }
         
-        ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage }, effect }   // FIXME effect
+        ActionTarget { player_id: self.id, action: ActionType::Attack{ amount: effective_damage as u32 }, effect }   // FIXME effect
     }
 
-    pub fn heal(&mut self, amount: u32, effect: EffectId, game: &Game) -> ActionTarget {
+    pub fn heal(&mut self, amount: u32, effect: EffectId) -> ActionTarget {
         // TODO check buffs
-        let effective_heal = amount;
-        if self.health + i32::try_from(effective_heal).unwrap() > PLAYER_MAX_HEALTH {
+        let effective_heal = amount as i32;
+        if self.health + effective_heal > PLAYER_MAX_HEALTH {
             self.health = PLAYER_MAX_HEALTH;
         } else {
-            self.health += i32::try_from(effective_heal).unwrap();
+            self.health += effective_heal;
         }
 
-        ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal }, effect }   // FIXME effect
+        ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal as u32 }, effect }   // FIXME effect
     }
 
 }

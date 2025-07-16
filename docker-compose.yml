@@ -31,7 +31,6 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${POSTGRES_DB}
-      BACKEND_URL: ${BACKEND_URL}
       BACKEND_SECRET_KEY: ${BACKEND_SECRET_KEY}
     
     networks:
@@ -40,14 +39,18 @@ services:
       - db
   
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      additional_contexts:
+        # this context is used to point to the parent assets folder
+        assets: .
     container_name: randomi-frontend
     ports:
       - "5173:5173"
     env_file: .env
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
     
     depends_on:
       - backend

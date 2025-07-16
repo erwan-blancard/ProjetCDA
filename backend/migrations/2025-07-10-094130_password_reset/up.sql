@@ -1,0 +1,7 @@
+CREATE TABLE password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    account_id INT UNIQUE NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    token VARCHAR(36) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE
+);

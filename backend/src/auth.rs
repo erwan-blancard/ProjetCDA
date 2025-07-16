@@ -1,6 +1,5 @@
 use actix_service::forward_ready;
-use actix_web::{body::EitherBody, dev::{Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, http::Method, Error, HttpMessage, HttpResponse};
-use diesel::expression::is_aggregate::No;
+use actix_web::{dev::{Service, ServiceRequest, ServiceResponse, Transform}, error::ErrorUnauthorized, http::Method, Error, HttpMessage};
 use futures::future::{ok, Ready};
 use futures::future::LocalBoxFuture;
 use jsonwebtoken::{decode, encode, EncodingKey, DecodingKey, Validation, Algorithm};
@@ -8,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use chrono::{Duration, Utc};
 
 
-const IGNORE_ROUTES: [&str; 2] = ["/login", "/register"];
+const IGNORE_ROUTES: [&str; 4] = ["/login", "/register", "/account/reset-password", "/account/request-password-reset"];
 
 
 #[derive(Debug, Deserialize, Serialize)]
