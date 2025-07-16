@@ -307,8 +307,12 @@ async fn join_lobby(
     }
 
     if let Some(lobby) = lobbies.get_mut(&json.lobby_id) {
+        if lobby.users.len() + 1 > MAX_PLAYERS {
+            return Err(ErrorBadRequest("Lobby is full !"));
+        }
+
         if lobby.is_private() && json.password.is_none() {
-            return Err(ErrorForbidden("Lobby is private !"))
+            return Err(ErrorForbidden("Lobby is private !"));
         } else if lobby.is_private() && json.password.is_some() {
             let json_passwd = json.password.clone().unwrap();
             let lobby_passwd = lobby.password.clone().unwrap();
