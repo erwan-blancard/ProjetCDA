@@ -143,7 +143,9 @@ export class PlayerUI extends CSS2DObject {
         for (let i = 0; i < buffs.length; i++) {
             const buffObj = new BuffInfo(buffs[i]);
             buffObj.position.x -= 1;
-            buffObj.position.z += (0.5 * i);
+            // compensate for POV offset if Player FIXME
+            const offsetZ = (this.parent instanceof Player ? 0.55 : 0.70);
+            buffObj.position.z += (offsetZ * i);
             this.add(buffObj);
             this.buffObjs.push(buffObj);
         }
@@ -165,16 +167,21 @@ export class BuffInfo extends CSS2DObject {
         this.layers.set(1);
         this.update(info);
 
-        const box = new BoxGeometry(1.0, 0.0, 1.0);
+        this.#createHoverObj();
+        
+    }
+
+    #createHoverObj() {
+        const box = new BoxGeometry(0.5, 0.0, 0.5);
         const mat = new MeshBasicMaterial( { color: 0xffffff, opacity: 0.0, transparent: true } );
         this.hoverObj = new Mesh(box, mat);
         this.hoverObj.layers.set(1);
-        this.hoverObj.position.z += 0.5;    // center on element
+        this.hoverObj.position.z += 0.5;    // center on element FIXME improve
         this.add(this.hoverObj);
     }
 
     update(info) {
         this.info = info;
-        this.element.className = "buff-"+this.info.buff_type;
+        this.element.classList.add("buff", this.info.buff_type);
     }
 }

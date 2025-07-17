@@ -63,6 +63,7 @@ pub trait Buff: Sync + Send + Debug + BuffClone {
         }
     }
 
+    /// Convert the Buff to a BuffVariant to be able to serialize it with serde (not implemented for Box<dyn Buff>)
     fn as_variant(&self) -> BuffVariant;
 }
 

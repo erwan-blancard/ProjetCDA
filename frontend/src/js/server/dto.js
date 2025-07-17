@@ -150,6 +150,16 @@ export function buffLifeTimeDesc(lifetime) {
     }
 }
 
+export function formatCardElement(element) {
+    switch(element.toLowerCase()) {
+        case "fire": return `<span style="color: #E32620;">${element}</span>`;
+        case "water": return `<span style="color: #2E4D9D;">${element}</span>`;
+        case "air": return `<span style="color: #968480;">${element}</span>`;
+        case "earth": return `<span style="color: #EF862A;">${element}</span>`;
+        default: return element;
+    }
+}
+
 export function matchingCardsDesc(elements, kinds, stars) {
     let stars_with_text = [];
 
@@ -160,7 +170,7 @@ export function matchingCardsDesc(elements, kinds, stars) {
             stars_with_text.push(`${star} Stars`);
     });
 
-    return strjoin([strjoin(elements, ", "), strjoin(kinds, ", "), strjoin(stars_with_text, ", ")], ", ", true);
+    return strjoin([strjoin(elements.map(e => { return formatCardElement(e); }), ", "), strjoin(kinds, ", "), strjoin(stars_with_text, ", ")], ", ", true);
 }
 
 
@@ -168,7 +178,7 @@ export class BuffInfoDTO {
     static ATTACK_BUFF = "AttackBuff";
     static ATTACK_BUFF_DESC_TEMPLATE(value, op, elements, kinds, stars, lifetime) {
         const desc = matchingCardsDesc(elements, kinds, stars);
-        return `${evalOpSymbol(op)}${value} attack for ${(desc ? desc + " " : "")}cards ${buffLifeTimeDesc(lifetime)}`;
+        return `<b>${evalOpSymbol(op)}${value}</b> attack for ${(desc ? desc + " " : "")}cards ${buffLifeTimeDesc(lifetime)}`;
     }
     static TARGET_ALL_BUFF = "TargetAllBuff";
     static TARGET_ALL_BUFF_DESC_TEMPLATE() {

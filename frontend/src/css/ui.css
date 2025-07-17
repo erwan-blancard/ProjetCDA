@@ -113,7 +113,7 @@ input[type='text'] {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 0.1em;
+    /* gap: 0.1em; */
     margin: 1em 0.2em 1em 0.2em;
     border: solid 0.2em whitesmoke;
     border-radius: 0.4em;
@@ -136,6 +136,21 @@ input[type='text'] {
     background-color: whitesmoke;
     border: solid 0.2em #000000;
     border-radius: 0.4em;
+}
+
+.card-tooltip-attr-container {
+    font-size: small;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+}
+
+.card-tooltip-attr-container > * {
+    margin: 0px;
+    padding: 0.2em 0.4em;
+    border-radius: 0.4em;
+    background-color: whitesmoke;
 }
 
 
@@ -192,27 +207,23 @@ input[type='text'] {
 
 /* Buffs */
 
-.buff-AttackBuff {
-    background-image: url("/assets/buff_icons/attack_buff.svg");
+.buff {
+    /* in px to not have weird offset when changing font-size */
+    width: 32px;
+    height: 32px;
     background-size: cover;
-    width: 2em;
-    height: 2em;
 }
 
-.buff-TargetAllBuff {
-    /* FIXME create icon */
+.AttackBuff {
     background-image: url("/assets/buff_icons/attack_buff.svg");
-    background-size: cover;
-    width: 2em;
-    height: 2em;
 }
 
-.buff-PlayAllCardsBuff {
-    /* FIXME create icon */
-    background-image: url("/assets/buff_icons/attack_buff.svg");
-    background-size: cover;
-    width: 2em;
-    height: 2em;
+.TargetAllBuff {
+    background-image: url("/assets/buff_icons/target_all.svg");
+}
+
+.PlayAllCardsBuff {
+    background-image: url("/assets/buff_icons/play_all.svg");
 }
 
 

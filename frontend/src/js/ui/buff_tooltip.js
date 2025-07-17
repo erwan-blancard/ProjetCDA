@@ -33,10 +33,10 @@ export class BuffTooltip extends CSS2DObject {
             this.buff = buff;
 
         if (this.buff != null && this.buff.info != null) {
-            this.descElement.textContent = this.buff.info.description;
+            this.descElement.innerHTML = this.buff.info.description;
             this.containerElement.style.backgroundColor = "lightgray";
         } else {
-            this.descElement.textContent = "Invalid";
+            this.descElement.innerHTML = "Invalid";
             this.containerElement.style.backgroundColor = "red";
         }
     }
