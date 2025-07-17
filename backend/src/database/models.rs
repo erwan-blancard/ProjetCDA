@@ -25,6 +25,16 @@ pub struct FilteredAccount {
     pub suspended: bool,
 }
 
+impl From<Account> for FilteredAccount {
+    fn from(account: Account) -> Self {
+        FilteredAccount {
+            id: account.id,
+            username: account.username,
+            suspended: account.suspended,
+        }
+    }
+}
+
 #[derive(Queryable, Selectable, Insertable, Serialize)]
 #[diesel(table_name = super::schema::account_stats)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

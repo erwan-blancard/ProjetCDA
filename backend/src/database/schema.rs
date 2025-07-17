@@ -105,7 +105,7 @@ diesel::table! {
         id -> Int4,
         account_id -> Int4,
         #[max_length = 36]
-        token -> VarChar,
+        token -> Varchar,
         expires_at -> Timestamp,
         used -> Bool,
     }

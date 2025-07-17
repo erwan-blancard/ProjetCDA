@@ -3,6 +3,7 @@ use diesel::dsl::insert_into;
 use diesel::PgConnection;
 use diesel::prelude::*;
 use serde_derive::{Serialize, Deserialize};
+use bcrypt::{hash, verify, DEFAULT_COST};
 
 use crate::database::models::*;
 use crate::database::schema::*;
@@ -44,10 +45,13 @@ pub fn create_account(conn: &mut PgConnection, username: &String, email: &String
     use super::schema::accounts::dsl::{accounts, id};
     use super::schema::account_stats::dsl::account_stats;
 
+    // hash password before storing
+    let hashed_password = hash(password, DEFAULT_COST).expect("Failed to hash password");
+
     let new_account = NewAccount {
         username: username.to_string(),
         email: email.to_string(),
-        password: password.to_string(),
+        password: hashed_password,
     };
 
     conn.transaction(|conn| {
@@ -102,10 +106,16 @@ pub fn get_full_account_by_email(conn: &mut PgConnection, email: &String) -> die
 }
 
 pub fn get_account_for_login(conn: &mut PgConnection, username: &String, password: &String) -> diesel::QueryResult<FilteredAccount> {
-    accounts::table.select(FilteredAccount::as_select())
-        .filter(accounts::dsl::username.eq(username)
-                .and(accounts::dsl::password.eq(password)))
-        .first(conn)
+    use super::schema::accounts::dsl;
+    let account = dsl::accounts
+        .filter(dsl::username.eq(username))
+        .first::<Account>(conn)?;
+
+    if verify(password, &account.password).unwrap_or(false) {
+        Ok(FilteredAccount::from(account))
+    } else {
+        Err(diesel::result::Error::NotFound)
+    }
 }
 
 

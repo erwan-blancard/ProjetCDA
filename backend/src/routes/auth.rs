@@ -30,7 +30,7 @@ async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_
         actions::get_account_for_login(&mut conn, &json.username, &json.password)
     })
     .await?
-    .map_err(error::ErrorInternalServerError)?;
+    .map_err(error::ErrorNotFound)?;
 
     if account.suspended {
         return Err(ErrorUnauthorized("The account is suspended."));
