@@ -5,6 +5,16 @@ body {
     background-image: url("/box-art.jpg");
 }
 
+/* Firefox only query */
+@supports (not (-moz-appearance:none)) {
+    body {
+        /* Applying blur filter twice solves issues
+        with blur dissappearing on browsers other than firefox ?
+        Blur filter is still needed in .root */
+        backdrop-filter: blur(4px);
+    }
+}
+
 .root {
     width: 100vw;
     height: 100vh;
