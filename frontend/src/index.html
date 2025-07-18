@@ -72,5 +72,45 @@
     </div>
       
   </div>
+    <!-- Ajout des boutons amis, collection, notifications et panneau amis -->
+    <div id="notif-container" style="position: fixed; top: 20px; right: 20px">
+      <button
+        id="show-notifications"
+        class="styled"
+        style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+      >🔔</button>
+    </div>
+    <div id="friend-container" style="position: fixed; top: 100px; right: 20px">
+      <button
+        id="show-friend-list"
+        class="styled"
+        style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+      >👤</button>
+    </div>
+    <div id="collection-container" style="position: fixed; top: 180px; right: 20px">
+      <button
+        id="show-collection"
+        class="styled"
+        style="background-color: white; margin-top: 40px; color: black; font-family: 'Segoe UI Symbol', 'Noto Sans', 'sans-serif'; font-size: 24px; border: none; cursor: pointer;"
+        onclick="window.location.href='collection.html'"
+      >🃏</button>
+    </div>
+    <div
+      id="friend-panel-backdrop"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.3); z-index: 4;"
+    ></div>
+    <div
+      id="friend-panel"
+      style="display: none; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 15px; width: 300px; position: fixed; top: 80px; right: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); font-family: sans-serif; z-index: 5;"
+    >
+      <h3 style="margin-top: 0">Liste d'amis</h3>
+      <div id="friend-list" style="margin-bottom: 15px"></div>
+      <label for="add-friend-name">Ajouter un ami :</label>
+      <input id="add-friend-name" type="text" placeholder="Pseudo" style="width: 100%; margin-top: 5px" />
+      <button id="add-friend-button" class="styled;">Ajouter</button>
+      <button id="close-friend-button" class="styled;">Fermer</button>
+      <div id="add-friend-feedback" style="margin-top: 5px; font-size: 0.9em"></div>
+    </div>
+    <script type="module" src="js/ui/friend_panel.js"></script>
 </body>
 </html>
