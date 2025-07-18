@@ -9,6 +9,9 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
     },
+    test: {
+      environment: 'jsdom',
+    },
     plugins: [
       // dev only: resolve cards.json from parent folder as if it was in public dir
       {

@@ -14,6 +14,11 @@ import { displayMessage } from "./ui/popup";
 // expose for debug
 window.GAME = GAME;
 
+if (typeof screen === "undefined") {
+  globalThis.screen = { orientation: { lock: () => {} } };
+} else if (typeof screen.orientation === "undefined") {
+  screen.orientation = { lock: () => {} };
+}
 
 screen.orientation.lock("landscape");
 

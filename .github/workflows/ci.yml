@@ -1,0 +1,70 @@
+name: CI Backend Rust
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ${{ secrets.POSTGRES_USER }}" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer les dépendances système
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+      - name: Installer Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Corriger automatiquement les warnings Rust
+        working-directory: ./backend
+        run: cargo fix --allow-dirty --allow-staged --bin backend --tests
+      - name: Lancer les tests Rust du backend
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          BACKEND_SECRET_KEY: ${{ secrets.BACKEND_SECRET_KEY }}
+        run: cargo test --all --verbose
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Installer les dépendances frontend
+        working-directory: ./frontend
+        run: npm install
+      - name: Lancer les tests frontend
+        working-directory: ./frontend
+        run: |
+          if [ -f package.json ] && grep -q 'test' package.json; then
+            npm test
+          else
+            echo "Aucun script de test défini dans le frontend."
+          fi 

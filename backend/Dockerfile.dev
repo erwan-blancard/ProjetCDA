@@ -1,0 +1,17 @@
+FROM rust:1.84.1
+
+# Installer les dépendances système pour Diesel/PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev
+
+WORKDIR /usr/src/backend
+
+# Copier d'abord les fichiers de dépendances pour profiter du cache Docker
+COPY ./Cargo.toml ./Cargo.toml
+COPY ./diesel.toml ./diesel.toml
+
+# Copier le reste du code
+COPY ./src ./src
+COPY ./migrations ./migrations
+
+# Par défaut, ouvrir un shell interactif (pour dev/test)
+CMD [ "bash" ] 

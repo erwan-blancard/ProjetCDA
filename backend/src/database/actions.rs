@@ -213,6 +213,7 @@ pub fn list_friend_requests_for_account(conn: &mut PgConnection, account_id: i32
         .load(conn)
 }
 
+<<<<<<< HEAD
 
 #[derive(Insertable, Deserialize)]
 #[diesel(table_name = super::schema::password_reset_tokens)]
@@ -276,3 +277,21 @@ pub fn reset_password(conn: &mut PgConnection, reset_token: PasswordResetToken, 
         Ok(())
     })
 }
+=======
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use diesel::Connection;
+    use diesel::pg::PgConnection;
+
+    // #[test]
+    // fn test_create_account() {
+    //     let mut conn = PgConnection::establish(":memory:").unwrap();
+    //     let username = String::from("testuser");
+    //     let email = String::from("test@example.com");
+    //     let password = String::from("password");
+    //     let result = create_account(&mut conn, &username, &email, &password);
+    //     assert!(result.is_ok());
+    // }
+}
+>>>>>>> test_unit
