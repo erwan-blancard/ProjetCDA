@@ -19,13 +19,13 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpassword
-          POSTGRES_DB: testdb
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U testuser" --health-interval 10s --health-timeout 5s --health-retries 5
+          --health-cmd "pg_isready -U ${{ secrets.POSTGRES_USER }}" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Installer les dépendances système
@@ -41,8 +41,8 @@ jobs:
       - name: Lancer les tests Rust du backend
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/testdb
-          BACKEND_SECRET_KEY: test_secret
+          DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}
+          BACKEND_SECRET_KEY: ${{ secrets.BACKEND_SECRET_KEY }}
         run: cargo test --all --verbose
 
   test-frontend:

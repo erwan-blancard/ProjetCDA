@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardTexturePathById } from './cards.js';
+import { getCardTexturePathById } from './game/cards.js';
 
 describe('getCardTexturePathById', () => {
   it('génère le bon chemin pour tous les ids de 1 à 100', () => {
