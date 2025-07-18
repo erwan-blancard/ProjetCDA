@@ -2,6 +2,9 @@ use crate::server::game::buffs::Buff;
 
 use super::{cards::card::{Card, EffectId}, play_info::{ActionTarget, ActionType}};
 
+use rand::Rng;
+
+
 const PLAYER_MAX_HEALTH: i32 = 100;
 
 
@@ -57,4 +60,12 @@ impl Player {
         ActionTarget { player_id: self.id, action: ActionType::Heal { amount: effective_heal as u32 }, effect }
     }
 
+    pub fn remove_random_card(&mut self) -> Option<Box<dyn Card>> {
+        if self.hand_cards.is_empty() {
+            return None;
+        }
+        let mut rng = rand::thread_rng();
+        let idx = rng.gen_range(0..self.hand_cards.len());
+        Some(self.hand_cards.remove(idx))
+    }
 }

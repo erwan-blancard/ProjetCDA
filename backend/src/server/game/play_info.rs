@@ -32,6 +32,7 @@ pub enum ActionType {
     Heal{amount: u32},
     Draw{cards: Vec<CardId>},
     Discard{cards: Vec<usize>},
+    Steal{cards: Vec<CardId>},
 }
 
 
