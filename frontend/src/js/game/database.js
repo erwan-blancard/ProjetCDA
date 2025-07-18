@@ -49,18 +49,21 @@ export class CardInfo {
 
 }
 
-let cards = new Map();
+// Ajout d'une détection d'environnement de test
+const isNode = typeof window === 'undefined' || typeof document === 'undefined';
 
-await fetch('/assets/cards.json')
-    .then(response => response.json()) // Parse JSON
-    .then(cardsDb => {
-        for (let i = 0; i < cardsDb.length; i++) {
-            cards.set(i, new CardInfo(cardsDb[i]));
-        }
-    })
-    .catch(error => console.error('Error loading card database:', error));
+export let CARD_DATABASE = new Map();
 
-export let CARD_DATABASE = cards;
+if (!isNode) {
+    await fetch('/assets/cards.json')
+        .then(response => response.json()) // Parse JSON
+        .then(cardsDb => {
+            for (let i = 0; i < cardsDb.length; i++) {
+                CARD_DATABASE.set(i, new CardInfo(cardsDb[i]));
+            }
+        })
+        .catch(error => console.error('Error loading card database:', error));
+}
 
 // test
 window.CARD_DATABASE = CARD_DATABASE;

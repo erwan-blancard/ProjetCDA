@@ -28,9 +28,7 @@ export const COVER_FRONTBACK_MAT = newCardMat(cardCover);
 
 
 export function getCardTexturePathById(id) {
-    if (id < 0) return CARD_COVER_PATH;
-    const number = (id + 1).toString().padStart(4, "0");
-    return `assets/randomi_recto_cards_page-${number}.jpg`;
+  return `assets/randomi_recto_cards_page-${id.toString().padStart(4, "0")}.jpg`;
 }
 
 

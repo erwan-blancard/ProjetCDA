@@ -26,26 +26,24 @@ const EXPIRATION_TIME = 60 * 60 * 1000	// 1 hour
 // 	};
 // };
 
-let dbReady = new Promise((resolve, reject) => {
-	const request = indexedDB.open(DBNAME, DBVERSION);
-
-	request.onerror = (event) => {
-		console.error(`Error opening cache DB: ${event.target.error?.message}`);
-		reject(event.target.error);
-	};
-
-	request.onupgradeneeded = (event) => {
+let dbReady = null;
+if (typeof indexedDB !== 'undefined') {
+  dbReady = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DBNAME, DBVERSION);
+    request.onerror = (event) => {
+      reject(event);
+    };
+    request.onsuccess = (event) => {
+      resolve(request.result);
+    };
+    request.onupgradeneeded = (event) => {
 		const db = event.target.result;
 		if (!db.objectStoreNames.contains(ACCOUNT_NAMES_STORE)) {
 			db.createObjectStore(ACCOUNT_NAMES_STORE, { keyPath: "account.id" });
 		}
 	};
-
-	request.onsuccess = (event) => {
-		DB = event.target.result;
-		resolve(DB);
-	};
-});
+  });
+}
 
 
 export async function getAccountFromStore(account_id) {
