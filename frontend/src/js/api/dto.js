@@ -22,15 +22,17 @@ export class GameSessionInfoDTO {
 /* Lobby DTO */
 
 export class LobbyDTO {
+    id;
     users;
     users_ready;
-    password;
+    unlisted;
     game_id;
 
     constructor(data) {
+        this.id = data.id;
         this.users = data.users;
         this.users_ready = data.users_ready;
-        this.password = data.password;
+        this.unlisted = data.unlisted;
         this.game_id = data.game_id;
     }
 
@@ -40,35 +42,15 @@ export class LobbyDTO {
 }
 
 export class LobbyInfoDTO {
+    id;
     users;
     users_ready;
-    /** @type boolean */
-    password;
     ingame;
 
     constructor(data) {
+        this.id = data.id;
         this.users = data.users;
         this.users_ready = data.users_ready;
-        this.password = data.password;
-        this.ingame = data.ingame;
-    }
-}
-
-export class LobbyEntryDTO {
-    lobby_id;
-    // lobby_info;
-    users;
-    users_ready;
-    /** @type boolean */
-    password;
-    ingame;
-
-    constructor(data) {
-        this.lobby_id = data.lobby_id;
-        // this.lobby_info = new LobbyInfoDTO(data);   // lobby info fields are flattened by api
-        this.users = data.users;
-        this.users_ready = data.users_ready;
-        this.password = data.password;
         this.ingame = data.ingame;
     }
 }
@@ -82,7 +64,7 @@ export class LobbyPageListDTO {
         this.entries = [];
 
         data.entries.forEach(entry => {
-            this.entries.push(new LobbyEntryDTO(entry));
+            this.entries.push(new LobbyInfoDTO(entry));
         });
 
         this.page = data.page;

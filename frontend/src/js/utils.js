@@ -1,6 +1,6 @@
 import { get_my_account } from "./api/account";
 import { AccountDTO } from "./api/dto";
-import { displayMessage, displayPopup } from "./ui/popup";
+import { displayMessageNoControls, displayPopup } from "./ui/popup";
 
 export const HOST = "localhost:8080";
 export const API_URL = `http://${HOST}`;
@@ -37,7 +37,7 @@ export async function login_guard(silent=true) {
 
     } else {
 
-        const msgFrame = displayMessage("Connecting...");
+        const msgFrame = displayMessageNoControls("Connecting...");
 
         try {
             if (!getCookie("token"))

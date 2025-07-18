@@ -115,11 +115,16 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     display: flex;
     flex-direction: row;
     /* justify-content: space-evenly; */
+
+    /* wrap vertically if screen width is too small */
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .vlayout {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     /* justify-content: space-evenly; */
 }
 

@@ -8,7 +8,7 @@ import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardRespo
 import { GameSessionInfoDTO } from "./api/dto";
 import { CARD_COLLECTION } from "./game/collection";
 import { randInt } from "three/src/math/MathUtils";
-import { displayMessage } from "./ui/popup";
+import { displayMessageNoControls } from "./ui/popup";
 
 
 // expose for debug
@@ -40,7 +40,7 @@ if (game_info != null) {
     try {
         GAME.initGame();
     } catch (e) {
-        displayMessage(`Error when initializing Game: ${e.message}`);
+        displayMessageNoControls(`Error when initializing Game: ${e.message}`);
     }
 
     // chat

@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound};
 use actix_web::{delete, error, patch, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, post};
+use nanoid::nanoid;
 use tokio::spawn;
 use tokio::sync::oneshot;
 use uuid::Uuid;
@@ -14,40 +15,62 @@ use crate::routes::sse::Broadcaster;
 use crate::server::dto::responses::PlayerProfile;
 use crate::server::game::game::MAX_PLAYERS;
 use crate::server::server::GameServer;
-use crate::utils::limited_string::LimitedString;
 use crate::{GameHandlers, GameId};
 use crate::{database::actions, DbPool};
 
 
-pub type LobbyId = Uuid;
-pub type LobbyPassword = LimitedString<9>;
+pub const LOBBY_ID_LEN: usize = 7;
+pub const LOBBY_ID_CHARS: [char; 35] = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+];
 
 
-/// Filtered struct for Lobby (password is filtered)
+pub type LobbyId = String;
+
+
+pub fn generate_lobby_id(existing_lobbies: &LobbiesInner) -> Result<String, String> {
+    let mut i: usize = 0;
+    // attempt to generate new random id
+    // in case it was already generated, try again until limit is reached
+    // this is very unlikely but possible
+    while i < 10 {
+        let id = nanoid!(LOBBY_ID_LEN, &LOBBY_ID_CHARS);
+
+        if existing_lobbies.get(&id).is_none() {
+            return Ok(id);
+        }
+
+        i += 1;
+    }
+
+    Err("Unable to generate new lobby id !".to_string())
+}
+
+
+/// Simplified struct for Lobby
 #[derive(Debug, Serialize, Clone)]
 pub struct LobbyInfo {
+    pub id: String,
     pub users: HashSet<i32>,
     pub users_ready: HashSet<i32>,
-    pub password: bool,
     pub ingame: bool
 }
 
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Lobby {
+    pub id: String,
     pub users: HashSet<i32>,
     pub users_ready: HashSet<i32>,
-    pub password: Option<LobbyPassword>,
+    /// if unlisted the lobby is not returned by /lobby/list route
+    pub unlisted: bool,
     pub game_id: Option<GameId>
 }
 
 impl Lobby {
-    pub fn new(password: Option<LobbyPassword>) -> Self {
-        Self { users: HashSet::new(), users_ready: HashSet::new(), password, game_id: None }
-    }
-
-    pub fn is_private(&self) -> bool {
-        self.password.is_some()
+    pub fn new(id: String, unlisted: bool) -> Self {
+        Self { id, users: HashSet::new(), users_ready: HashSet::new(), unlisted, game_id: None }
     }
 
     pub fn all_users_ready(&self) -> bool {
@@ -58,9 +81,9 @@ impl Lobby {
 
     pub fn info(&self) -> LobbyInfo {
         LobbyInfo {
+            id: self.id.clone(),
             users: self.users.clone(),
             users_ready: self.users_ready.clone(),
-            password: self.password.is_some(),
             ingame: self.game_id.is_some()
         }
     }
@@ -75,7 +98,8 @@ const LOBBY_PAGE_SIZE: usize = 20;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateLobbyInfo {
-    pub password: Option<LobbyPassword>,
+    #[serde(default)]
+    pub unlisted: bool,
 }
 
 
@@ -149,64 +173,16 @@ async fn create_lobby(
         return Err(ErrorConflict("User is already in a lobby !"));
     }
 
-    let mut password: Option<LobbyPassword> = None;
-    // set password if not None and len > 0
-    if let Some(pswd) = &json.password {
-        if pswd.len() > 0 {
-            password = Some(pswd.clone());
-        }
-    }
+    let lobby_id = generate_lobby_id(&lobbies)
+        .map_err(error::ErrorInternalServerError)?;
 
-    let mut lobby = Lobby::new(password);
+    let mut lobby = Lobby::new(lobby_id.clone(), json.unlisted);
     lobby.users.insert(account_id);
-    let lobby_id: LobbyId = Uuid::new_v4();
 
     lobbies.insert(lobby_id, lobby.clone());
     
     Ok(HttpResponse::Created().json(lobby))
 
-    // if !json.players.iter().any(|id| *id == account_id) {
-    //     return Err(ErrorBadRequest("The list of players must contain the sender's id !"));
-    // }
-    
-    // // FIXME check if users are not already in a game
-    // if json.players.len() > 1 && json.players.len() <= MAX_PLAYERS {
-
-    //     let players = web::block(move || {
-    //         let mut conn = pool.get().expect("couldn't get db connection from pool");
-
-    //         actions::get_accounts_by_id(&mut conn, &json.players)
-    //     })
-    //     .await?
-    //     .map_err(error::ErrorInternalServerError)?;
-
-    //     let players: Vec<PlayerProfile> = players.iter()
-    //         .map(|acc| PlayerProfile { id: acc.id, name: acc.username.clone() })
-    //         .collect();
-
-    //     let mut game_handlers = game_handlers.lock().unwrap();
-
-    //     // create server proccess
-    //     let (game_server, handle) = GameServer::new(players);
-    //     let proccess = spawn(game_server.run());
-        
-    //     let game_id: GameId = Uuid::new_v4();
-    //     game_handlers.insert(game_id, (proccess, handle));
-
-    //     // return the address of the WebSocket
-    //     // match api_url.join(format!("/ws/{}", game_id).as_str()) {
-    //     //     Ok(ws_url) => {
-    //     //         Ok(HttpResponse::Created().json(ws_url.to_string()))
-    //     //     },
-    //     //     Err(_) => { Ok(HttpResponse::Created().json(game_id.to_string())) }
-    //     // }
-
-    //     Ok(HttpResponse::Created().json(game_id.to_string()))
-
-    // } else {
-    //     Err(ErrorBadRequest(format!("Number of players must be between 1 and {}", MAX_PLAYERS)))
-    // }
-    
 }
 
 
@@ -219,9 +195,7 @@ async fn get_current_lobby(
                              .unwrap()
                              .clone();
 
-    log::info!("ROUTE /lobby/current");
     let lobbies = lobbies.lock().unwrap();
-    log::info!("ROUTE /lobby/current -> lock acquired");
 
     if let Some(lobby_id) = get_lobby_id_for_user(account_id, &lobbies) {
         Ok(HttpResponse::Found().json(lobbies.get(&lobby_id)))
@@ -232,15 +206,8 @@ async fn get_current_lobby(
 
 
 #[derive(Debug, Serialize)]
-struct LobbyEntry {
-    pub lobby_id: LobbyId,
-    #[serde(flatten)]
-    pub lobby_info: LobbyInfo
-}
-
-#[derive(Debug, Serialize)]
 struct LobbyPageList {
-    pub entries: Vec<LobbyEntry>,
+    pub entries: Vec<LobbyInfo>,
     pub page: usize,
     pub page_count: usize,
 }
@@ -256,9 +223,10 @@ async fn list_lobbies(
 
     let lobbies = lobbies.lock().unwrap();
 
-    let entries: Vec<LobbyEntry> = lobbies.iter()
-        .skip(page*LOBBY_PAGE_SIZE).take(LOBBY_PAGE_SIZE)
-        .map(|(lobby_id, lobby)| LobbyEntry { lobby_id: lobby_id.clone(), lobby_info: lobby.info() })
+    let entries: Vec<LobbyInfo> = lobbies.iter()
+        .skip(page*LOBBY_PAGE_SIZE)
+        .filter_map(|(_, lobby)| if !lobby.unlisted { Some(lobby.info()) } else { None })
+        .take(LOBBY_PAGE_SIZE)
         .collect();
 
     let page_count = (lobbies.len() as f64 / LOBBY_PAGE_SIZE as f64).ceil() as usize;
@@ -273,6 +241,8 @@ async fn get_lobby_info(
     lobbies: web::Data<Lobbies>
 ) -> actix_web::Result<impl Responder> {
     let (lobby_id,) = path.into_inner();
+    // ID should only contain uppercase letters
+    let lobby_id = lobby_id.to_uppercase();
     let lobbies = lobbies.lock().unwrap();
 
     if let Some(lobby) = lobbies.get(&lobby_id) {
@@ -286,7 +256,6 @@ async fn get_lobby_info(
 #[derive(Debug, Deserialize)]
 struct LobbyJoinInfo {
     pub lobby_id: LobbyId,
-    pub password: Option<LobbyPassword>
 }
 
 
@@ -300,26 +269,24 @@ async fn join_lobby(
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
                              .clone();
+
+    // return immediately if wrong len
+    if json.lobby_id.len() != LOBBY_ID_LEN {
+        return Err(ErrorNotFound("Lobby doesn't exist !"));
+    }
+
+    // ID should only contain uppercase letters
+    let lobby_id = json.lobby_id.to_uppercase();
+
     let mut lobbies = lobbies.lock().unwrap();
     
     if get_lobby_id_for_user(account_id, &lobbies).is_some() {
         return Err(ErrorConflict("User is already in a lobby !"));
     }
 
-    if let Some(lobby) = lobbies.get_mut(&json.lobby_id) {
+    if let Some(lobby) = lobbies.get_mut(&lobby_id) {
         if lobby.users.len() + 1 > MAX_PLAYERS {
             return Err(ErrorBadRequest("Lobby is full !"));
-        }
-
-        if lobby.is_private() && json.password.is_none() {
-            return Err(ErrorForbidden("Lobby is private !"));
-        } else if lobby.is_private() && json.password.is_some() {
-            let json_passwd = json.password.clone().unwrap();
-            let lobby_passwd = lobby.password.clone().unwrap();
-
-            if json_passwd != lobby_passwd {
-                return Err(ErrorForbidden("Wrong Password"));
-            }
         }
 
         // join lobby

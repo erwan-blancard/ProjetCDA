@@ -1,12 +1,12 @@
-import { LobbyDTO, LobbyInfoDTO, LobbyEntryDTO, LobbyPageListDTO } from "./dto";
+import { LobbyDTO, LobbyInfoDTO, LobbyPageListDTO } from "./dto";
 import { api_url } from "../utils";
 import { displayPopup } from "../ui/popup";
 
 
 /** @type {Promise<LobbyDTO | null>} */
-export async function create_lobby(password, warn=true) {
+export async function create_lobby(unlisted, warn=true) {
     const payload = {
-        "password": password,
+        "unlisted": unlisted,
     };
 
     try {
@@ -29,6 +29,28 @@ export async function create_lobby(password, warn=true) {
         if (warn)
             displayPopup(`Could not create lobby: ${error.message}`, "Error");
 
+        return null;
+    }
+}
+
+
+/** @type {Promise<LobbyDTO | null>} */
+export async function get_lobby_info(lobby_id) {
+    try {
+        const response = await fetch(api_url(`/lobby/find/${lobby_id}`), {
+            method: 'GET',
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (response.status != 302)    // not Found
+            throw new Error("Lobby not found !");
+
+        return new LobbyInfoDTO(await response.json());
+    } catch (error) {
+        console.log("Could not find lobby:", error.message);
         return null;
     }
 }
@@ -67,7 +89,7 @@ export async function get_current_lobby() {
             },
         });
 
-        if (response.status != 302)    // Found
+        if (response.status != 302)    // not Found
             if (response.status == 404)
                 throw new Error("No current lobby !");
             else
@@ -80,10 +102,9 @@ export async function get_current_lobby() {
     }
 }
 
-export async function join_lobby(lobby_id, password=null, warn=true) {
+export async function join_lobby(lobby_id, warn=true) {
     const payload = {
         "lobby_id": lobby_id,
-        "password": password,
     };
 
     try {

@@ -121,7 +121,7 @@ export function displayYesNo(message, title, onYesClose=null, onNoClose=null) {
 
 
 /** Simpler popup with only a message and no button */
-export function displayMessage(message) {
+export function displayMessageNoControls(message) {
     const frame = document.createElement("div");
     frame.className = "msg-frame";
 
@@ -141,53 +141,82 @@ export function displayMessage(message) {
 }
 
 
-/** display input popup */
-export function displayInput(label, title, buttonText="Ok", isPassword=false, onclose=null) {
-    const frame = document.createElement("div");
-    frame.className = "input-frame";
+/**
+ * display input popup
+ * @param {Map<String, String> | null} attrs
+ * @param {Map<String, String> | null} styleAttrs
+ */
+export async function displayInput(label, title, buttonText="Ok", attrs=null, styleAttrs=null) {
+    return new Promise(resolve => {
+        const frame = document.createElement("div");
+        frame.className = "input-frame";
 
-    const container = document.createElement("section");
-    container.className = "input-container";
+        const container = document.createElement("section");
+        container.className = "input-container";
 
-    const titleElement = document.createElement("h1");
-    titleElement.textContent = title;
+        const titleElement = document.createElement("h1");
+        titleElement.textContent = title;
 
-    const inputForm = document.createElement("div");
-    inputForm.className = "input-form";
+        const inputForm = document.createElement("div");
+        inputForm.className = "input-form";
 
-    const labelElement = document.createElement("p");
-    labelElement.textContent = label;
+        const labelElement = document.createElement("p");
+        labelElement.textContent = label;
 
-    const inputElement = document.createElement("input");
-    if (isPassword) { inputElement.type = "password"; }
+        const inputElement = document.createElement("input");
+        
+        if (attrs)
+            for (var k in attrs) {
+                inputElement[k] = attrs[k];
+            }
 
-    inputForm.appendChild(labelElement);
-    inputForm.appendChild(inputElement);
+        if (styleAttrs)
+            for (var k in styleAttrs) {
+                inputElement.style[k] = styleAttrs[k];
+            }
 
-    const button = document.createElement("button");
-    const buttonSpan = document.createElement("span");
-    button.className = "styled";
-    buttonSpan.textContent = buttonText;
-    button.appendChild(buttonSpan);
+        inputForm.appendChild(labelElement);
+        inputForm.appendChild(inputElement);
 
-    button.onclick = async () => {
-        frame.remove();
-        removeInert();
+        const buttonContainer = document.createElement("div");
+        buttonContainer.classList = "hlayout center";
 
-        if (onclose != null) {
-            await onclose(inputElement);
-        }
-    };
+        const acceptButton = document.createElement("button");
+        const acceptButtonSpan = document.createElement("span");
+        acceptButton.className = "styled";
+        acceptButtonSpan.textContent = buttonText;
+        acceptButton.appendChild(acceptButtonSpan);
 
-    container.appendChild(titleElement);
-    container.appendChild(inputForm);
-    container.appendChild(button);
+        acceptButton.onclick = async () => {
+            frame.remove();
+            removeInert();
 
-    frame.appendChild(container);
+            resolve(inputElement.value);
+        };
 
-    document.body.appendChild(frame);
+        const cancelButton = document.createElement("button");
+        const cancelButtonSpan = document.createElement("span");
+        cancelButton.className = "styled";
+        cancelButtonSpan.textContent = "Cancel";
+        cancelButton.appendChild(cancelButtonSpan);
 
-    setInertExceptPopup(frame);
+        cancelButton.onclick = async () => {
+            frame.remove();
+            removeInert();
 
-    return frame;
+            resolve(null);
+        };
+
+        container.appendChild(titleElement);
+        container.appendChild(inputForm);
+        container.appendChild(buttonContainer);
+        buttonContainer.appendChild(acceptButton);
+        buttonContainer.appendChild(cancelButton);
+
+        frame.appendChild(container);
+
+        document.body.appendChild(frame);
+
+        setInertExceptPopup(frame);
+    });
 }

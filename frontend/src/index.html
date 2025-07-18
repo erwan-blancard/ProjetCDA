@@ -44,10 +44,10 @@
       <section>
         <div class="styled"><h1>Create Lobby</h1></div>
         <section class="styled vlayout" style="padding: 1.5em;">
-          <div>
-            <label for="lobby-password-input">Password:</label>
-            <input id="lobby-password-input" type="password" maxlength="9"/>
-            <input id="lobby-private-check" class="lock" type="checkbox"/>
+          <div id="create-lobby-form">
+            <label for="lobby-unlisted-check">Unlisted: </label>
+            <input id="lobby-unlisted-check" type="checkbox"/>
+            <!-- TODO add hint icon -->
           </div>
           <button class="styled" id="create-lobby-validate-button"><span>Create</span></button>
         </section>
@@ -59,13 +59,16 @@
       <section class="vlayout">
         <div class="styled"><h2>Select Lobby</h2></div>
         <lobby-list id="lobby-list" style="height: 40vh; margin-bottom: 24px;"></lobby-list>
-        <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
+        <section class="hlayout">
+          <button class="styled" id="lobby-direct-join"><span>Join with Code...</span></button>
+          <button class="styled" id="select-lobby-back-button"><span>Back</span></button>
+        </section>
       </section>
     </div>
 
     <div id="current-lobby" class="view">
       <section>
-        <div class="styled"><h1>Lobby</h1></div>
+        <div class="styled"><h1>Lobby <span id="current-lobby-id"></span></h1></div>
 
         <lobby-view id="lobby"></lobby-view>
       </section>

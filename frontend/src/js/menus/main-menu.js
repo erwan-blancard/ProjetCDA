@@ -1,11 +1,10 @@
 import { get_current_game_info } from '../api/account';
-import { LobbyDTO, LobbyEntryDTO, LobbyInfoDTO } from '../api/dto';
 import { LobbyList } from '../ui/lobby_list';
-import { LobbyView } from '../ui/lobby';
 import { ViewMgr } from '../ui/viewmgr';
 import { api_url, login_guard } from '../utils';
-import { create_lobby, current_lobby_set_ready_state, get_current_lobby, leave_current_lobby, list_lobbies } from '../api/lobby';
-import { displayPopup, displayYesNo } from '../ui/popup';
+import { create_lobby, current_lobby_set_ready_state, get_current_lobby, leave_current_lobby } from '../api/lobby';
+import { displayInput, displayPopup, displayYesNo } from '../ui/popup';
+import { LobbyView } from '../ui/lobby';
 
 
 const account = await login_guard();
@@ -26,14 +25,17 @@ const currentlobbyview = document.getElementById("current-lobby");
 
 const viewMgr = new ViewMgr();
 
+/** @type {LobbyView} */
 const lobbyViewElement = document.getElementById("lobby");
+const lobbyViewIDElement = document.getElementById("current-lobby-id")
 
 
-/** @type LobbyList */
+/** @type {LobbyList} */
 const lobbyList = document.getElementById("lobby-list");
 
 lobbyList.lobbyJoinedCallback = (lobby) => {
     console.log("Lobby Joined: ", lobby);
+    lobbyViewIDElement.textContent = lobby.id;
     lobbyViewElement.update(lobby);
     viewMgr.setPrimaryView(currentlobbyview);
 };
@@ -41,17 +43,27 @@ lobbyList.lobbyJoinedCallback = (lobby) => {
 
 lobbyList.busyCallback = (busy) => {
     document.getElementById("select-lobby-back-button").disabled = busy;
+    document.getElementById("lobby-direct-join").disabled = busy;
 };
-
 
 document.getElementById("select-lobby-back-button").onclick = () => {
     viewMgr.setPrimaryView(mainview);
+};
+
+document.getElementById("lobby-direct-join").onclick = async () => {
+    const lobby_id = await displayInput("Code:", "Enter lobby code", "Join", {"maxlength": "7"}, {"textTransform": "uppercase"});
+
+    if (lobby_id) {
+        // calls lobbyJoinedCallback()
+        await lobbyList.joinWithCode(lobby_id);
+    }
 };
 
 
 try {
     // check if lobby
     const lobbyDTO = await get_current_lobby();
+    lobbyViewIDElement.textContent = lobbyDTO.id;
     lobbyViewElement.update(lobbyDTO);
     if (lobbyDTO != null) {
         viewMgr.setPrimaryView(currentlobbyview);
@@ -60,11 +72,13 @@ try {
     }
 } catch (error) {
     console.log(`Error getting current lobby: ${error.message}`);
+    viewMgr.setPrimaryView(mainview);
 }
 
 
 document.getElementById("to-create-lobby").onclick = () => {
-    lobbyPasswordInput.value = "";   // clear password
+    // reset create form inputs
+    lobbyUnlistedCheck.checked = false;
     viewMgr.setPrimaryView(createlobbyview);
 };
 document.getElementById("to-join-lobby").onclick = () => {
@@ -75,42 +89,32 @@ document.getElementById("to-join-lobby").onclick = () => {
 };
 
 
-const lobbyPasswordCheck = document.getElementById("lobby-private-check");
-const lobbyPasswordInput = document.getElementById("lobby-password-input");
+const createLobbyForm = document.getElementById("create-lobby-form");
+const lobbyUnlistedCheck = document.getElementById("lobby-unlisted-check");
 const createLobbyValidateButton = document.getElementById("create-lobby-validate-button");
 const createLobbyBackButton = document.getElementById("create-lobby-back-button");
-lobbyPasswordCheck.checked = false;
-lobbyPasswordInput.disabled = true;
-
-lobbyPasswordCheck.onclick = () => {
-    lobbyPasswordInput.disabled = !lobbyPasswordCheck.checked;
-};
 
 
 createLobbyValidateButton.onclick = async () => {
-    const use_password = lobbyPasswordCheck.checked;
-    const password = lobbyPasswordInput.value;
+    const is_unlisted = lobbyUnlistedCheck.checked;
 
     createLobbyValidateButton.disabled = true;
     createLobbyBackButton.disabled = true;
+    // disable form interactions
+    createLobbyForm.disabled = true;
 
-    // disable interactions with password inputs
-    lobbyPasswordInput.disabled = true;
-    lobbyPasswordCheck.disabled = true;
-
-    const lobby = await create_lobby(use_password ? password : null, true);
+    const lobby = await create_lobby(is_unlisted);
 
     if (lobby) {
+        lobbyViewIDElement.textContent = lobby.id;
         lobbyViewElement.update(lobby);
         viewMgr.setPrimaryView(currentlobbyview);
     }
 
     createLobbyValidateButton.disabled = false;
     createLobbyBackButton.disabled = false;
-
-    // re-enable interactions with password inputs
-    lobbyPasswordInput.disabled = !lobbyPasswordCheck.checked;
-    lobbyPasswordCheck.disabled = false;
+    // re-enable form interactions
+    createLobbyForm.disabled = false;
 };
 createLobbyBackButton.onclick = () => {
     viewMgr.setPrimaryView(mainview);
@@ -173,7 +177,7 @@ if (account != null) {
     }
 
     events.onerror = (ev) => {
-        console.log("sse error:", ev);
+        console.error("SSE Error:", ev);
     };
 
     events.onmessage = (ev) => {
@@ -182,7 +186,7 @@ if (account != null) {
         try {
             json_data = JSON.parse(ev.data);
         } catch (error) {
-            console.log(`Could not convert message to JSON: ${json_data}`)
+            console.error(`SSE: Could not convert message to JSON: ${json_data}`)
             return;
         }
 
@@ -200,7 +204,7 @@ if (account != null) {
                 window.location.href = "/ingame.html";
                 break;
             default:
-                console.log(`Unrecognized message type: ${json_data["type"]}`);
+                console.error(`SSE: Unrecognized message type: ${json_data["type"]}`);
                 break;
         }
     }

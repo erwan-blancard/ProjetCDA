@@ -48,3 +48,7 @@
     align-items: center;
     gap: 1em;
 }
+
+.input-form > input {
+    font-size: 1em;
+}
