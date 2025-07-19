@@ -141,12 +141,7 @@ export function displayMessageNoControls(message) {
 }
 
 
-/**
- * display input popup
- * @param {Map<String, String> | null} attrs
- * @param {Map<String, String> | null} styleAttrs
- */
-export async function displayInput(label, title, buttonText="Ok", attrs=null, styleAttrs=null) {
+export async function displayInput(label, title, buttonText="Ok", attrs=null, styleAttrs=null, required=true) {
     return new Promise(resolve => {
         const frame = document.createElement("div");
         frame.className = "input-frame";
@@ -206,6 +201,14 @@ export async function displayInput(label, title, buttonText="Ok", attrs=null, st
 
             resolve(null);
         };
+
+        if (required) {
+            acceptButton.disabled = true;
+            // disable accept button if empty
+            inputElement.onkeyup = () => {
+                acceptButton.disabled = !inputElement.value.length;
+            }
+        }
 
         container.appendChild(titleElement);
         container.appendChild(inputForm);

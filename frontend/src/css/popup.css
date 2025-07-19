@@ -13,7 +13,7 @@
 
 .popup-container {
     width: 60vw;
-    height: 60vh;
+    /* height: 60vh; */
     padding: 0.5em;
     background-color: whitesmoke;
     display: flex;
@@ -33,7 +33,7 @@
 
 .input-container {
     width: 60vw;
-    height: 60vh;
+    /* height: 60vh; */
     padding: 0.5em;
     background-color: whitesmoke;
     display: flex;
@@ -51,4 +51,12 @@
 
 .input-form > input {
     font-size: 1em;
+}
+
+
+/* MOBILE VIEW (width only) */
+@media all and (max-width: 480px) {
+    .popup-container, .input-container {
+        width: 85vw;
+    }
 }

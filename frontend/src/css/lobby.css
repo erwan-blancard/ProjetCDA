@@ -167,4 +167,9 @@
     .lobby-entry {
         font-size: x-small;
     }
+
+    .lobby-list {
+        min-width: 80vw;
+        max-width: 95vw;
+    }
 }

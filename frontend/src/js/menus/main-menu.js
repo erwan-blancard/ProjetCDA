@@ -51,7 +51,7 @@ document.getElementById("select-lobby-back-button").onclick = () => {
 };
 
 document.getElementById("lobby-direct-join").onclick = async () => {
-    const lobby_id = await displayInput("Code:", "Enter lobby code", "Join", {"maxlength": "7"}, {"textTransform": "uppercase"});
+    const lobby_id = await displayInput("Code:", "Enter lobby code", "Join", {"maxLength": "7"}, {"textTransform": "uppercase", "width": "7em"});
 
     if (lobby_id) {
         // calls lobbyJoinedCallback()
