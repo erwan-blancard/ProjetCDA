@@ -48,21 +48,21 @@ impl Card for ComplexEffectCard {
             match effect {
                 ComplexEffect::Steal => {
                     let target_index = target_indices[0];
-                    let (player, target) = if player_index < target_index {
-                        let (left, right) = game.players.split_at_mut(target_index);
-                        (&mut left[player_index], &mut right[0])
-                    } else {
-                        let (left, right) = game.players.split_at_mut(player_index);
-                        (&mut right[0], &mut left[target_index])
-                    };
-                    if let Some(stolen_card) = target.remove_random_card() {
-                        let stolen_card_id = stolen_card.get_id();
-                        println!("[VOL] {} vole la carte {} à {}", player.name, stolen_card_id, target.name);
-                        player.hand_cards.push(stolen_card);
+                    // Pick a random card index from the victim's hand
+                    use rand::Rng;
+                    if target_index < game.players.len() && !game.players[target_index].hand_cards.is_empty() {
+                        let hand_len = game.players[target_index].hand_cards.len();
+                        let card_index = rand::thread_rng().gen_range(0..hand_len);
+                        // Remove the card from the victim and add it to the thief
+                        let stolen_card = game.players[target_index].hand_cards.remove(card_index);
+                        game.players[player_index].hand_cards.push(stolen_card.clone_box());
+                        // Log the steal event for debugging
+                        println!("[STEAL] Player {} steals a card at index {} from player {}", player_index, card_index, target_index);
+                        // Generate a PlayAction/GameEvent for the frontend with the index
                         let mut steal_action = PlayAction::new();
                         steal_action.targets.push(ActionTarget {
-                            player_id: player.id,
-                            action: ActionType::Steal { cards: vec![stolen_card_id] },
+                            player_id: player_index as i32, // thief
+                            action: ActionType::Steal { cards: vec![card_index as i32] }, // index of the stolen card
                             effect: "steal".to_string(),
                         });
                         info.actions.push(steal_action);

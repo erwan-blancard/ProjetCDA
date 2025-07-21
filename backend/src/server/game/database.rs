@@ -14,6 +14,7 @@ use super::cards::multi_hit_card::MultiHitCard;
 use super::cards::pearth_card::PearthCard;
 use super::cards::players_rolls_dice_card::{PlayersRollsDiceCard, PlayersRollsDiceCardAction};
 use super::cards::target_both_card::TargetBothCard;
+use super::cards::exchange_card::{ComplexEffectCard, ComplexEffect};
 
 
 lazy_static! {
@@ -114,12 +115,43 @@ struct CardInfo {
     desc: String,
     #[serde(default)]
     buffs: Vec<BuffVariant>,
+    #[serde(default)]
+    complex_effects: Option<Vec<ComplexEffect>>,
     #[serde(flatten)]
     variant: CardVariant
 }
 
 impl CardInfo {
     fn make_card(&self) -> Box<dyn Card> {
+        if let Some(effects) = &self.complex_effects {
+            if !effects.is_empty() {
+                // Si la carte a des complex_effects, on crée une ComplexEffectCard
+                let base = match &self.variant {
+                    CardVariant::BasicCard(data) => BasicCard {
+                        id: self.id,
+                        name: self.name.clone(),
+                        element: self.element,
+                        stars: self.stars,
+                        kind: self.kind,
+                        desc: self.desc.clone(),
+                        attack: data.attack,
+                        heal: data.heal,
+                        attack_modifier: data.attack_modifier.clone().map(|m| m.into_boxed()),
+                        heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                        draw: data.draw,
+                        draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
+                        target_type: data.targets,
+                        buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
+                        complex_effects: None,
+                    },
+                    _ => panic!("ComplexEffectCard only support BasicCard as base for l'instant"),
+                };
+                return Box::new(ComplexEffectCard {
+                    base,
+                    complex_effects: effects.clone(),
+                });
+            }
+        }
         match &self.variant {
             CardVariant::BasicCard(data) => {
                 Box::new(BasicCard {
@@ -131,12 +163,13 @@ impl CardInfo {
                     desc: self.desc.clone(),
                     attack: data.attack,
                     heal: data.heal,
-                    draw: data.draw,
                     attack_modifier: data.attack_modifier.clone().map(|m| m.into_boxed()),
                     heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                    draw: data.draw,
                     draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
                     target_type: data.targets,
                     buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
+                    complex_effects: None,
                 })
             },
             CardVariant::MultiHitCard(data) => {
@@ -165,9 +198,9 @@ impl CardInfo {
                     desc: self.desc.clone(),
                     attack: data.attack,
                     heal: data.heal,
-                    draw: data.draw,
                     attack_modifier: data.attack_modifier.clone().map(|m| m.into_boxed()),
                     heal_modifier: data.heal_modifier.clone().map(|m| m.into_boxed()),
+                    draw: data.draw,
                     draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
                     target_type: data.targets,
                     buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),

@@ -15,7 +15,7 @@ use super::super::player::Player;
 pub type EffectId = String;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Element {
     Fire,
     Air,
@@ -23,14 +23,14 @@ pub enum Element {
     Water,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Kind {
     Spell,
     Weapon,
     Food,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Stars {
     One,
     Two,
@@ -58,7 +58,7 @@ impl Display for Element {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TargetType {
     #[default]
     Single,     // no targets if only heal
@@ -306,7 +306,8 @@ pub struct BasicCard {
     pub heal_modifier: Option<Box<dyn Modifier>>,
     pub draw: u32,
     pub draw_modifier: Option<Box<dyn Modifier>>,
-    pub buffs: Vec<Box<dyn Buff>>
+    pub buffs: Vec<Box<dyn Buff>>,
+    pub complex_effects: Option<Vec<String>>,
 }
 
 impl Card for BasicCard {

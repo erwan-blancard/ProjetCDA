@@ -395,7 +395,7 @@
     "attack": 2,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": ["steal"]
   },
   {
     "name": "Cyclone",
@@ -590,7 +590,7 @@
     "note": "Complex effect: no simple modifier"
   },
   {
-    "name": "Feuraise",
+    "name": "Feurise",
     "element": "Fire",
     "stars": "One",
     "kind": "Food",
@@ -1047,7 +1047,7 @@
     "attack": 8,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": ["steal"]
   },
   {
     "name": "Secousse",
