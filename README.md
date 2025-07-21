@@ -148,3 +148,5 @@ Lancer les tests du backend en local, en étant sur la racine du projet:
     -docker run -it --rm backend-dev
     (-cargo fix --bin backend --tests)
     -cargo test
+
+    blipbloup
