@@ -144,8 +144,12 @@ async fn main() -> std::io::Result<()> {
 
             // auth
             .configure(routes::auth::configure_routes)
-            // accounts, stats, friends
+            // accounts
             .configure(routes::account::configure_routes)
+            // stats
+            .configure(routes::stats::configure_routes)
+            // friends
+            .configure(routes::friends::configure_routes)
             // game
             .configure(routes::game::configure_routes)
             // settings
