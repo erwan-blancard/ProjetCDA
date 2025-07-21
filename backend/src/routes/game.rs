@@ -10,9 +10,8 @@ use tokio::sync::oneshot;
 use uuid::Uuid;
 use serde_derive::{Serialize, Deserialize};
 
-use crate::dto::GameSessionInfo;
 use crate::routes::sse::Broadcaster;
-use crate::server::dto::responses::PlayerProfile;
+use crate::server::dto::{GameSessionInfo, responses::PlayerProfile};
 use crate::server::game::game::MAX_PLAYERS;
 use crate::server::server::GameServer;
 use crate::{GameHandlers, GameId};

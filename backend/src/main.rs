@@ -18,49 +18,11 @@ use tokio::{self, spawn};
 // expose modules
 
 mod auth;
-mod utils {
-    pub mod limited_string;
-    pub mod clamp;
-}
-
-mod dto;
-mod routes {
-    pub mod account;
-    pub mod auth;
-    pub mod game;
-    pub mod settings;
-    pub mod sse;
-}
-
-mod database {
-    pub mod models;
-    pub mod schema;
-    pub mod actions;
-}
-
-mod server {
-    pub mod server;
-    pub mod handler;
-    pub mod dto {
-        pub mod actions;
-        pub mod responses;
-    }
-    pub mod game {
-        /// module that contains the card variants definitions
-        pub mod cards;
-        pub mod database;
-        pub mod game;
-        pub mod eval;
-        pub mod modifiers;
-        pub mod buffs;
-        pub mod player;
-        pub mod play_info;
-    }
-}
-
-mod email {
-    pub mod mailer;
-}
+mod utils;
+mod routes;
+mod database;
+mod server;
+mod email;
 
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
