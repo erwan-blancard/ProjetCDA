@@ -97,11 +97,11 @@ input[type='text'] {
 }
 
 .player-cards-icon::before {
-    content: "🃏 ";
+    content: "🖐️ ";
 }
 
 .player-discard-icon::before {
-    content: "🃏 ";
+    content: "🗑️ ";
 }
 
 

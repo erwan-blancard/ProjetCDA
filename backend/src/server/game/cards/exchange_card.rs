@@ -56,13 +56,14 @@ impl Card for ComplexEffectCard {
                         // Remove the card from the victim and add it to the thief
                         let stolen_card = game.players[target_index].hand_cards.remove(card_index);
                         game.players[player_index].hand_cards.push(stolen_card.clone_box());
+                        let stolen_card_id = stolen_card.get_id();
                         // Log the steal event for debugging
-                        println!("[STEAL] Player {} steals a card at index {} from player {}", player_index, card_index, target_index);
-                        // Generate a PlayAction/GameEvent for the frontend with the index
+                        println!("[STEAL] Player {} steals card id {} from player {}", player_index, stolen_card_id, target_index);
+                        // Generate a PlayAction/GameEvent for the frontend with the card id
                         let mut steal_action = PlayAction::new();
                         steal_action.targets.push(ActionTarget {
                             player_id: player_index as i32, // thief
-                            action: ActionType::Steal { cards: vec![card_index as i32] }, // index of the stolen card
+                            action: ActionType::Steal { cards: vec![stolen_card_id] }, // id of the stolen card
                             effect: "steal".to_string(),
                         });
                         info.actions.push(steal_action);

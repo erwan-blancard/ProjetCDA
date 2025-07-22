@@ -357,6 +357,11 @@ impl GameServer {
                                     let _ = resp.send_unbounded(tx);
                                     let _ = buffs_resp.send_unbounded(tx);
                                 }
+                                // Envoi d'un snapshot complet GameStatus à tous les joueurs
+                                for (_, (pid, tx)) in &self.sessions.lock().await.sessions {
+                                    let state = self.game.status_for_player(*pid).unwrap();
+                                    let _ = state.to_server_response().send_unbounded(tx);
+                                }
                                 self.advance_turn().await;
                             } else {
                                 // send game state to player when error

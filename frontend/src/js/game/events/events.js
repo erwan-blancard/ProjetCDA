@@ -355,3 +355,70 @@ export class GameEndEvent extends GameEvent {
     }
 
 }
+
+export class StealCardEvent extends GameEvent {
+    /**
+     * @param {PlayerObject} thief - Le joueur qui vole
+     * @param {PlayerObject} victim - Le joueur qui se fait voler
+     * @param {number} card_id - L'id de la carte volée
+     */
+    constructor(thief, victim, card_id, updatedHand=null) {
+        super();
+        this.thief = thief;
+        this.victim = victim;
+        this.card_id = card_id;
+        this.updatedHand = updatedHand;
+        this.timeout = 800;
+    }
+
+    async run() {
+        try {
+            // 1. Chercher la carte à voler dans la main de la victime par id
+            const idx = this.victim.cards.findIndex(c => c.card_id === this.card_id);
+            const card = this.victim.cards.splice(idx, 1)[0];
+            if (!card) {
+                console.warn("StealCardEvent: carte à voler introuvable");
+                this.onTimeout();
+                return;
+            }
+            card.active = true;
+
+            // 2. Flip côté victime (face cachée)
+            card.flipCard();
+
+            // 3. Animation de déplacement vers la main du voleur
+            const { x, y, z } = this.thief.getHandCardPositionByIndex(this.thief.cards.length);
+            await gsap.to(card.position, { x, y, z, duration: 0.8, ease: "power1.inOut" });
+
+            // 4. Supprimer la carte de la scène (elle n'est plus dans la main de la victime)
+            if (card.parent) card.parent.remove(card);
+
+            // 5. Créer la carte dans la main du voleur
+            let newCard;
+            if (this.thief === GAME.PLAYER) {
+                newCard = new Card(card.card_id);
+            } else {
+                newCard = new OpponentCard();
+                newCard.displayCardAsFront(card.card_id);
+            }
+            newCard.position.set(x, y, z);
+            GAME.scene.add(newCard);
+
+            // 6. Flip côté voleur (face visible)
+            newCard.flipCard();
+
+            // 7. Ajouter la carte à la main du voleur
+            this.thief.cards.push(newCard);
+
+            // 8. Mettre à jour les positions des mains
+            this.thief.updateHandCardPositions();
+            this.victim.updateHandCardPositions();
+        } catch (e) {
+            console.error("Erreur dans StealCardEvent:", e);
+        }
+        if (this.updatedHand && this.thief === GAME.PLAYER) {
+            this.thief.updateHandCards(this.updatedHand);
+        }
+        this.onTimeout();
+    }
+}

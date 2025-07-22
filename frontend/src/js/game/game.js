@@ -8,7 +8,7 @@ import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, PlayerBuffStatusResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent, StealCardEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
 import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
@@ -318,6 +318,24 @@ export function onPlayCardEvent(data) {
                         events.push(new DrawCardEvent(targetedPlayer, card_id));
                     });
                     break;
+                case "Steal": {
+                    // Log la main du joueur cible avant le vol
+                    console.log("[Steal] Main du joueur cible avant vol:", targetedPlayer.cards.map(c => c.card_id));
+                    // Vérifie que la main n'est pas vide
+                    if (targetedPlayer.cards.length === 0) {
+                        console.warn("[Steal] Main vide, impossible de voler");
+                        break;
+                    }
+                    // Ajoute d'abord l'event de défausse de la carte jouée si ce n'est pas déjà fait
+                    // (normalement déjà fait via PutCardInPile, mais on vérifie)
+                    // events.push(new PutCardInPile(player, card)); // décommenter si besoin
+                    events.push(new StealCardEvent(
+                        getPlayerById(data.player_id), // voleur
+                        targetedPlayer,                // cible
+                        target.action.cards[0],        // id de la carte volée
+                    ));
+                    break;
+                }
                 case ActionTypeDTO.DISCARD:
                     // sort indexes in descending order
                     target.action.cards.sort((a, b) => a < b).forEach(card_index => {
@@ -331,6 +349,7 @@ export function onPlayCardEvent(data) {
         });
     });
 
+    // S'assurer que la carte jouée est bien défaussée (PutCardInPile)
     events.push(new PutCardInPile(player, card));
 
     eventMgr.pushEvents(events);
