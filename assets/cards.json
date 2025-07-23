@@ -289,14 +289,16 @@
   {
     "name": "Canne à pêche",
     "element": "Water",
-    "stars": "One",
+    "stars": "Two",
     "kind": "Weapon",
-    "desc": "Enlevez 2 points à votre adversaire. Volez lui une carte, si c'est une carte d'élément Eau, rejouez Canne à Pêche.",
+    "desc": "Volez une carte à l'adversaire. Si la carte volée est d'élément Eau, rejouez.",
     "type": "BasicCard",
-    "attack": 2,
+    "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "steal", "count": 1, "on_water_replay": true }
+    ]
   },
   {
     "name": "Canne",
@@ -395,7 +397,7 @@
     "attack": 2,
     "heal": 0,
     "draw": 0,
-    "complex_effects": ["steal"]
+    "complex_effects": [ { "type": "steal" } ]
   },
   {
     "name": "Cyclone",
@@ -859,7 +861,10 @@
         "type": "HandSizeModifier",
         "hand_size_op": "Mul",
         "from_target": true
-    }
+    },
+    "complex_effects": [
+      { "type": "steal", "count": 2 }
+    ]
   },
   {
     "name": "Nettoyage",
@@ -1047,7 +1052,7 @@
     "attack": 8,
     "heal": 0,
     "draw": 0,
-    "complex_effects": ["steal"]
+    "complex_effects": [ { "type": "steal" } ]
   },
   {
     "name": "Secousse",
@@ -1203,12 +1208,14 @@
     "element": "Air",
     "stars": "Four",
     "kind": "Spell",
-    "desc": "Enlevez 8 points à votre adversaire. Volez toutes les cartes d'élément Air présentes dans sa main.",
+    "desc": "Vole toutes les cartes d'élément Air de la main de l'adversaire.",
     "type": "BasicCard",
-    "attack": 8,
+    "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "steal", "element": "Air" }
+    ]
   },
   {
     "name": "Tourbillon",

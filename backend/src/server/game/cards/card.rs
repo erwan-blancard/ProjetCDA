@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fmt::{self, Debug, Display};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::utils::clamp::clamp;
 
@@ -307,7 +308,7 @@ pub struct BasicCard {
     pub draw: u32,
     pub draw_modifier: Option<Box<dyn Modifier>>,
     pub buffs: Vec<Box<dyn Buff>>,
-    pub complex_effects: Option<Vec<String>>,
+    pub complex_effects: Option<Vec<Value>>,
 }
 
 impl Card for BasicCard {
