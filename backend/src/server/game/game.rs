@@ -162,6 +162,7 @@ impl Game {
 
         let card = self.players[player_index].hand_cards.get(card_index)
             .ok_or_else(|| "Card not in hand".to_string())?.clone();
+        let card_id = card.get_id();
 
         // play the card and return play info
         match card.play(player_index, target_indices, self) {
@@ -169,17 +170,19 @@ impl Game {
                 // remove used buffs
                 self.remove_player_buffs_used(player_index, buffs_used);
 
-                // Vérification de l'index avant suppression
-                if card_index >= self.players[player_index].hand_cards.len() {
-                    return Err(format!("Invalid card index: {}", card_index));
+                // On retire la carte jouée par son id (et non par index)
+                let pos = self.players[player_index].hand_cards.iter().position(|c| c.get_id() == card_id);
+                if let Some(idx) = pos {
+                    let card = self.players[player_index].hand_cards.remove(idx);
+                    // grant card buffs to player
+                    for buff in card.get_buffs() {
+                        self.players[player_index].buffs.push(buff);
+                    }
+                    // remove card from hand and put it in discard pile
+                    self.players[player_index].discard_cards.push(card);
+                } else {
+                    return Err("Card to discard not found in hand after play".to_string());
                 }
-                let card = self.players[player_index].hand_cards.remove(card_index);
-                // grant card buffs to player
-                for buff in card.get_buffs() {
-                    self.players[player_index].buffs.push(buff);
-                }
-                // remove card from hand and put it in discard pile
-                self.players[player_index].discard_cards.push(card);
 
                 // check if game is over
                 let remaining_players: Vec<&Player> = self.players.iter()
