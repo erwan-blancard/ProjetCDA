@@ -26,6 +26,39 @@ body {
 }
 
 
+.panel-backdrop {
+    display: none;  /* start hidden */
+    position: fixed;
+    background: rgba(0, 0, 0, 0.3);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 4;
+}
+
+
+#side-actions-container.show {
+    position: fixed;
+    animation-name: appear-in-place;
+    animation-duration: 0.2s;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+#side-actions-container.hide {
+    position: fixed;
+    animation-name: disappear-in-place;
+    animation-duration: 0.2s;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+
 /* MOBILE VIEW */
 @media all and (max-device-width: 480px) {
 

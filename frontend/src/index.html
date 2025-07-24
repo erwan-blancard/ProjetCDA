@@ -15,6 +15,7 @@
     <link rel='stylesheet' type='text/css' media='screen' href='/css/popup.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/lobby.css'>
     <link rel='stylesheet' type='text/css' media='screen' href='/css/friends.css'>
+    <link rel='stylesheet' type='text/css' media='screen' href='/css/profile.css'>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
       /* remove scrolling */
@@ -82,13 +83,21 @@
     </div>
 
     <!-- side buttons -->
-    <section id="side-actions-container" class="vlayout" style="font-size: 0.8em; position: fixed; top: 20px; right: -2em;">
+    <!-- start hidden -->
+    <section id="side-actions-container" class="vlayout" style="font-size: 0.8em; position: fixed; top: 20px; right: -2em; visibility: hidden;">
+      <button id="show-profile" class="styled" style="background-color: white; cursor: pointer;"
+      ><span style="padding-right: 1em;"><i class="fas fa-user"></i></span></button>
       <button id="show-friend-list" class="styled" style="background-color: white; cursor: pointer;"
       ><span style="padding-right: 1em;"><i class="fas fa-users"></i></span></button>
     </section>
 
     <!-- Friend panel -->
-    <div id="friend-panel-backdrop"></div>
+    <div id="friend-panel-backdrop" class="panel-backdrop"></div>
     <friend-panel id="friend-panel"></friend-panel>
+
+    <!-- Profile panel -->
+    <div id="profile-panel-backdrop" class="panel-backdrop"></div>
+    <profile-panel id="profile-panel"></profile-panel>
+
   </body>
 </html>

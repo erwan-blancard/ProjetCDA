@@ -147,6 +147,14 @@ export class FriendPanel extends HTMLElement {
     constructor() {
         super();
 
+        this.closeBtn = document.createElement("i");
+        this.closeBtn.className = "fas fa-times-circle";
+        this.closeBtn.style.position = "absolute";
+        this.closeBtn.style.top = "0.4em";
+        this.closeBtn.style.right = "0.4em";
+        this.closeBtn.style.cursor = "pointer";
+        this.appendChild(this.closeBtn);
+
         const title = document.createElement("h3");
         title.textContent = PANEL_TITLE_TEXT;
         this.appendChild(title);
@@ -168,6 +176,7 @@ export class FriendPanel extends HTMLElement {
         this.addFriendInput.id = "add-friend-name";
         this.addFriendInput.type = "text";
         this.addFriendInput.placeholder = "Username";
+        this.addFriendInput.maxLength = "32";
         this.appendChild(this.addFriendInput);
 
         // Buttons + feedback
@@ -177,12 +186,6 @@ export class FriendPanel extends HTMLElement {
         this.addFriendButton.className = 'styled';
         this.addFriendButton.innerHTML = '<span>Send Request</span>';
         btnContainer.appendChild(this.addFriendButton);
-
-        this.closeFriendButton = document.createElement('button');
-        this.closeFriendButton.id = "close-friend-button";
-        this.closeFriendButton.className = 'styled';
-        this.closeFriendButton.innerHTML = '<span>Close</span>';
-        btnContainer.appendChild(this.closeFriendButton);
 
         this.appendChild(btnContainer);
 

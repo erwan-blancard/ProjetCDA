@@ -173,6 +173,25 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
 }
 
 
+.hline {
+    width: 100%;
+    height: 2px;
+    border-radius: 4px;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    background-color: gray;
+}
+
+.vline {
+    width: 2px;
+    height: 100%;
+    border-radius: 4px;
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+    background-color: gray;
+}
+
+
 /* Classes for ViewMgr animations */
 
 .show {
@@ -294,6 +313,30 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     100% {
         opacity: 0;
         left: 4em;
+    }
+}
+
+@keyframes appear-in-place {
+    0% {
+        opacity: 0;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes disappear-in-place {
+    0% {
+        opacity: 1;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
     }
 }
 
