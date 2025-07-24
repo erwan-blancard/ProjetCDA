@@ -11,6 +11,11 @@ friend-panel {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     font-family: sans-serif;
     z-index: 5;
+
+    .empty-list-label {
+        font-size: 0.75em;
+        color: gray;
+    };
 }
 
 friend-panel h3 {
@@ -40,7 +45,7 @@ friend-panel button.styled {
     margin-top: 5px;
 }
 
-#add-friend-feedback {
+#friend-action-feedback {
     margin-top: 5px;
     font-size: 0.9em;
 }
@@ -69,6 +74,11 @@ friend-entry {
         overflow: hidden;
         text-overflow: clip ellipsis;
     };
+
+    .button-container {
+        display: flex;
+        gap: 4px;  
+    }
 
     button {
         color: white;

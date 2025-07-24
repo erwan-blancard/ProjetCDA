@@ -6,6 +6,11 @@ import { create_lobby, current_lobby_set_ready_state, get_current_lobby, leave_c
 import { displayInput, displayPopup, displayYesNo } from '../ui/popup';
 import { LobbyView } from '../ui/lobby';
 import { FriendPanel } from '../ui/friend_panel';
+import { APP_STATE } from '../app_state';
+
+
+// debug
+window.APP_STATE = APP_STATE;
 
 
 const account = await login_guard();
@@ -34,12 +39,16 @@ const lobbyViewIDElement = document.getElementById("current-lobby-id")
 /** @type {LobbyList} */
 const lobbyList = document.getElementById("lobby-list");
 
-lobbyList.lobbyJoinedCallback = (lobby) => {
+// callback to use when a lobby is joined successfully
+function lobbyJoinedCallback(lobby) {
     console.log("Lobby Joined: ", lobby);
+    APP_STATE.lobby = lobby;
     lobbyViewIDElement.textContent = lobby.id;
     lobbyViewElement.update(lobby);
     viewMgr.setPrimaryView(currentlobbyview);
-};
+}
+
+lobbyList.lobbyJoinedCallback = lobbyJoinedCallback;
 
 
 lobbyList.busyCallback = (busy) => {
@@ -67,6 +76,7 @@ try {
     lobbyViewIDElement.textContent = lobbyDTO.id;
     lobbyViewElement.update(lobbyDTO);
     if (lobbyDTO != null) {
+        APP_STATE.lobby = lobbyDTO;
         viewMgr.setPrimaryView(currentlobbyview);
     } else {
         viewMgr.setPrimaryView(mainview);
@@ -90,9 +100,6 @@ document.getElementById("to-join-lobby").onclick = () => {
 };
 
 
-
-
-
 // Friends panel elements
 /** @type {FriendPanel} */
 const friendPanel = document.getElementById('friend-panel');
@@ -100,11 +107,15 @@ const btnShowFriendList = document.getElementById('show-friend-list');
 const friendPanelBackdrop = document.getElementById('friend-panel-backdrop');
 const closeFriendButton = document.getElementById('close-friend-button');
 
+friendPanel.lobbyJoinedCallback = lobbyJoinedCallback;
+
 function showFriendPanel() {
+    friendPanel.friendActionFeedback.textContent = "";
     friendPanel.style.display = 'block';
     friendPanelBackdrop.style.display = 'block';
 
-    friendPanel.addFriendFeedback.textContent = "";
+    // disable interactions for views
+    viewMgr.setInert();
 
     updateShowPanelButtonColor(false);
 }
@@ -112,10 +123,14 @@ function showFriendPanel() {
 function closeFriendPanel() {
     friendPanel.style.display = 'none';
     friendPanelBackdrop.style.display = 'none';
+
+    // re-enable interactions for views
+    viewMgr.removeInert();
 }
 
 function updateShowPanelButtonColor(pending_updates=true) {
     if (pending_updates) {
+        btnShowFriendList.style.backgroundColor = "#f0c115";
         // update color only if not already open
         if (friendPanel.style.display == "none") {
             btnShowFriendList.style.backgroundColor = "#f0c115";
@@ -207,10 +222,12 @@ lobbyViewElement.leaveButton.onclick = () => {
     displayYesNo("Leave this lobby ?", "", async () => {
         lobbyViewElement.leaveButton.disabled = true;
         lobbyViewElement.readyButton.disabled = true;
-        if (await leave_current_lobby())
+        if (await leave_current_lobby()) {
+            APP_STATE.lobby = null;
             viewMgr.setPrimaryView(mainview);
-        else
+        } else {
             displayPopup("An error occured when leaving the lobby !", "Error !");
+        }
         lobbyViewElement.leaveButton.disabled = false;
         lobbyViewElement.readyButton.disabled = false;
     });

@@ -1,5 +1,6 @@
 import { get_account } from "../api/account";
 import { LobbyDTO } from "../api/dto";
+import { APP_STATE } from "../app_state";
 
 
 export class LobbyView extends HTMLElement {
@@ -42,6 +43,8 @@ export class LobbyView extends HTMLElement {
 
     update(lobbyDTO) {
         this.lobbyDTO = lobbyDTO;
+
+        APP_STATE.lobby = lobbyDTO;
 
         // clear users
         for (let i = this.userListElement.children.length-1; i >= 0; i--) {

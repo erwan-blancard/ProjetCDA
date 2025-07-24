@@ -65,6 +65,22 @@ export class ViewMgr {
         }, SHOW_HIDE_DELAY * 1000);
     }
 
+    // disable interactions
+    setInert() {
+        this.primaryViews.forEach(v => {
+            v.setAttribute('inert', '');
+            v.setAttribute('aria-hidden', 'true');
+        });
+    }
+
+    // re-enable interactions
+    removeInert() {
+        this.primaryViews.forEach(v => {
+            v.removeAttribute('inert');
+            v.removeAttribute('aria-hidden');
+        });
+    }
+
 }
 
 

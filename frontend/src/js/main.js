@@ -1,13 +1,9 @@
-import gsap from "gsap";
 import { login_guard, ws_url } from "./utils";
 
 import * as THREE from 'three';
 import * as GAME from './game/game';
 import { get_current_game_info } from "./api/account";
-import { ChangeTurnResponse, DrawCardResponse, GameStatusResponse, PlayCardResponse, SessionInfoResponse } from "./server/dto";
-import { GameSessionInfoDTO } from "./api/dto";
 import { CARD_COLLECTION } from "./game/collection";
-import { randInt } from "three/src/math/MathUtils";
 import { displayMessageNoControls } from "./ui/popup";
 
 
@@ -22,17 +18,6 @@ const account = await login_guard();
 
 const game_info = await get_current_game_info();
 
-// const game_info = new GameSessionInfoDTO({"game_id": 0, "players": [
-//     {"id": 0, "name": "Player 1"},
-//     {"id": 1, "name": "Player 2"},
-//     {"id": 2, "name": "Player 3"}
-// ]});
-
-// const session_info = new SessionInfoResponse({"id": 0, "players": [
-//     {"id": 0, "name": "Player 1"},
-//     {"id": 1, "name": "Player 2"},
-//     {"id": 2, "name": "Player 3"}
-// ]});
 
 if (game_info != null) {
     const wsUrl = ws_url(game_info.game_id);
@@ -78,7 +63,6 @@ if (game_info != null) {
     })
 
     GAME.connectToServer(wsUrl);
-    // GAME.onSessionInfoReceived(session_info);
 } else {
     window.location.href = "/index.html";
 }

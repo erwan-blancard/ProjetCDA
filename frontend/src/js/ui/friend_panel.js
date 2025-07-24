@@ -3,6 +3,7 @@ import { get_account } from '../api/account.js';
 import { APP_STATE } from '../app_state.js';
 import { strjoin } from '../utils.js';
 import { FriendDTO, FriendWithLobbyStatusDTO } from '../api/dto.js';
+import { join_lobby } from '../api/lobby.js';
 
 const PANEL_TITLE_TEXT = "Friends list";
 const SEND_REQUEST_LABEL = "Send friend request:";
@@ -21,8 +22,8 @@ const EMPTY_LIST_TEXT = "Nothing to show here...";
 
 
 export class FriendRequestEntry extends HTMLElement {
-    /** @type {FriendDTO} */
-    info;
+    /** @type {FriendDTO | null} */
+    info = null;
     username;
     // child elements
     label;
@@ -38,6 +39,7 @@ export class FriendRequestEntry extends HTMLElement {
 
         this.label = document.createElement("span");
         const btns = document.createElement("div");
+        btns.className = "button-container";
 
         this.acceptBtn = document.createElement("button");
         this.acceptBtn.className = "accept-button";
@@ -61,7 +63,7 @@ export class FriendRequestEntry extends HTMLElement {
 
         this.appendChild(this.label);
         this.appendChild(btns);
-
+        
         this.update(friendDTO, username);
     }
 
@@ -88,8 +90,8 @@ export class FriendRequestEntry extends HTMLElement {
 
 
 export class FriendEntry extends HTMLElement {
-    /** @type {FriendWithLobbyStatusDTO} */
-    info;
+    /** @type {FriendWithLobbyStatusDTO | null} */
+    info = null;
     label;
     removeBtn;
     joinLobbyBtn;
@@ -99,6 +101,9 @@ export class FriendEntry extends HTMLElement {
 
         this.label = document.createElement("span");
         this.label.className = "friend-entry-label";
+        const btns = document.createElement("div");
+        btns.className = "button-container";
+
         this.removeBtn = document.createElement("button");
         this.removeBtn.className = "remove-button";
         this.removeBtn.textContent = "X";
@@ -107,8 +112,9 @@ export class FriendEntry extends HTMLElement {
         this.joinLobbyBtn.textContent = ">";
 
         this.appendChild(this.label);
-        this.appendChild(this.joinLobbyBtn);
-        this.appendChild(this.removeBtn);
+        btns.appendChild(this.joinLobbyBtn);
+        btns.appendChild(this.removeBtn);
+        this.appendChild(btns);
 
         this.update(friendWithLobbyStatusDTO);
     }
@@ -120,9 +126,9 @@ export class FriendEntry extends HTMLElement {
             this.label.textContent = friendWithLobbyStatusDTO.username;
 
             if (friendWithLobbyStatusDTO.lobby_id != null) {
-                info.textContent += " - ";
-                info.textContent += FRIEND_IN_LOBBY_TEXT;
-                info.textContent += ` (${friendWithLobbyStatusDTO.lobby_id})`;
+                this.label.textContent += " - ";
+                this.label.textContent += FRIEND_IN_LOBBY_TEXT;
+                this.label.textContent += ` (${friendWithLobbyStatusDTO.lobby_id})`;
                 this.joinLobbyBtn.style.display = "initial";
             } else {
                 this.joinLobbyBtn.style.display = "none";
@@ -135,6 +141,8 @@ export class FriendEntry extends HTMLElement {
 export class FriendPanel extends HTMLElement {
     friends = [];
     requests = [];
+
+    lobbyJoinedCallback = null;
 
     constructor() {
         super();
@@ -178,11 +186,11 @@ export class FriendPanel extends HTMLElement {
 
         this.appendChild(btnContainer);
 
-        this.addFriendFeedback = document.createElement('div');
-        this.addFriendFeedback.id = 'add-friend-feedback';
-        this.appendChild(this.addFriendFeedback);
+        this.friendActionFeedback = document.createElement('div');
+        this.friendActionFeedback.id = 'friend-action-feedback';
+        this.appendChild(this.friendActionFeedback);
 
-        this.addFriendButton.addEventListener("click", async () => { await this.onSendRequestClicked() });
+        this.addFriendButton.onclick = async () => { await this.onSendRequestClicked() };
     }
 
     async getFriendList() {
@@ -216,9 +224,9 @@ export class FriendPanel extends HTMLElement {
 
         if (sorted.length == 0) {
             const empty_msg = document.createElement("span");
-            empty_msg.style.color = "gray";
+            empty_msg.className = "empty-list-label";
             empty_msg.textContent = EMPTY_LIST_TEXT;
-            this.friendListDiv.appendChild();
+            this.friendListDiv.appendChild(empty_msg);
         }
 
     }
@@ -226,11 +234,32 @@ export class FriendPanel extends HTMLElement {
     createFriendEntry(friend) {
         const entry = new FriendEntry(friend);
 
-        entry.removeBtn.addEventListener('click', async () => {
+        entry.removeBtn.onclick = async () => {
             if (await delete_friend(entry.info.username) != null) {
                 entry.remove();
             }
-        });
+        };
+
+        entry.joinLobbyBtn.onclick = async () => {
+            if (this.lobbyJoinedCallback != null && entry.info.lobby_id) {
+
+                // can't join if in lobby
+                if (!APP_STATE.lobby) {
+
+                    const lobby = await join_lobby(entry.info.lobby_id);
+                    if (lobby) {
+                        this.lobbyJoinedCallback(lobby);
+                    } else {
+                        this.friendActionFeedback.textContent = "Unable to join the lobby.";
+                        this.friendActionFeedback.style.color = "red";
+                    }
+
+                } else {
+                    this.friendActionFeedback.textContent = "Can't join: already in a lobby.";
+                    this.friendActionFeedback.style.color = "orange";
+                }
+            }
+        }
 
         return entry;
     }
@@ -306,34 +335,34 @@ export class FriendPanel extends HTMLElement {
     async onSendRequestClicked() {
         const name = this.addFriendInput.value.trim();
         if (!name) {
-            this.addFriendFeedback.textContent = "Please enter a valid name";
-            this.addFriendFeedback.style.color = 'red';
+            this.friendActionFeedback.textContent = "Please enter a valid name";
+            this.friendActionFeedback.style.color = 'red';
             return;
         }
 
         // Check if not already in list
         const currentFriends = Array.from(this.friendListDiv.children).map(entry => entry.username);
         if (currentFriends.some(f => f === name)) {
-            this.addFriendFeedback.textContent = "Already friend with this user.";
-            this.addFriendFeedback.style.color = 'red';
+            this.friendActionFeedback.textContent = "Already friend with this user.";
+            this.friendActionFeedback.style.color = 'red';
             return;
         }
 
-        this.addFriendFeedback.textContent = "Sending request...";
-        this.addFriendFeedback.style.color = 'black';
+        this.friendActionFeedback.textContent = "Sending request...";
+        this.friendActionFeedback.style.color = 'black';
 
         const result = await send_friend_request(name);
         if (result && result.id) {
-            this.addFriendFeedback.textContent = `Request sent to ${name}`;
-            this.addFriendFeedback.style.color = 'green';
+            this.friendActionFeedback.textContent = `Request sent to ${name}`;
+            this.friendActionFeedback.style.color = 'green';
             this.addFriendInput.value = '';
 
             // create entry
             const entry = await this.createFriendRequestEntry(result);
             this.friendListDiv.prepend(entry);
         } else {
-            this.addFriendFeedback.textContent = "Error : " + (result && result.message ? result.message : "Could not send request with this username.");
-            this.addFriendFeedback.style.color = 'red';
+            this.friendActionFeedback.textContent = "Error : " + (result && result.message ? result.message : "Could not send request with this username.");
+            this.friendActionFeedback.style.color = 'red';
         }
     }
 
