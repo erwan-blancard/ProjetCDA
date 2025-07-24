@@ -366,7 +366,11 @@ impl GameServer {
                             } else {
                                 // send game state to player when error
                                 println!("Error playing card: {:?}", result.clone().err().unwrap());
-                                self.send_game_state(player_id).await;
+                                // Envoi d'un snapshot complet GameStatus à tous les joueurs pour resync
+                                for (_, (pid, tx)) in &self.sessions.lock().await.sessions {
+                                    let state = self.game.status_for_player(*pid).unwrap();
+                                    let _ = state.to_server_response().send_unbounded(tx);
+                                }
                             }
                         }
         

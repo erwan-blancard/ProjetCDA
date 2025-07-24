@@ -235,7 +235,160 @@ impl Card for ComplexEffectCard {
                     });
                     info.actions.push(steal_action);
                 }
-                _ => {}
+                ComplexEffect::Give => {
+                    let card_name = self.base.get_name().to_lowercase();
+                    let target_index = target_indices[0];
+                    let (player, target) = if player_index < target_index {
+                        let (left, right) = game.players.split_at_mut(target_index);
+                        (&mut left[player_index], &mut right[0])
+                    } else if player_index > target_index {
+                        let (left, right) = game.players.split_at_mut(player_index);
+                        (&mut right[0], &mut left[target_index])
+                    } else {
+                        return Err("Target is player !".to_string());
+                    };
+                    // Pour Flambeau, on ne défausse pas la carte, on la transfère au joueur ciblé
+                    if card_name == "flambeau" {
+                        // 1. Infliger les dégâts
+                        let damage = self.base.get_attack();
+                        if damage > 0 {
+                            let mut attack_action = PlayAction::new();
+                            let action_target = target.damage(damage, "flambeau_damage".to_string());
+                            attack_action.targets.push(action_target);
+                            info.actions.push(attack_action);
+                        }
+                        // 2. Transférer la carte Flambeau au joueur ciblé
+                        let pos = player.hand_cards.iter().position(|c| c.get_name().to_lowercase() == "flambeau");
+                        if let Some(idx) = pos {
+                            let card = player.hand_cards.remove(idx);
+                            let id = card.get_id();
+                            target.hand_cards.push(card);
+                            // On log l'action de don
+                            let mut give_action = PlayAction::new();
+                            give_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Steal { cards: vec![id] },
+                                effect: "give".to_string(),
+                            });
+                            info.actions.push(give_action);
+                        }
+                        // 3. Pioche une carte
+                        let drawn_cards = Game::give_from_pile(&mut game.pile, player, 1);
+                        if !drawn_cards.is_empty() {
+                            let mut draw_action = PlayAction::new();
+                            draw_action.targets.push(ActionTarget {
+                                player_id: player_index as i32,
+                                action: ActionType::Draw { cards: drawn_cards },
+                                effect: "draw".to_string(),
+                            });
+                            info.actions.push(draw_action);
+                        }
+                    } else if card_name == "airtichaut" {
+                        // Airtichaut : soigne, donne toutes les autres cartes sauf elle-même
+                        let nb_cartes = player.hand_cards.len();
+                        if nb_cartes > 0 {
+                            let heal = nb_cartes * 5;
+                            let mut heal_action = PlayAction::new();
+                            let action_target = player.heal(heal as u32, "airtichaut_heal".to_string());
+                            heal_action.targets.push(action_target);
+                            info.actions.push(heal_action);
+                        }
+                        // Donner toutes les autres cartes au ciblé (sauf la carte airtichaut elle-même)
+                        // On identifie la carte airtichaut par son nom (en minuscule)
+                        let pos = player.hand_cards.iter().position(|c| c.get_name().to_lowercase() == "airtichaut");
+                        let mut to_give = Vec::new();
+                        for (i, card) in player.hand_cards.iter().enumerate() {
+                            if Some(i) != pos {
+                                to_give.push(card.get_id());
+                            }
+                        }
+                        let mut given_ids = Vec::new();
+                        // On retire les cartes à donner en partant du plus grand index pour ne pas décaler les indices
+                        to_give.sort_unstable_by(|a, b| b.cmp(a));
+                        for id in to_give {
+                            if let Some(idx) = player.hand_cards.iter().position(|c| c.get_id() == id) {
+                                let card = player.hand_cards.remove(idx);
+                                given_ids.push(card.get_id());
+                                target.hand_cards.push(card);
+                            }
+                        }
+                        if !given_ids.is_empty() {
+                            let mut give_action = PlayAction::new();
+                            give_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Steal { cards: given_ids },
+                                effect: "give".to_string(),
+                            });
+                            info.actions.push(give_action);
+                        }
+                    } else if card_name == "shuriken" {
+                        // Shuriken : donne 2 cartes au ciblé, puis pioche 2 cartes
+                        use rand::seq::SliceRandom;
+                        let mut rng = rand::thread_rng();
+                        let hand_len = player.hand_cards.len();
+                        let mut indices: Vec<usize> = (0..hand_len).collect();
+                        indices.shuffle(&mut rng);
+                        let mut to_remove: Vec<usize> = indices.into_iter().take(2).collect();
+                        to_remove.sort_unstable_by(|a, b| b.cmp(a)); // du plus grand au plus petit
+                        let mut given_ids = Vec::new();
+                        for i in to_remove {
+                            if i < player.hand_cards.len() {
+                                let card = player.hand_cards.remove(i);
+                                given_ids.push(card.get_id());
+                                target.hand_cards.push(card);
+                            }
+                        }
+                        if !given_ids.is_empty() {
+                            let mut give_action = PlayAction::new();
+                            give_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Steal { cards: given_ids },
+                                effect: "give".to_string(),
+                            });
+                            info.actions.push(give_action);
+                        }
+                        // Pioche 2 cartes
+                        let drawn_cards = Game::give_from_pile(&mut game.pile, player, 2);
+                        if !drawn_cards.is_empty() {
+                            let mut draw_action = PlayAction::new();
+                            draw_action.targets.push(ActionTarget {
+                                player_id: player_index as i32,
+                                action: ActionType::Draw { cards: drawn_cards },
+                                effect: "draw".to_string(),
+                            });
+                            info.actions.push(draw_action);
+                        }
+                    } else {
+                        // Défausser la carte jouée (celle qui déclenche le don)
+                        let pos = player.hand_cards.iter().position(|c| c.get_name().to_lowercase() == card_name);
+                        if let Some(idx) = pos {
+                            let _ = player.hand_cards.remove(idx);
+                        }
+                        // Donner toutes les autres cartes au ciblé
+                        let mut to_give = Vec::new();
+                        for i in (0..player.hand_cards.len()).rev() {
+                            to_give.push(player.hand_cards.remove(i));
+                        }
+                        let mut given_ids = Vec::new();
+                        for card in to_give {
+                            given_ids.push(card.get_id());
+                            target.hand_cards.push(card);
+                        }
+                        if !given_ids.is_empty() {
+                            let mut give_action = PlayAction::new();
+                            give_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Steal { cards: given_ids },
+                                effect: "give".to_string(),
+                            });
+                            info.actions.push(give_action);
+                        }
+                    }
+                }
+                &ComplexEffect::Exchange => {
+                    // TODO: implémenter la mécanique d'échange si besoin
+                    todo!("Effet Exchange non encore implémenté");
+                }
             }
         }
         Ok((info, buffs_used))

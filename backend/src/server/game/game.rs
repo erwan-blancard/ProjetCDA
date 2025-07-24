@@ -169,6 +169,10 @@ impl Game {
                 // remove used buffs
                 self.remove_player_buffs_used(player_index, buffs_used);
 
+                // Vérification de l'index avant suppression
+                if card_index >= self.players[player_index].hand_cards.len() {
+                    return Err(format!("Invalid card index: {}", card_index));
+                }
                 let card = self.players[player_index].hand_cards.remove(card_index);
                 // grant card buffs to player
                 for buff in card.get_buffs() {

@@ -20,7 +20,9 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "give" }
+    ]
   },
   {
     "name": "Arc-En-Ciel",
@@ -629,7 +631,9 @@
     "attack": 9,
     "heal": 0,
     "draw": 1,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "give" }
+    ]
   },
   {
     "name": "Flambée",
@@ -1091,12 +1095,14 @@
     "element": "Air",
     "stars": "Two",
     "kind": "Weapon",
-    "desc": "Enlevez 4 points à votre adversaire. Replacez ensuite cette carte dans votre main.",
+    "desc": "Donnez 2 cartes à votre adversaire puis piochez 2 cartes.",
     "type": "BasicCard",
-    "attack": 4,
+    "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "give" }
+    ]
   },
   {
     "name": "Sismarteau",
