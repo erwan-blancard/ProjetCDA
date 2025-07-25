@@ -38,6 +38,8 @@ export class FriendRequestEntry extends HTMLElement {
         super();
 
         this.label = document.createElement("span");
+        this.label.className = "friend-request-entry-label";
+
         const btns = document.createElement("div");
         btns.className = "button-container";
 
@@ -143,9 +145,12 @@ export class FriendPanel extends HTMLElement {
     requests = [];
 
     lobbyJoinedCallback = null;
+    showFriendProfileCallback = null;
 
     constructor() {
         super();
+
+        this.className = "floating-panel";
 
         this.closeBtn = document.createElement("i");
         this.closeBtn.className = "fas fa-times-circle";
@@ -156,6 +161,7 @@ export class FriendPanel extends HTMLElement {
         this.appendChild(this.closeBtn);
 
         const title = document.createElement("h3");
+        title.className = "panel-title";
         title.textContent = PANEL_TITLE_TEXT;
         this.appendChild(title);
 
@@ -166,6 +172,10 @@ export class FriendPanel extends HTMLElement {
         this.friendListDiv = document.createElement("div");
         this.friendListDiv.className = "friend-list";
         this.appendChild(this.friendListDiv);
+
+        const hline = document.createElement("div");
+        hline.className = "hline";
+        this.appendChild(hline);
 
         const sendRequestLabel = document.createElement("label");
         sendRequestLabel.textContent = SEND_REQUEST_LABEL;
@@ -264,6 +274,13 @@ export class FriendPanel extends HTMLElement {
             }
         }
 
+        // view profile on name click
+        entry.label.onclick = async () => {
+            if (this.showFriendProfileCallback != null) {
+                this.showFriendProfileCallback(entry.info.account_id);
+            }
+        };
+
         return entry;
     }
 
@@ -329,6 +346,13 @@ export class FriendPanel extends HTMLElement {
             // deletes the declined request, allowing the user to send a new request
             if (await delete_friend(entry.username) != null) {
                 entry.remove();
+            }
+        };
+
+        // view profile on name click
+        entry.label.onclick = async () => {
+            if (this.showFriendProfileCallback != null) {
+                this.showFriendProfileCallback(APP_STATE.account.id == entry.info.account1 ? entry.info.account2 : entry.info.account1);
             }
         };
 

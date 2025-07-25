@@ -257,6 +257,7 @@ pub fn delete_friendship(conn: &mut PgConnection, account_id: i32, username: &st
 #[derive(Queryable, Serialize)]
 pub struct FriendWithLobbyStatus {
     pub id: i32,
+    pub account_id: i32,
     pub username: String,
     pub lobby_id: Option<LobbyId>,
 }
@@ -288,6 +289,7 @@ pub fn list_friends_with_status_for_account(
         let lobby_id = get_lobby_id_for_user(friend_account_id, &lobbies);
         friends_with_status.push(FriendWithLobbyStatus {
             id,
+            account_id: friend_account_id,
             username: other_username,
             lobby_id,
         });

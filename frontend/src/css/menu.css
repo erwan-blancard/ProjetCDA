@@ -26,6 +26,20 @@ body {
 }
 
 
+.floating-panel {
+    display: none;  /* start hidden */
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 0.6em;
+    width: 16em;
+    top: 1em;
+    right: 1em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 5;
+}
+
 .panel-backdrop {
     display: none;  /* start hidden */
     position: fixed;
@@ -36,7 +50,11 @@ body {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 4;
+    z-index: 5;
+}
+
+.panel-title {
+    margin-top: 0px;
 }
 
 

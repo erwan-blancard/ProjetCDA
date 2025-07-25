@@ -90,11 +90,13 @@ export class FriendDTO {
 
 export class FriendWithLobbyStatusDTO {
     id;
+    account_id;
     username;
     lobby_id;
 
     constructor(data) {
         this.id = data.id;
+        this.account_id = data.account_id;
         this.username = data.username;
         this.lobby_id = data.lobby_id;
     }

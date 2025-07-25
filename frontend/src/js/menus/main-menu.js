@@ -1,4 +1,4 @@
-import { get_current_game_info } from '../api/account';
+import { get_account, get_current_game_info } from '../api/account';
 import { LobbyList } from '../ui/lobby_list';
 import { ViewMgr } from '../ui/viewmgr';
 import { api_url, login_guard } from '../utils';
@@ -6,7 +6,7 @@ import { create_lobby, current_lobby_set_ready_state, get_current_lobby, leave_c
 import { displayInput, displayPopup, displayYesNo } from '../ui/popup';
 import { LobbyView } from '../ui/lobby';
 import { FriendPanel } from '../ui/friend_panel';
-import { ProfilePanel } from '../ui/profile_panel';
+import { OtherProfilePanel, ProfilePanel } from '../ui/profile_panel';
 import { APP_STATE } from '../app_state';
 
 
@@ -149,6 +149,31 @@ profilePanel.closeBtn.addEventListener('click', closeProfilePanel);
 profilePanelBackdrop.addEventListener('click', closeProfilePanel);
 
 
+// Other Profile panel elements
+/** @type {OtherProfilePanel} */
+const otherProfilePanel = document.getElementById("other-profile-panel");
+const otherProfilePanelBackdrop = document.getElementById('other-profile-panel-backdrop');
+
+function showOtherProfilePanel() {
+    otherProfilePanel.style.display = 'block';
+    otherProfilePanelBackdrop.style.display = 'block';
+
+    // disable interactions for views
+    viewMgr.setInert();
+}
+
+function closeOtherProfilePanel() {
+    otherProfilePanel.style.display = 'none';
+    otherProfilePanelBackdrop.style.display = 'none';
+
+    // re-enable interactions for views
+    viewMgr.removeInert();
+}
+
+otherProfilePanel.closeBtn.addEventListener('click', closeOtherProfilePanel);
+otherProfilePanelBackdrop.addEventListener('click', closeOtherProfilePanel);
+
+
 // Friends panel elements
 /** @type {FriendPanel} */
 const friendPanel = document.getElementById('friend-panel');
@@ -188,6 +213,16 @@ function updateShowPanelButtonColor(pending_updates=true) {
         btnShowFriendList.style.backgroundColor = "white";
     }
 }
+
+
+async function showFriendProfileCallback(account_id) {
+    // closeFriendPanel();
+    showOtherProfilePanel();
+    const account = await get_account(account_id);
+    otherProfilePanel.update(account);
+}
+friendPanel.showFriendProfileCallback = showFriendProfileCallback;
+
 
 btnShowFriendList.addEventListener('click', () => {
   const isHidden = friendPanel.style.display === 'none' || friendPanel.style.display === '';

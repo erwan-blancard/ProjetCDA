@@ -72,6 +72,8 @@ export class ProfilePanel extends HTMLElement {
     constructor(accountDTO) {
         super();
 
+        this.className = "floating-panel";
+
         this.closeBtn = document.createElement("i");
         this.closeBtn.className = "fas fa-times-circle";
         this.closeBtn.style.position = "absolute";
@@ -135,5 +137,53 @@ export class ProfilePanel extends HTMLElement {
 }
 
 
+/** 
+ * Panel to show any profile
+ */
+export class OtherProfilePanel extends HTMLElement {
+    /** @type {AccountDTO | null} */
+    accountDTO;
+
+    closeBtn;
+    profileInfo;
+
+    constructor(accountDTO) {
+        super();
+
+        this.className = "floating-panel";
+
+        this.closeBtn = document.createElement("i");
+        this.closeBtn.className = "fas fa-times-circle";
+        this.closeBtn.style.position = "absolute";
+        this.closeBtn.style.top = "0.4em";
+        this.closeBtn.style.right = "0.4em";
+        this.closeBtn.style.cursor = "pointer";
+
+        const title = document.createElement("h3");
+        title.className = "panel-title";
+        title.textContent = "Profile";
+
+        this.profileInfo = new ProfileInfo(accountDTO);
+
+        this.appendChild(this.closeBtn);
+        this.appendChild(title);
+        this.appendChild(this.profileInfo);
+
+        this.update(accountDTO);
+    }
+
+    async update(accountDTO) {
+        if (accountDTO) {
+            this.accountDTO = accountDTO;
+
+            this.profileInfo.update(accountDTO);
+        }
+
+    }
+
+}
+
+
 customElements.define("profile-info", ProfileInfo);
 customElements.define("profile-panel", ProfilePanel);
+customElements.define("other-profile-panel", OtherProfilePanel);
