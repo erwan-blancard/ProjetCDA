@@ -2,11 +2,11 @@ import { AccountDTO, AccountStatsDTO } from "./api/dto";
 
 /** use IndexedDB API to store account names based on account id
  * to reduce amount of requests to make to the api
- * @type IDBDatabase */
+ * @type {IDBDatabase | null} */
 let DB;
 
 const DBNAME = "RandomiCache";
-const DBVERSION = 2;
+const DBVERSION = 3;
 const ACCOUNT_NAMES_STORE = "accounts";
 const ACCOUNT_STATS_NAMES_STORE = "account_stats";
 /** in ms */
@@ -14,21 +14,15 @@ const ACCOUNT_EXPIRATION_TIME = 60 * 60 * 1000	// 1 hour
 const ACCOUNT_STATS_EXPIRATION_TIME = 60 * 1000 // 1 min
 
 
-// const request = indexedDB.open(DBNAME, DBVERSION);
+function checkObjectStores(db) {
+	if (!db.objectStoreNames.contains(ACCOUNT_NAMES_STORE)) {
+		db.createObjectStore(ACCOUNT_NAMES_STORE, { keyPath: "account.id" });
+	}
+	if (!db.objectStoreNames.contains(ACCOUNT_STATS_NAMES_STORE)) {
+		db.createObjectStore(ACCOUNT_STATS_NAMES_STORE, { keyPath: "account_stats.account_id" });
+	}
+}
 
-// request.onerror = (event) => {
-// 	console.log(`Error opening cache DB: ${event.target.error?.message}`);
-// };
-
-// request.onupgradeneeded = (event) => {
-//     DB = event.target.result;
-
-//     DB.createObjectStore(ACCOUNT_NAMES_STORE, { keyPath: "id" /* AccountDTO wrapped in { "account", "date" } obj */ });
-
-// 	DB.onerror = (event) => {
-// 		console.error(`Database error: ${event.target.error?.message}`);
-// 	};
-// };
 
 let dbReady = new Promise((resolve, reject) => {
 	const request = indexedDB.open(DBNAME, DBVERSION);
@@ -40,12 +34,7 @@ let dbReady = new Promise((resolve, reject) => {
 
 	request.onupgradeneeded = (event) => {
 		const db = event.target.result;
-		if (!db.objectStoreNames.contains(ACCOUNT_NAMES_STORE)) {
-			db.createObjectStore(ACCOUNT_NAMES_STORE, { keyPath: "account.id" });
-		}
-		if (!db.objectStoreNames.contains(ACCOUNT_STATS_NAMES_STORE)) {
-			db.createObjectStore(ACCOUNT_STATS_NAMES_STORE, { keyPath: "account_stats.account_id" });
-		}
+		checkObjectStores(db);
 	};
 
 	request.onsuccess = (event) => {
