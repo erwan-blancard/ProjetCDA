@@ -9,32 +9,56 @@ const WAITING_FOR_STATS_HTML = "Waiting for stats...";
 const ERROR_STATS_HTML = '<span style="color: red;">Error querying stats for user</span>';
 
 
+export class ProfileStats extends HTMLElement {
+    /** @type {AccountStatsDTO | null} */
+    accountStatsDTO;
+
+    constructor(accountStatsDTO) {
+        super();
+
+        this.innerHTML = WAITING_FOR_STATS_HTML;
+
+        this.update(accountStatsDTO);
+    }
+
+    update(accountStatsDTO) {
+        if (accountStatsDTO) {
+            this.accountStatsDTO = accountStatsDTO;
+
+            this.innerHTML = `
+                <h3>Stats</h3>
+                <p>Level: ${this.accountStatsDTO.level+1}</p>
+                <p>Games played: ${this.accountStatsDTO.games_played}</p>
+                <p>Games won: ${this.accountStatsDTO.games_won}</p>
+            `;
+        }
+    }
+
+}
+
+
 /**
  * Element to show profile info
  */
 export class ProfileInfo extends HTMLElement {
     /** @type {AccountDTO | null} */
     accountDTO;
-    /** @type {AccountStatsDTO | null} */
-    accountStatsDTO;
 
     username;
-    statsList;
+    profileStats;
 
     constructor(accountDTO) {
         super();
 
-        this.username = document.createElement("p");
+        this.username = document.createElement("h3");
         this.username.textContent = "...";
-        this.statsList = document.createElement("div");
-        this.statsList.className = "stats-list";
+        this.profileStats = new ProfileStats();
 
         this.innerHTML += '<div class="hline" style="width: 25%"></div>';
-        this.innerHTML += '<h4>Stats</h4>';
         // if appendChild() was used before innerHTML += ..., ref to this.username
         // would have been lost because new elements would have been created
         this.prepend(this.username);
-        this.appendChild(this.statsList);
+        this.appendChild(this.profileStats);
 
         this.update(accountDTO);
     }
@@ -45,13 +69,12 @@ export class ProfileInfo extends HTMLElement {
 
             this.username.textContent = this.accountDTO.username;
 
-            this.statsList.innerHTML = WAITING_FOR_STATS_HTML;
-            this.accountStatsDTO = await get_account_stats(this.accountDTO.id);
-            if (this.accountStatsDTO) {
+            const accountStatsDTO = await get_account_stats(this.accountDTO.id);
+            if (accountStatsDTO) {
                 // TODO show stats
-                this.statsList.innerHTML = this.accountStatsDTO;
+                this.profileStats.update(accountStatsDTO);
             } else {
-                this.statsList.innerHTML = ERROR_STATS_HTML;
+                this.profileStats.innerHTML = ERROR_STATS_HTML;
             }
         }
     }
@@ -184,6 +207,7 @@ export class OtherProfilePanel extends HTMLElement {
 }
 
 
+customElements.define("profile-stats", ProfileStats);
 customElements.define("profile-info", ProfileInfo);
 customElements.define("profile-panel", ProfilePanel);
 customElements.define("other-profile-panel", OtherProfilePanel);
