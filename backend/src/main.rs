@@ -14,6 +14,9 @@ use server::server::GameServerHandle;
 use tokio::time::Instant;
 use tokio::{self, spawn};
 
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
 
 // expose modules
 
@@ -23,12 +26,14 @@ mod routes;
 mod database;
 mod server;
 mod email;
+mod docs;
 
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 use tokio::task::{spawn_local, JoinHandle};
 use uuid::Uuid;
 
+use crate::docs::ApiDoc;
 use crate::email::mailer::Mailer;
 use crate::routes::game::{Lobbies, Lobby, LobbyId};
 use crate::routes::sse::Broadcaster;
@@ -140,7 +145,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(mailer.clone()))
             .wrap(cors)
             .wrap(auth::JwtMiddleware)
-            .wrap(NormalizePath::trim())    // normalizes paths (no trailing "/")
 
             // auth
             .configure(routes::auth::configure_routes)
@@ -159,6 +163,12 @@ async fn main() -> std::io::Result<()> {
 
             // ws
             .service(connect_to_ws)
+
+            // doc
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", ApiDoc::openapi())
+            )
     })
     .bind(("0.0.0.0", 8080))?
     .run()

@@ -4,6 +4,7 @@ use diesel::PgConnection;
 use diesel::prelude::*;
 use serde_derive::{Serialize, Deserialize};
 use bcrypt::{hash, verify, DEFAULT_COST};
+use utoipa::ToSchema;
 
 use crate::database::models::*;
 use crate::database::schema::*;
@@ -254,7 +255,7 @@ pub fn delete_friendship(conn: &mut PgConnection, account_id: i32, username: &st
 }
 
 
-#[derive(Queryable, Serialize)]
+#[derive(Queryable, Serialize, ToSchema)]
 pub struct FriendWithLobbyStatus {
     pub id: i32,
     pub account_id: i32,

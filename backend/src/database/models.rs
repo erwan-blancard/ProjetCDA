@@ -1,6 +1,7 @@
 use diesel::prelude::*;
 use serde_derive::Serialize;
 use chrono::NaiveDateTime;
+use utoipa::ToSchema;
 
 
 #[derive(Queryable, Selectable, Insertable, Serialize)]
@@ -52,7 +53,7 @@ pub struct AccountStats {
     pub best_rank: i32,
 }
 
-#[derive(Queryable, Selectable, Insertable, Serialize)]
+#[derive(Queryable, Selectable, Insertable, Serialize, ToSchema)]
 #[diesel(table_name = super::schema::friends)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Friend {

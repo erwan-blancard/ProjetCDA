@@ -38,3 +38,8 @@ parking_lot = "0.12.4"
 
 lettre = "0.11"
 nanoid = "0.4.0"
+
+# api doc
+utoipa = { version = "5.4.0", features = ["actix_extras", "chrono", "time", "openapi_extensions"] }
+utoipa-actix-web = "0.1.2"
+utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
