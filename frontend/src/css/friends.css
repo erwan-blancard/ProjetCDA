@@ -1,16 +1,6 @@
 friend-panel {
-    display: none;  /* start hidden */
-    position: fixed;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    padding: 15px;
-    width: 300px;
-    top: 80px;
-    right: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    font-family: sans-serif;
-    z-index: 5;
+    width: 14em;
+    top: 4em;
 
     .empty-list-label {
         font-size: 0.75em;
@@ -18,26 +8,12 @@ friend-panel {
     };
 }
 
-friend-panel h3 {
-    margin-top: 0px;
+friend-panel .panel-title {
     margin-bottom: 0.4em;
 }
 
 friend-panel button.styled {
     font-size: 0.75em;
-}
-
-#friend-panel-backdrop {
-    display: none;  /* start hidden */
-    position: fixed;
-    background: rgba(0, 0, 0, 0.3);
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 4;
 }
 
 #add-friend-name {
@@ -73,6 +49,8 @@ friend-entry {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: clip ellipsis;
+        /* show as pointer because clicking on the label opens up the profile panel for the account */
+        cursor: pointer;
     };
 
     .button-container {
@@ -107,11 +85,13 @@ friend-request-entry {
     align-items: center;
     margin-bottom: 5px;
 
-    span {
+    .friend-request-entry-label {
         max-width: 8em;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: clip ellipsis;
+        /* show as pointer because clicking on the label opens up the profile panel for the account */
+        cursor: pointer;
     };
 
     button {

@@ -1,4 +1,4 @@
-import { get_current_game_info } from '../api/account';
+import { get_account, get_current_game_info } from '../api/account';
 import { LobbyList } from '../ui/lobby_list';
 import { ViewMgr } from '../ui/viewmgr';
 import { api_url, login_guard } from '../utils';
@@ -6,6 +6,7 @@ import { create_lobby, current_lobby_set_ready_state, get_current_lobby, leave_c
 import { displayInput, displayPopup, displayYesNo } from '../ui/popup';
 import { LobbyView } from '../ui/lobby';
 import { FriendPanel } from '../ui/friend_panel';
+import { OtherProfilePanel, ProfilePanel } from '../ui/profile_panel';
 import { APP_STATE } from '../app_state';
 
 
@@ -70,13 +71,18 @@ document.getElementById("lobby-direct-join").onclick = async () => {
 };
 
 
+// should be hidden by default
+const sideActionsContainer = document.getElementById("side-actions-container");
+sideActionsContainer.style.visibility = "hidden";
+
+
+// decide which view to show
 try {
     // check if lobby
     const lobbyDTO = await get_current_lobby();
     lobbyViewIDElement.textContent = lobbyDTO.id;
     lobbyViewElement.update(lobbyDTO);
     if (lobbyDTO != null) {
-        APP_STATE.lobby = lobbyDTO;
         viewMgr.setPrimaryView(currentlobbyview);
     } else {
         viewMgr.setPrimaryView(mainview);
@@ -85,6 +91,9 @@ try {
     console.log(`Error getting current lobby: ${error.message}`);
     viewMgr.setPrimaryView(mainview);
 }
+
+sideActionsContainer.style.visibility = "visible";
+sideActionsContainer.classList.add("show");     // animate
 
 
 document.getElementById("to-create-lobby").onclick = () => {
@@ -100,12 +109,77 @@ document.getElementById("to-join-lobby").onclick = () => {
 };
 
 
+// Profile panel elements
+/** @type {ProfilePanel} */
+const profilePanel = document.getElementById("profile-panel");
+const btnShowProfile = document.getElementById('show-profile');
+const profilePanelBackdrop = document.getElementById('profile-panel-backdrop');
+
+// update profile
+profilePanel.update(account);
+
+function showProfilePanel() {
+    profilePanel.style.display = 'block';
+    profilePanelBackdrop.style.display = 'block';
+
+    profilePanel.switchTab("profile-tab");
+
+    // disable interactions for views
+    viewMgr.setInert();
+}
+
+function closeProfilePanel() {
+    profilePanel.style.display = 'none';
+    profilePanelBackdrop.style.display = 'none';
+
+    // re-enable interactions for views
+    viewMgr.removeInert();
+}
+
+btnShowProfile.addEventListener('click', () => {
+  const isHidden = profilePanel.style.display === 'none' || profilePanel.style.display === '';
+  if (isHidden) {
+    showProfilePanel();
+  } else {
+    closeProfilePanel();
+  }
+});
+
+profilePanel.closeBtn.addEventListener('click', closeProfilePanel);
+profilePanelBackdrop.addEventListener('click', closeProfilePanel);
+
+
+// Other Profile panel elements
+/** @type {OtherProfilePanel} */
+const otherProfilePanel = document.getElementById("other-profile-panel");
+const otherProfilePanelBackdrop = document.getElementById('other-profile-panel-backdrop');
+
+function showOtherProfilePanel() {
+    otherProfilePanel.style.display = 'block';
+    otherProfilePanelBackdrop.style.display = 'block';
+
+    // disable interactions for views
+    viewMgr.setInert();
+}
+
+function closeOtherProfilePanel() {
+    otherProfilePanel.style.display = 'none';
+    otherProfilePanelBackdrop.style.display = 'none';
+
+    // re-enable interactions for views
+    viewMgr.removeInert();
+}
+
+otherProfilePanel.closeBtn.addEventListener('click', closeOtherProfilePanel);
+otherProfilePanelBackdrop.addEventListener('click', closeOtherProfilePanel);
+
+
 // Friends panel elements
 /** @type {FriendPanel} */
 const friendPanel = document.getElementById('friend-panel');
 const btnShowFriendList = document.getElementById('show-friend-list');
 const friendPanelBackdrop = document.getElementById('friend-panel-backdrop');
-const closeFriendButton = document.getElementById('close-friend-button');
+const closeFriendButton = friendPanel.closeBtn;
 
 friendPanel.lobbyJoinedCallback = lobbyJoinedCallback;
 
@@ -140,25 +214,22 @@ function updateShowPanelButtonColor(pending_updates=true) {
     }
 }
 
+
+async function showFriendProfileCallback(account_id) {
+    // closeFriendPanel();
+    showOtherProfilePanel();
+    const account = await get_account(account_id);
+    otherProfilePanel.update(account);
+}
+friendPanel.showFriendProfileCallback = showFriendProfileCallback;
+
+
 btnShowFriendList.addEventListener('click', () => {
   const isHidden = friendPanel.style.display === 'none' || friendPanel.style.display === '';
   if (isHidden) {
     friendPanel.updateFriendRequests();
     friendPanel.updateFriendList();
 
-    // Ajoute la section demandes d'amis en haut du panneau si pas déjà présente
-    if (!friendPanel.contains(friendPanel.friendRequestsDiv)) {
-      friendPanel.insertBefore(friendPanel.friendRequestsDiv, friendPanel.firstChild);
-      // Optionnel: titre
-      if (!document.getElementById('friend-requests-title')) {
-        const title = document.createElement('div');
-        title.id = 'friend-requests-title';
-        title.textContent = 'Demandes d\'amis reçues';
-        title.style.fontWeight = 'bold';
-        title.style.marginBottom = '5px';
-        friendPanel.insertBefore(title, friendPanel.friendRequestsDiv);
-      }
-    }
     showFriendPanel();
   } else {
     closeFriendPanel();

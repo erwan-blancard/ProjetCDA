@@ -1,0 +1,24 @@
+profile-panel .tab {
+    border: none;
+    padding: 0.4em;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+profile-panel .tab-content {
+    font-size: 0.8em;
+}
+
+other-profile-panel profile-info {
+    font-size: 0.8em;
+}
+
+profile-stats h3 {
+    margin-top: 0px;
+    margin-bottom: 0.4em;
+}
+
+profile-stats p {
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+}

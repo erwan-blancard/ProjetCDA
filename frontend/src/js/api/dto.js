@@ -90,12 +90,43 @@ export class FriendDTO {
 
 export class FriendWithLobbyStatusDTO {
     id;
+    account_id;
     username;
     lobby_id;
 
     constructor(data) {
         this.id = data.id;
+        this.account_id = data.account_id;
         this.username = data.username;
         this.lobby_id = data.lobby_id;
+    }
+}
+
+
+export class AccountStatsDTO {
+    id;
+    account_id;
+    first_log;
+    last_log;
+    games_played;
+    games_won;
+    wallet;
+    experience;
+    level;
+    season_rank;
+    best_rank;
+
+    constructor(data) {
+        this.id = data.id;
+        this.account_id = data.account_id;
+        this.first_log = data.first_log;
+        this.last_log = data.last_log;
+        this.games_played = data.games_played;
+        this.games_won = data.games_won;
+        this.wallet = data.wallet;
+        this.experience = data.experience;
+        this.level = data.level;
+        this.season_rank = data.season_rank;
+        this.best_rank = data.best_rank;
     }
 }
