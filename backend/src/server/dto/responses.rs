@@ -4,15 +4,16 @@ use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::UnboundedSender;
+use utoipa::ToSchema;
 
-use crate::server::game::buffs::{Buff, BuffVariant};
+use crate::server::game::buffs::BuffVariant;
 use crate::server::game::cards::card::CardId;
 use crate::server::game::play_info::PlayAction;
 use crate::server::game::player::PlayerId;
 
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct PlayerProfile {
     pub id: PlayerId,
     pub name: String

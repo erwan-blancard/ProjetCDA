@@ -1,9 +1,19 @@
 use actix_web::{error, web, HttpRequest, HttpMessage, HttpResponse, Responder};
 use actix_web::get;
 
+use crate::database::models::AccountStats;
 use crate::{database::actions, DbPool};
 
-
+#[utoipa::path(
+    get,
+    path = "/account/stats",
+    responses(
+        (status = 200, description = "Get stats for your account", body = AccountStats),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("jwt" = [])),
+    tag = "Stats"
+)]
 #[get("/account/stats")]
 async fn get_my_account_stats(req: HttpRequest, pool: web::Data<DbPool>) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
@@ -23,7 +33,18 @@ async fn get_my_account_stats(req: HttpRequest, pool: web::Data<DbPool>) -> acti
     Ok(HttpResponse::Ok().json(stats))
 }
 
-
+#[utoipa::path(
+    get,
+    path = "/account/stats/{account_id}",
+    params(
+        ("account_id" = i32, Path, description = "ID of the account to get stats for")
+    ),
+    responses(
+        (status = 200, description = "Get stats of an account", body = AccountStats),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Stats"
+)]
 #[get("/account/stats/{account_id}")]
 async fn get_other_account_stats(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> actix_web::Result<impl Responder> {
     let (account_id,) = path.into_inner();

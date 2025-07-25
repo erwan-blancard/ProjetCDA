@@ -1,17 +1,25 @@
-use actix_web::{error, web, HttpRequest, HttpMessage, HttpResponse, Responder};
-use actix_web::{get, patch, post};
+use actix_web::{error, web, HttpResponse, Responder};
+use actix_web::post;
 use serde_derive::Deserialize;
 
 use crate::email::mailer::Mailer;
 use crate::{database::actions, DbPool};
 
-
-#[derive(Deserialize)]
-struct ResetRequest {
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct ResetRequest {
     email: String,
 }
 
-
+#[utoipa::path(
+    post,
+    path = "/account/request-password-reset",
+    request_body = ResetRequest,
+    responses(
+        (status = 200, description = "Password reset request sent to email address"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Settings"
+)]
 #[post("/account/request-password-reset")]
 async fn request_password_reset_token(json: web::Json<ResetRequest>, pool: web::Data<DbPool>, mailer: web::Data<Mailer>) -> actix_web::Result<impl Responder> {
     let email = json.email.clone();
@@ -46,8 +54,8 @@ async fn request_password_reset_token(json: web::Json<ResetRequest>, pool: web::
 }
 
 
-#[derive(Deserialize)]
-struct ResetPassword {
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct ResetPassword {
     token: String,
     new_password: String,
 }
@@ -75,7 +83,18 @@ impl std::fmt::Display for ResetPasswordError {
 
 impl std::error::Error for ResetPasswordError {}
 
-
+#[utoipa::path(
+    post,
+    path = "/account/reset-password",
+    request_body = ResetPassword,
+    responses(
+        (status = 200, description = "Password reset successful"),
+        (status = 400, description = "Token expired or already used"),
+        (status = 404, description = "Token not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Settings"
+)]
 #[post("/account/reset-password")]
 async fn reset_password(json: web::Json<ResetPassword>, pool: web::Data<DbPool>) -> actix_web::Result<impl Responder> {
     let result = web::block(move || {

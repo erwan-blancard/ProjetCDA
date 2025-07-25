@@ -205,6 +205,16 @@ impl Broadcaster {
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/events",
+    responses(
+        (status = 200, description = "Server-Sent Events stream for real-time updates"),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(("jwt" = [])),
+    tag = "SSE"
+)]
 #[get("/events")]
 async fn event_stream(
     req: HttpRequest,

@@ -1,9 +1,18 @@
 use actix_web::{cookie::{Cookie, SameSite}, error::{self, ErrorUnauthorized}, post, web, HttpResponse, Responder};
 
-use crate::{auth, database::actions::{self, AccountLogin, NewAccount}, DbPool};
+use crate::{auth, database::{actions::{self, AccountLogin, NewAccount}, models::FilteredAccount}, DbPool};
 
 
-
+#[utoipa::path(
+    post,
+    path = "/register",
+    request_body = NewAccount,
+    responses(
+        (status = 201, description = "Account created successfully", body = FilteredAccount),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth"
+)]
 #[post("/register")]
 async fn register(pool: web::Data<DbPool>, json: web::Json<NewAccount>) -> actix_web::Result<impl Responder> {
     let account = web::block(move || {
@@ -20,6 +29,17 @@ async fn register(pool: web::Data<DbPool>, json: web::Json<NewAccount>) -> actix
 }
 
 
+#[utoipa::path(
+    post,
+    path = "/login",
+    request_body = AccountLogin,
+    responses(
+        (status = 200, description = "Login successful, returns JWT token as string", body = String),
+        (status = 401, description = "Unauthorized or suspended account"),
+        (status = 404, description = "Account not found")
+    ),
+    tag = "Auth"
+)]
 #[post("/login")]
 async fn login(pool: web::Data<DbPool>, json: web::Json<AccountLogin>) -> actix_web::Result<impl Responder> {
     let account = web::block(move || {

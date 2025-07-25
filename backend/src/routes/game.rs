@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound};
+use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound, ErrorNotImplemented};
 use actix_web::{error, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, post, delete, patch};
 use nanoid::nanoid;
@@ -9,6 +9,7 @@ use tokio::spawn;
 use tokio::sync::oneshot;
 use uuid::Uuid;
 use serde_derive::{Serialize, Deserialize};
+use utoipa::ToSchema;
 
 use crate::routes::sse::Broadcaster;
 use crate::server::dto::{GameSessionInfo, responses::PlayerProfile};
@@ -48,7 +49,7 @@ pub fn generate_lobby_id(existing_lobbies: &LobbiesInner) -> Result<String, Stri
 
 
 /// Simplified struct for Lobby
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, ToSchema)]
 pub struct LobbyInfo {
     pub id: String,
     pub users: HashSet<i32>,
@@ -57,13 +58,14 @@ pub struct LobbyInfo {
 }
 
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, ToSchema)]
 pub struct Lobby {
     pub id: String,
     pub users: HashSet<i32>,
     pub users_ready: HashSet<i32>,
     /// if unlisted the lobby is not returned by /lobby/list route
     pub unlisted: bool,
+    #[schema(value_type = Option<String>)]
     pub game_id: Option<GameId>
 }
 
@@ -95,7 +97,7 @@ pub type Lobbies = Arc<Mutex<LobbiesInner>>;
 const LOBBY_PAGE_SIZE: usize = 20;
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct CreateLobbyInfo {
     #[serde(default)]
     pub unlisted: bool,
@@ -151,6 +153,18 @@ async fn create_game_session(
 }
 
 
+#[utoipa::path(
+    post,
+    path = "/lobby/create",
+    request_body = CreateLobbyInfo,
+    responses(
+        (status = 201, description = "Lobby created and joined", body = Lobby),
+        (status = 409, description = "User already in a lobby"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("jwt" = [])),
+    tag = "Lobby"
+)]
 #[post("/lobby/create")]
 /// create and join lobby
 async fn create_lobby(
@@ -181,6 +195,16 @@ async fn create_lobby(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/lobby/current",
+    responses(
+        (status = 302, description = "Current lobby found", body = Lobby),
+        (status = 404, description = "User is not in a lobby")
+    ),
+    security(("jwt" = [])),
+    tag = "Lobby"
+)]
 #[get("/lobby/current")]
 async fn get_current_lobby(
     req: HttpRequest,
@@ -200,14 +224,22 @@ async fn get_current_lobby(
 }
 
 
-#[derive(Debug, Serialize)]
-struct LobbyPageList {
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LobbyPageList {
     pub entries: Vec<LobbyInfo>,
     pub page: usize,
     pub page_count: usize,
 }
 
-
+#[utoipa::path(
+    get,
+    path = "/lobby/list/{page}",
+    params(("page" = usize, Path, description = "Page number (starts at 0)")),
+    responses(
+        (status = 200, description = "List of lobbies", body = LobbyPageList)
+    ),
+    tag = "Lobby"
+)]
 #[get("/lobby/list/{page}")]
 async fn list_lobbies(
     path: web::Path<(usize,)>,
@@ -230,6 +262,16 @@ async fn list_lobbies(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/lobby/find/{lobby_id}",
+    params(("lobby_id" = String, Path, description = "Lobby ID")),
+    responses(
+        (status = 302, description = "Lobby found", body = LobbyInfo),
+        (status = 404, description = "Lobby not found")
+    ),
+    tag = "Lobby"
+)]
 #[get("/lobby/find/{lobby_id}")]
 async fn get_lobby_info(
     path: web::Path<(LobbyId,)>,
@@ -248,12 +290,24 @@ async fn get_lobby_info(
 }
 
 
-#[derive(Debug, Deserialize)]
-struct LobbyJoinInfo {
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct LobbyJoinInfo {
     pub lobby_id: LobbyId,
 }
 
-
+#[utoipa::path(
+    post,
+    path = "/lobby/join",
+    request_body = LobbyJoinInfo,
+    responses(
+        (status = 200, description = "Joined lobby", body = Lobby),
+        (status = 404, description = "Lobby not found"),
+        (status = 409, description = "User already in a lobby"),
+        (status = 400, description = "Lobby is full")
+    ),
+    security(("jwt" = [])),
+    tag = "Lobby"
+)]
 #[post("/lobby/join")]
 async fn join_lobby(
     req: HttpRequest,
@@ -297,14 +351,24 @@ async fn join_lobby(
 }
 
 
-#[derive(Debug, Deserialize)]
-struct LobbyReadyInfo {
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct LobbyReadyInfo {
     pub ready: bool,
 }
 
-
-// TODO create game server when everyone is ready
-
+#[utoipa::path(
+    patch,
+    path = "/lobby/current/ready",
+    request_body = LobbyReadyInfo,
+    responses(
+        (status = 200, description = "Ready status updated"),
+        (status = 404, description = "User is not in a lobby"),
+        (status = 409, description = "All users are already ready"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("jwt" = [])),
+    tag = "Lobby"
+)]
 #[patch("/lobby/current/ready")]
 async fn lobby_set_ready(
     req: HttpRequest,
@@ -354,6 +418,18 @@ async fn lobby_set_ready(
 }
 
 
+#[utoipa::path(
+    post,
+    path = "/lobby/current/leave",
+    responses(
+        (status = 200, description = "Left lobby"),
+        (status = 404, description = "User is not in a lobby"),
+        (status = 409, description = "All users are already ready"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("jwt" = [])),
+    tag = "Lobby"
+)]
 #[post("/lobby/current/leave")]
 async fn leave_current_lobby(
     req: HttpRequest,
@@ -396,6 +472,16 @@ async fn leave_current_lobby(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/game/find/{game_id}",
+    params(("game_id" = String, Path, description = "Game ID (UUID)")),
+    responses(
+        (status = 200, description = "Game session info", body = GameSessionInfo),
+        (status = 404, description = "Session is closed or invalid ID")
+    ),
+    tag = "Game"
+)]
 #[get("/game/find/{game_id}")]
 async fn get_game_session_info(
     path: web::Path<(GameId,)>,
@@ -417,6 +503,16 @@ async fn get_game_session_info(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/game/current",
+    responses(
+        (status = 302, description = "Current game session found", body = GameSessionInfo),
+        (status = 404, description = "No current game")
+    ),
+    security(("jwt" = [])),
+    tag = "Game"
+)]
 #[get("/game/current")]
 async fn get_current_game_session_info(
     req: HttpRequest,
@@ -464,6 +560,14 @@ async fn get_current_game_session_info(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/game/list",
+    responses(
+        (status = 200, description = "List of active game sessions", body = [GameSessionInfo])
+    ),
+    tag = "Game"
+)]
 #[get("/game/list")]
 async fn list_game_sessions(game_handlers: web::Data<GameHandlers>) -> actix_web::Result<impl Responder> {
     let game_handlers = game_handlers.lock().unwrap();
@@ -490,6 +594,8 @@ async fn list_game_sessions(game_handlers: web::Data<GameHandlers>) -> actix_web
 }
 
 
+/// TODO add admin role for account and only allow admins for this endpoint
+/// + verify logic
 #[delete("/game/kill/{game_id}")]
 async fn kill_session(path: web::Path<(GameId,)>, game_handlers: web::Data<GameHandlers>, lobbies: web::Data<Lobbies>) -> actix_web::Result<impl Responder> {
     let (game_id,) = path.into_inner();
@@ -533,6 +639,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
 
         .service(get_game_session_info)
         .service(get_current_game_session_info)
-        .service(list_game_sessions)
-        .service(kill_session);
+        .service(list_game_sessions);
+        // .service(kill_session);
 }

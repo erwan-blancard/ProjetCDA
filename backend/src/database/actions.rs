@@ -15,7 +15,7 @@ use super::models::{Account, Friend};
 
 // DTOs
 
-#[derive(Insertable, Deserialize)]
+#[derive(Insertable, Deserialize, ToSchema)]
 #[diesel(table_name = super::schema::accounts)]
 pub struct NewAccount {
     pub username: String,
@@ -23,7 +23,7 @@ pub struct NewAccount {
     pub password: String,
 }
 
-#[derive(Insertable, Deserialize)]
+#[derive(Insertable, Deserialize, ToSchema)]
 #[diesel(table_name = super::schema::accounts)]
 pub struct AccountLogin {
     pub username: String,

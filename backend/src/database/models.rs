@@ -17,7 +17,7 @@ pub struct Account {
 }
 
 // Account struct with sensible fields hidden from the user
-#[derive(Queryable, Selectable, Insertable, Serialize)]
+#[derive(Queryable, Selectable, Insertable, Serialize, ToSchema)]
 #[diesel(table_name = super::schema::accounts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FilteredAccount {
@@ -36,7 +36,7 @@ impl From<Account> for FilteredAccount {
     }
 }
 
-#[derive(Queryable, Selectable, Insertable, Serialize)]
+#[derive(Queryable, Selectable, Insertable, Serialize, ToSchema)]
 #[diesel(table_name = super::schema::account_stats)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AccountStats {
