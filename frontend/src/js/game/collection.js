@@ -1,3 +1,5 @@
+import { get_cards_json } from "../api/cards";
+
 export class CardKind {
     static FOOD = "Food";
     static SPELL = "Spell";
@@ -170,8 +172,7 @@ export class CardInfo {
 
 let cards = new Map();
 
-await fetch('/assets/cards.json')
-    .then(response => response.json()) // Parse JSON
+await get_cards_json()
     .then(cardsDb => {
         for (let i = 0; i < cardsDb.length; i++) {
             cards.set(i, new CardInfo(cardsDb[i]));
@@ -183,4 +184,3 @@ export let CARD_COLLECTION = cards;
 
 // test
 window.CARD_COLLECTION = CARD_COLLECTION;
-window.TargetType = TargetType;

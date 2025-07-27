@@ -18,7 +18,7 @@ use super::cards::target_both_card::TargetBothCard;
 
 lazy_static! {
     pub static ref CARD_DATABASE: Vec<Box<dyn Card>> = {
-        create_deck_database()
+        get_card_database()
     };
 }
 
@@ -261,28 +261,26 @@ impl<'de> Deserialize<'de> for CardInfoList {
 }
 
 
-//recuperation du deck depuis un fichier JSON
-pub fn create_deck_database() -> Vec<Box<dyn Card>> {
-    let path = "assets/cards.json";
+pub fn get_card_database() -> Vec<Box<dyn Card>> {
+    let path = std::env::var("CARDS_FILE_PATH").expect("CARDS_FILE_PATH not set !");
 
-    if !Path::new(path).exists() {
-        panic!("Fichier JSON non trouvé à : {}", path);
+    if !Path::new(&path).exists() {
+        panic!("JSON file for cards not found ({})", path);
     }
 
-    let file = File::open(path).expect("Impossible d’ouvrir le fichier JSON");
+    let file = File::open(&path).expect("Could not open JSON file");
     let reader = BufReader::new(file);
 
-    let deck_data: CardInfoList = serde_json::from_reader(reader).expect("Erreur de lecture JSON");
+    let cards_info: CardInfoList = serde_json::from_reader(reader).expect("Error reading JSON file");
 
     let mut deck: Vec<Box<dyn Card>> = Vec::new();
 
-    for card_info in deck_data.0.iter() {
+    for card_info in cards_info.0.iter() {
         deck.push(card_info.make_card());
     }
 
-    println!("Deck chargé depuis {} !", path);
     for (i, card) in deck.iter().enumerate() {
-        println!("Carte {} : {:?}", i + 1, card);
+        println!("Card {} : {:?}", i + 1, card);
     }
 
     deck

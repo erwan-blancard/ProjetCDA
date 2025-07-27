@@ -160,6 +160,8 @@ async fn main() -> std::io::Result<()> {
             .configure(routes::settings::configure_routes)
             // sse
             .configure(routes::sse::configure_routes)
+            // cards
+            .configure(routes::cards::configure_routes)
 
             // ws
             .service(connect_to_ws)

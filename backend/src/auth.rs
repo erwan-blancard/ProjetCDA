@@ -7,9 +7,10 @@ use serde::{Deserialize, Serialize};
 use chrono::{Duration, Utc};
 
 
-const IGNORE_ROUTES: [&str; 6] = [
+const IGNORE_ROUTES: [&str; 7] = [
     "/login", "/register", "/account/reset-password", "/account/request-password-reset",
-    "/swagger-ui", "/api-docs"
+    "/swagger-ui", "/api-docs",
+    "/cards"
 ];
 
 
