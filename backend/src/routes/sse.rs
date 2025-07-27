@@ -12,7 +12,7 @@ use parking_lot::Mutex;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 
-use serde_derive::Serialize;
+use serde::Serialize;
 
 use crate::database::models::Friend;
 use crate::routes::game::Lobby;

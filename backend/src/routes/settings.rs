@@ -1,6 +1,6 @@
 use actix_web::{error, web, HttpResponse, Responder};
 use actix_web::post;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 use crate::email::mailer::Mailer;
 use crate::{database::actions, DbPool};

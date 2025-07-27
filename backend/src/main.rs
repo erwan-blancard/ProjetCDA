@@ -5,7 +5,7 @@ use core::time::Duration;
 use actix_web::error::ErrorNotFound;
 use actix_web::{get, HttpMessage, HttpRequest};
 use actix_web::{web, App, HttpServer, HttpResponse};
-use actix_web::middleware::{Logger, NormalizePath};
+use actix_web::middleware::Logger;
 use actix_cors::Cors;
 use diesel::PgConnection;
 use diesel::r2d2;

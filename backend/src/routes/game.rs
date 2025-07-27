@@ -1,14 +1,14 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorForbidden, ErrorInternalServerError, ErrorNotFound, ErrorNotImplemented};
+use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorNotFound};
 use actix_web::{error, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, post, delete, patch};
 use nanoid::nanoid;
 use tokio::spawn;
 use tokio::sync::oneshot;
 use uuid::Uuid;
-use serde_derive::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
 
 use crate::routes::sse::Broadcaster;

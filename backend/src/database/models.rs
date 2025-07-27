@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use serde_derive::Serialize;
+use serde::Serialize;
 use chrono::NaiveDateTime;
 use utoipa::ToSchema;
 

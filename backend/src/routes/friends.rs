@@ -1,6 +1,6 @@
 use actix_web::{delete, error, web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, patch, post};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use utoipa::ToSchema;
 
 use crate::routes::game::Lobbies;

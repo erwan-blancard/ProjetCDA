@@ -32,6 +32,7 @@ use utoipa::{openapi::{self, security::{HttpAuthScheme, HttpBuilder, SecuritySch
         crate::routes::game::get_current_game_session_info,
         crate::routes::game::list_game_sessions,
         crate::routes::sse::event_stream,
+        crate::routes::cards::get_cards_collection,
     ),
     components(
         schemas(
@@ -52,6 +53,7 @@ use utoipa::{openapi::{self, security::{HttpAuthScheme, HttpBuilder, SecuritySch
             crate::routes::game::LobbyReadyInfo,
             crate::routes::game::CreateLobbyInfo,
             crate::server::dto::GameSessionInfo,
+            crate::routes::cards::CardInfo,
         )
     ),
     tags(
@@ -63,6 +65,7 @@ use utoipa::{openapi::{self, security::{HttpAuthScheme, HttpBuilder, SecuritySch
         (name = "Lobby", description = "Lobby management endpoints"),
         (name = "Game", description = "Game session endpoints"),
         (name = "SSE", description = "Server-Sent Events endpoints for real-time updates"),
+        (name = "Cards", description = "Card endpoints"),
     ),
     modifiers(&SecurityAddon)
 )]

@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use diesel::dsl::insert_into;
 use diesel::PgConnection;
 use diesel::prelude::*;
-use serde_derive::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use utoipa::ToSchema;
 

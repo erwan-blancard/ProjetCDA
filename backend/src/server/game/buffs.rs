@@ -1,7 +1,7 @@
 use std::{fmt::Debug};
 use serde::{Deserialize, Serialize};
 
-use crate::server::game::{cards::card::{Card, Element, Kind, Stars}, eval::EvalOp};
+use crate::server::game::{cards::card::{Element, Kind, Stars}, eval::EvalOp};
 
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
