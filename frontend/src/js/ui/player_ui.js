@@ -145,7 +145,7 @@ export class PlayerUI extends CSS2DObject {
             buffObj.position.x -= 1;
             // compensate for POV offset if Player FIXME
             const offsetZ = (this.parent instanceof Player ? 0.55 : 0.70);
-            buffObj.position.z += (offsetZ * i);
+            buffObj.position.z -= (offsetZ * i);
             this.add(buffObj);
             this.buffObjs.push(buffObj);
         }
