@@ -1,0 +1,45 @@
+# Fichiers de développement
+node_modules/
+target/
+*.log
+.env
+.env.local
+.env.development
+.env.test
+
+# Fichiers de test
+tests/
+**/*.test.js
+**/*.test.rs
+**/*_test.rs
+
+# Fichiers de documentation
+docs/
+README.md
+*.md
+
+# Fichiers temporaires
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Fichiers de build
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Fichiers de configuration locale
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers de migration (gérés par le backend)
+backend/migrations/
+
+# Fichiers de test PostgreSQL
+backend/postgres_test_workspace/
+backend/run_all_tests.ps1
+backend/TESTS_README.md 

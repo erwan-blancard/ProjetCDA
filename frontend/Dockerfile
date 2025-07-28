@@ -1,16 +1,26 @@
-FROM node:latest
+FROM node:18-alpine as builder
 
 WORKDIR /app
 
+# Copier les fichiers de dépendances
 COPY package*.json ./
-RUN npm i
-RUN npm install vite
+RUN npm ci
 
+# Copier le code source
 COPY . .
 
-EXPOSE 5173
+# Construire l'application
+RUN npm run build
 
-# CMD ["npx", "vite", "src", "--host", "0.0.0.0"]
+# Image de production avec nginx
+FROM nginx:alpine
 
-# use vite.config.ts
-CMD ["npx", "vite"]
+# Copier les fichiers construits
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copier la configuration nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

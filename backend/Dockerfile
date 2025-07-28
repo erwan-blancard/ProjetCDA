@@ -1,21 +1,40 @@
-FROM rust:1.84.1
+FROM rust:1.84.1 as builder
 
 WORKDIR /usr/src/backend
 
-COPY ./src ./src
-COPY ./migrations ./migrations
+# Copier les fichiers de dépendances
+COPY Cargo.toml Cargo.lock ./
+COPY diesel.toml ./
 
-# grab assets folder from build context "assets"
-COPY ./assets/cards.json ./assets/cards.json
+# Créer un projet factice pour télécharger les dépendances
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+RUN rm -rf src
 
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./diesel.toml ./diesel.toml
+# Copier le vrai code source
+COPY src ./src
+COPY migrations ./migrations
+COPY assets ./assets
 
-RUN cargo install --path .
+# Construire l'application
+RUN cargo build --release
 
-ENV DATABASE_URL=postgres://localhost:3307/randomi
-ENV BACKEND_URL=http://localhost:8080
+# Image de production
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/local/bin
+
+# Copier l'exécutable depuis l'étape de build
+COPY --from=builder /usr/src/backend/target/release/backend .
+
+# Copier les assets
+COPY --from=builder /usr/src/backend/assets ./assets
 
 EXPOSE 8080
 
-CMD [ "backend" ]
+CMD ["./backend"]

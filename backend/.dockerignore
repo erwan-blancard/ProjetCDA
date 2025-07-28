@@ -1,0 +1,11 @@
+target/
+Cargo.lock
+*.log
+.env
+.git/
+.gitignore
+README.md
+tests/
+postgres_test_workspace/
+run_all_tests.ps1
+TESTS_README.md 

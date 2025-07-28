@@ -1,0 +1,20 @@
+name: randomigo-frontend
+region: fra
+
+services:
+  - name: frontend
+    source_dir: /
+    github:
+      repo: your-username/ProjetCDA
+      branch: main
+      deploy_on_push: true
+    run_command: nginx -g 'daemon off;'
+    environment_slug: nginx
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 80
+    routes:
+      - path: /
+    envs:
+      - key: VITE_BACKEND_URL
+        value: https://randomigo-backend.ondigitalocean.app/api 

@@ -1,0 +1,9 @@
+[package]
+name = "postgres_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+diesel = { version = "2.2.0", features = ["postgres", "r2d2", "chrono"] }
+r2d2 = "0.8.10"
+actix-rt = "2.9" 

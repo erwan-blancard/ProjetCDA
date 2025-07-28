@@ -1,15 +1,58 @@
 name: randomigo-app
 region: fra
+
 services:
+  # Service Backend
   - name: backend
-    image:
-      registry: ${DIGITALOCEAN_REGISTRY}
-      repository: ${DIGITALOCEAN_REPO}
-      tag: latest
-    run_command: ""
-    envs: []
-    http_port: 8000
+    source_dir: /backend
+    github:
+      repo: erwan-blancard/ProjetCDA
+      branch: main
+    run_command: cargo run --release
     instance_count: 1
     instance_size_slug: basic-xxs
+    http_port: 8080
     routes:
-      - path: / 
+      - path: /api
+    envs:
+      - key: DATABASE_URL
+        value: ${DATABASE_URL}
+      - key: BACKEND_SECRET_KEY
+        value: ${BACKEND_SECRET_KEY}
+        type: SECRET
+
+  # Service Frontend
+  - name: frontend
+    source_dir: /frontend
+    github:
+      repo: erwan-blancard/ProjetCDA
+      branch: main
+    run_command: nginx -g 'daemon off;'
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 80
+    routes:
+      - path: /
+    envs:
+      - key: VITE_BACKEND_URL
+        value: https://randomigo-backend.ondigitalocean.app/api
+
+# Variables d'environnement globales
+envs:
+  - key: APP_URL
+    value: ${APP_URL}
+  - key: BACKEND_SECRET_KEY
+    value: ${BACKEND_SECRET_KEY}
+    type: SECRET 
+
+
+
+
+
+
+
+
+
+
+
+
