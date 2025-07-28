@@ -22,3 +22,22 @@ profile-stats p {
     margin-top: 0.2em;
     margin-bottom: 0.2em;
 }
+
+.logout-button {
+    border: none;
+    /* background-color: none; */
+    padding-top: 0.5em;
+    padding-bottom: 0.25em;
+    border-radius: 0.25em;
+    background-color: red;
+
+    object {
+        pointer-events: none;
+        width: 1.8em;
+        height: 1.8em;
+    }
+}
+
+.logout-button:active {
+    background-color: rgb(200, 0, 0);
+}

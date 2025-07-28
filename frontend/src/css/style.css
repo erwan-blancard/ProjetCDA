@@ -135,13 +135,20 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, tex
     /* justify-content: space-evenly; */
 }
 
-.hlayout.center, .vlayout.center {
+.hlayout.center,
+.vlayout.center {
     align-items: center;
     justify-content: center;
 }
 
-.hlayout.space-evenly, .vlayout.space-evenly {
+.hlayout.space-evenly,
+.vlayout.space-evenly {
     justify-content: space-evenly;
+}
+
+.hlayout.space-between,
+.vlayout.space-between {
+    justify-content: space-between;
 }
 
 .stretch {

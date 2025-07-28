@@ -1,5 +1,7 @@
+import { logout } from "../api/auth";
 import { AccountDTO, AccountStatsDTO } from "../api/dto";
 import { get_account_stats } from "../api/stats";
+import { displayYesNo } from "./popup";
 
 
 const PROFILE_TAB_TITLE = "Profile";
@@ -7,6 +9,8 @@ const SETTINGS_TAB_TITLE = "Settings";
 
 const WAITING_FOR_STATS_HTML = "Waiting for stats...";
 const ERROR_STATS_HTML = '<span style="color: red;">Error querying stats for user</span>';
+
+const LOGOUT_TEXT = "Logout";
 
 
 export class ProfileStats extends HTMLElement {
@@ -33,7 +37,6 @@ export class ProfileStats extends HTMLElement {
             `;
         }
     }
-
 }
 
 
@@ -81,6 +84,46 @@ export class ProfileInfo extends HTMLElement {
 }
 
 
+export class ProfileSettings extends HTMLElement {
+    /** @type {AccountDTO | null} */
+    accountDTO;
+
+    logoutBtn;
+
+    constructor(accountDTO) {
+        super();
+
+        const logoutLine = document.createElement("div");
+        logoutLine.className = "hlayout center space-between";
+        const logoutText = document.createElement("p");
+        logoutText.textContent = LOGOUT_TEXT;
+
+        this.logoutBtn = document.createElement("button");
+        this.logoutBtn.className = "logout-button";
+        this.logoutBtn.innerHTML = "<object data='/logout-white.svg' type='image/svg+xml'></object>";
+        this.logoutBtn.addEventListener("click", () => {
+            displayYesNo("Are you sure you want to log out ?", "Confirm", () => {
+                logout();
+            });
+        });
+
+        logoutLine.appendChild(logoutText);
+        logoutLine.appendChild(this.logoutBtn);
+        this.appendChild(logoutLine);
+
+        this.update(accountDTO);
+    }
+
+    update(accountDTO) {
+        if (accountDTO) {
+            this.accountDTO = accountDTO;
+            // TODO
+        }
+    }
+
+}
+
+
 /** 
  * Panel to show our profile
  */
@@ -89,7 +132,9 @@ export class ProfilePanel extends HTMLElement {
     accountDTO;
 
     closeBtn;
+    /** @type {ProfileInfo} */
     profileInfo;
+    /** @type {ProfileSettings} */
     settings;
 
     constructor(accountDTO) {
@@ -124,7 +169,7 @@ export class ProfilePanel extends HTMLElement {
         this.profileInfo = new ProfileInfo(accountDTO);
         this.profileInfo.id = "profile-tab";
         this.profileInfo.className = "tab-content";
-        this.settings = document.createElement("div");
+        this.settings = new ProfileSettings(accountDTO);
         this.settings.id = "settings-tab";
         this.settings.className = "tab-content";
 
@@ -208,6 +253,7 @@ export class OtherProfilePanel extends HTMLElement {
 
 
 customElements.define("profile-stats", ProfileStats);
+customElements.define("profile-settings", ProfileSettings);
 customElements.define("profile-info", ProfileInfo);
 customElements.define("profile-panel", ProfilePanel);
 customElements.define("other-profile-panel", OtherProfilePanel);
