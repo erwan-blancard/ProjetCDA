@@ -205,12 +205,14 @@
     "stars": "Five",
     "kind": "Spell",
     "desc": "Enlevez 15 points à tous les joueurs y compris vous. Chaque joueur défausse toutes ses cartes en main.",
-    "type": "TargetBothCard",
+    "type": "BasicCard",
     "attack": 15,
     "heal": 0,
     "draw": 0,
     "targets": "All",
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "discard_all_hands" }
+    ]
   },
   {
     "name": "Brasier",
@@ -579,7 +581,9 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "discard_hand" }
+    ]
   },
   {
     "name": "Feu de forêt",

@@ -13,6 +13,7 @@ use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 use crate::server::game::cards::card::BasicCard;
 use rand::prelude::SliceRandom;
+use rand::Rng;
 
 
 #[derive(Debug, Clone)]
@@ -20,6 +21,8 @@ pub enum ComplexEffect {
     Steal { count: usize, element: Option<String>, kind: Option<String>, stars: Option<String> },
     Give,
     Exchange,
+    DiscardHand,
+    DiscardAllHands,
 }
 
 impl<'de> Deserialize<'de> for ComplexEffect {
@@ -39,6 +42,8 @@ impl<'de> Deserialize<'de> for ComplexEffect {
                 }
                 Some("give") => Ok(ComplexEffect::Give),
                 Some("exchange") => Ok(ComplexEffect::Exchange),
+                Some("discard_hand") => Ok(ComplexEffect::DiscardHand),
+                Some("discard_all_hands") => Ok(ComplexEffect::DiscardAllHands),
                 _ => Err(serde::de::Error::custom("Unknown effect type in object")),
             }
         } else {
@@ -388,6 +393,83 @@ impl Card for ComplexEffectCard {
                 &ComplexEffect::Exchange => {
                     // TODO: implémenter la mécanique d'échange si besoin
                     todo!("Effet Exchange non encore implémenté");
+                }
+                ComplexEffect::DiscardHand => {
+                    // Feu de détresse : défausse toute la main du joueur
+                    let player = &mut game.players[player_index];
+                    let mut discarded_indices = Vec::new();
+                    
+                    // Défausser toutes les cartes de la main dans un ordre aléatoire
+                    // SAUF la carte jouée (qui sera défaussée normalement par le système)
+                    let card_name = self.base.get_name().to_lowercase();
+                    let mut cards_to_keep = Vec::new();
+                    
+                    // Séparer les cartes à défausser de celles à garder
+                    while !player.hand_cards.is_empty() {
+                        let card = player.hand_cards.remove(0);
+                        if card.get_name().to_lowercase() == card_name {
+                            // Garder la carte jouée
+                            cards_to_keep.push(card);
+                        } else {
+                            // Défausser les autres cartes
+                            discarded_indices.push(0); // Index fictif pour l'affichage
+                            player.discard_cards.push(card);
+                        }
+                    }
+                    
+                    // Remettre la carte jouée dans la main
+                    player.hand_cards.append(&mut cards_to_keep);
+                    
+                    if !discarded_indices.is_empty() {
+                        let mut discard_action = PlayAction::new();
+                        discard_action.targets.push(ActionTarget {
+                            player_id: player_index as i32,
+                            action: ActionType::Discard { cards: discarded_indices },
+                            effect: "discard_hand".to_string(),
+                        });
+                        info.actions.push(discard_action);
+                    }
+                }
+                ComplexEffect::DiscardAllHands => {
+                    // Bourrasque : défausse toutes les mains de tous les joueurs
+                    let card_name = self.base.get_name().to_lowercase();
+                    
+                    for (player_idx, player) in game.players.iter_mut().enumerate() {
+                        let mut discarded_indices = Vec::new();
+                        let mut cards_to_keep = Vec::new();
+                        
+                        // Si c'est le joueur qui joue la carte, garder la carte jouée
+                        let is_current_player = player_idx == player_index;
+                        
+                        // Défausser toutes les cartes de la main dans un ordre aléatoire
+                        while !player.hand_cards.is_empty() {
+                            let card = player.hand_cards.remove(0);
+                            
+                            // Si c'est le joueur actuel et que c'est la carte jouée, la garder
+                            if is_current_player && card.get_name().to_lowercase() == card_name {
+                                cards_to_keep.push(card);
+                            } else {
+                                // Défausser les autres cartes
+                                discarded_indices.push(0); // Index fictif pour l'affichage
+                                player.discard_cards.push(card);
+                            }
+                        }
+                        
+                        // Remettre la carte jouée dans la main du joueur actuel
+                        if is_current_player {
+                            player.hand_cards.append(&mut cards_to_keep);
+                        }
+                        
+                        if !discarded_indices.is_empty() {
+                            let mut discard_action = PlayAction::new();
+                            discard_action.targets.push(ActionTarget {
+                                player_id: player_idx as i32,
+                                action: ActionType::Discard { cards: discarded_indices },
+                                effect: "discard_all_hands".to_string(),
+                            });
+                            info.actions.push(discard_action);
+                        }
+                    }
                 }
             }
         }
