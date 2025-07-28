@@ -751,11 +751,9 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "attack_modifier": {
-        "type": "DiscardSizeModifier",
-        "discard_size_op": "Add"
-    },
-    "note": "Complex effect: not fully handled by simple modifier"
+    "complex_effects": [
+      { "type": "discard_hand_and_attack" }
+    ]
   },
   {
     "name": "Inondation",

@@ -23,6 +23,7 @@ pub enum ComplexEffect {
     Exchange,
     DiscardHand,
     DiscardAllHands,
+    DiscardHandAndAttack,
 }
 
 impl<'de> Deserialize<'de> for ComplexEffect {
@@ -44,6 +45,7 @@ impl<'de> Deserialize<'de> for ComplexEffect {
                 Some("exchange") => Ok(ComplexEffect::Exchange),
                 Some("discard_hand") => Ok(ComplexEffect::DiscardHand),
                 Some("discard_all_hands") => Ok(ComplexEffect::DiscardAllHands),
+                Some("discard_hand_and_attack") => Ok(ComplexEffect::DiscardHandAndAttack),
                 _ => Err(serde::de::Error::custom("Unknown effect type in object")),
             }
         } else {
@@ -470,6 +472,55 @@ impl Card for ComplexEffectCard {
                             info.actions.push(discard_action);
                         }
                     }
+                }
+                
+                ComplexEffect::DiscardHandAndAttack => {
+                    // Gravats : défausse la main et inflige des dégâts basés sur la taille de la pile de défausse
+                    let player = &mut game.players[player_index];
+                    let mut discarded_indices = Vec::new();
+                    
+                    // SAUF la carte jouée (qui sera défaussée normalement par le système)
+                    let card_name = self.base.get_name().to_lowercase();
+                    let mut cards_to_keep = Vec::new();
+                    
+                    // Séparer les cartes à défausser de celles à garder
+                    while !player.hand_cards.is_empty() {
+                        let card = player.hand_cards.remove(0);
+                        if card.get_name().to_lowercase() == card_name {
+                            // Garder la carte jouée
+                            cards_to_keep.push(card);
+                        } else {
+                            // Défausser les autres cartes
+                            discarded_indices.push(0); // Index fictif pour l'affichage
+                            player.discard_cards.push(card);
+                        }
+                    }
+                    
+                    // Remettre la carte jouée dans la main
+                    player.hand_cards.append(&mut cards_to_keep);
+                    
+                    if !discarded_indices.is_empty() {
+                        let mut discard_action = PlayAction::new();
+                        discard_action.targets.push(ActionTarget {
+                            player_id: player_index as i32,
+                            action: ActionType::Discard { cards: discarded_indices },
+                            effect: "discard_hand".to_string(),
+                        });
+                        info.actions.push(discard_action);
+                    }
+                    
+                    // Calculer les dégâts basés sur la taille de la pile de défausse
+                    // +1 pour inclure la carte Gravats elle-même qui sera défaussée après
+                    let discard_pile_size = (player.discard_cards.len() + 1) as u32;
+                    
+                    // Infliger les dégâts à l'adversaire
+                    let target_index = if player_index == 0 { 1 } else { 0 };
+                    let target = &mut game.players[target_index];
+                    
+                    let mut attack_action = PlayAction::new();
+                    let action_target = target.damage(discard_pile_size, "discard_hand_attack".to_string());
+                    attack_action.targets.push(action_target);
+                    info.actions.push(attack_action);
                 }
             }
         }
