@@ -1,4 +1,5 @@
 services:
+#listes des conteneurs du docker compose
   db:
     build:
       context: ./backend
@@ -6,6 +7,7 @@ services:
     container_name: randomi-db
     ports:
       - '5432:5432'
+      #a gauche nom de l'os, à droite docker (cf docker engine et systeme de namespace)
     env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}

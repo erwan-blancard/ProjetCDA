@@ -619,7 +619,10 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "heal_modifier": {
+      "type": "DoubleDiceModifier",
+      "dice_op": "Mul"
+    }
   },
   {
     "name": "Flambeau",
@@ -677,7 +680,10 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "attack_modifier": {
+      "type": "DoubleDiceModifier",
+      "dice_op": "Mul"
+    }
   },
   {
     "name": "Fléchettes",

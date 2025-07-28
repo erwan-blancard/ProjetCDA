@@ -37,6 +37,7 @@ impl Clone for Box<dyn Modifier> {
 #[serde(tag = "type")]
 pub enum ModifierInfo {
     DiceRollModifier(DiceRollModifier),
+    DoubleDiceModifier(DoubleDiceModifier),
     HandSizeModifier(HandSizeModifier),
     DiscardSizeModifier(DiscardSizeModifier),
     HandAndDiceModifier(HandAndDiceModifier),
@@ -47,6 +48,7 @@ impl ModifierInfo {
     pub fn into_boxed(self) -> Box<dyn Modifier> {
         match self {
             ModifierInfo::DiceRollModifier(m) => Box::new(m),
+            ModifierInfo::DoubleDiceModifier(m) => Box::new(m),
             ModifierInfo::HandSizeModifier(m) => Box::new(m),
             ModifierInfo::DiscardSizeModifier(m) => Box::new(m),
             ModifierInfo::HandAndDiceModifier(m) => Box::new(m),
@@ -81,6 +83,38 @@ impl Modifier for DiceRollModifier {
         println!("DiceRollModifier: base_value={}, dice_roll={}, result={}", base_value, dice_roll, result);
 
         (result, dice_roll, if self.target_throws_dice { target.id } else { player.id })
+    }
+}
+
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type")]
+pub struct DoubleDiceModifier {
+    pub dice_op: EvalOp,
+    /// maximum value
+    #[serde(default = "default_cap")]
+    pub cap: u32,
+    /// if true, returned id is from target (defends with dice), else id is from player (attacks with dice)
+    #[serde(default)]
+    pub target_throws_dice: bool,
+}
+
+impl Modifier for DoubleDiceModifier {
+    fn compute(&self, base_value: u32, player: &Player, target: &Player, _dice_roll: Option<u8>) -> (u32, u8, PlayerId) {
+        // Generate two dice rolls
+        let dice_roll1: u8 = rand::random_range(0..6) + 1;
+        let dice_roll2: u8 = rand::random_range(0..6) + 1;
+        
+        // Multiply the two dice rolls
+        let mut result: u32 = self.dice_op.eval(dice_roll1 as u32, dice_roll2 as u32);
+        // cap result
+        if result > self.cap { result = self.cap; }
+
+        println!("DoubleDiceModifier: dice_roll1={}, dice_roll2={}, result={}", dice_roll1, dice_roll2, result);
+
+        // Return a special PlayerId (-999) to indicate this is a double dice modifier
+        // The actual result is the multiplication of the two dice rolls
+        (result, dice_roll1, -999)
     }
 }
 

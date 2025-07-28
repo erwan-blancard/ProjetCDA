@@ -107,8 +107,6 @@ pub trait Card: Sync + Send + Debug + CardClone {
     fn handle_attack(&self, info: &mut PlayInfo, game: &mut Game, player_index: usize, target_indices: &Vec<usize>, dice_roll: u8, dice_roll_used: &mut bool, buffs_used: &mut HashSet<usize>) -> Result<(), String> {
         if self.get_attack() > 0 || self.get_attack_modifier().is_some() {
             for &target_index in target_indices {
-                let mut attack_action: PlayAction = PlayAction::new();
-
                 // use split_at_mut() to prevent warnings about mutable borrows
                 let (player, target) = if player_index < target_index {
                     let (left, right) = game.players.split_at_mut(target_index);
@@ -126,19 +124,49 @@ pub trait Card: Sync + Send + Debug + CardClone {
                     } else { (self.get_attack(), 0, -1) }
                 };
 
-                // show dice anim on client only if this is the first time the dice is used
-                if !*dice_roll_used && player_dice_id != -1 {
-                    attack_action.dice_roll = dice_roll;
-                    attack_action.player_dice_id = player_dice_id;
-                    *dice_roll_used = true;
+                // Special handling for DoubleDiceModifier (player_dice_id = -999)
+                if player_dice_id == -999 {
+                    // Generate two dice rolls for display
+                    let dice_roll1: u8 = rand::random_range(0..6) + 1;
+                    let dice_roll2: u8 = rand::random_range(0..6) + 1;
+                    
+                    // First dice roll action
+                    let mut action1: PlayAction = PlayAction::new();
+                    action1.dice_roll = dice_roll1;
+                    action1.player_dice_id = player.id;
+                    info.actions.push(action1);
+                    
+                    // Second dice roll action
+                    let mut action2: PlayAction = PlayAction::new();
+                    action2.dice_roll = dice_roll2;
+                    action2.player_dice_id = player.id;
+                    info.actions.push(action2);
+                    
+                    // Final attack action with the multiplied result
+                    let mut attack_action: PlayAction = PlayAction::new();
+                    let final_amount = dice_roll1 as u32 * dice_roll2 as u32;
+                    let final_amount = check_apply_attack_buffs(final_amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
+                    let action_target = target.damage(final_amount, self.get_damage_effect());
+                    attack_action.targets.push(action_target);
+                    info.actions.push(attack_action);
+                } else {
+                    // Normal processing for other modifiers
+                    let mut attack_action: PlayAction = PlayAction::new();
+
+                    // show dice anim on client only if this is the first time the dice is used
+                    if !*dice_roll_used && player_dice_id != -1 {
+                        attack_action.dice_roll = dice_roll;
+                        attack_action.player_dice_id = player_dice_id;
+                        *dice_roll_used = true;
+                    }
+
+                    // apply attack buffs
+                    let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
+
+                    let action_target = target.damage(amount, self.get_damage_effect());
+                    attack_action.targets.push(action_target);
+                    info.actions.push(attack_action);
                 }
-
-                // apply attack buffs
-                let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), buffs_used);
-
-                let action_target = target.damage(amount, self.get_damage_effect());
-                attack_action.targets.push(action_target);
-                info.actions.push(attack_action);
             }
         }
 
@@ -150,24 +178,51 @@ pub trait Card: Sync + Send + Debug + CardClone {
         let player = &mut game.players[player_index];
 
         if self.get_heal() > 0 || self.get_heal_modifier().is_some() {
-            let mut heal_action: PlayAction = PlayAction::new();
-
             let (amount, dice_roll, player_dice_id) = {
                 if let Some(modifier) = self.get_heal_modifier() {
                     modifier.compute(self.get_heal(), player, player, Some(dice_roll))
                 } else { (self.get_heal(), 0, -1) }
             };
 
-            // show dice anim on client only if this is the first time the dice is used
-            if !*dice_roll_used && player_dice_id != -1 {
-                heal_action.dice_roll = dice_roll;
-                heal_action.player_dice_id = player_dice_id;
-                *dice_roll_used = true;
-            }
+            // Special handling for DoubleDiceModifier (player_dice_id = -999)
+            if player_dice_id == -999 {
+                // Generate two dice rolls for display
+                let dice_roll1: u8 = rand::random_range(0..6) + 1;
+                let dice_roll2: u8 = rand::random_range(0..6) + 1;
+                
+                // First dice roll action
+                let mut action1: PlayAction = PlayAction::new();
+                action1.dice_roll = dice_roll1;
+                action1.player_dice_id = player.id;
+                info.actions.push(action1);
+                
+                // Second dice roll action
+                let mut action2: PlayAction = PlayAction::new();
+                action2.dice_roll = dice_roll2;
+                action2.player_dice_id = player.id;
+                info.actions.push(action2);
+                
+                // Final heal action with the multiplied result
+                let mut heal_action: PlayAction = PlayAction::new();
+                let final_amount = dice_roll1 as u32 * dice_roll2 as u32;
+                let action_target = player.heal(final_amount, self.get_heal_effect());
+                heal_action.targets.push(action_target);
+                info.actions.push(heal_action);
+            } else {
+                // Normal processing for other modifiers
+                let mut heal_action: PlayAction = PlayAction::new();
 
-            let action_target = player.heal(amount, self.get_heal_effect());
-            heal_action.targets.push(action_target);
-            info.actions.push(heal_action);
+                // show dice anim on client only if this is the first time the dice is used
+                if !*dice_roll_used && player_dice_id != -1 {
+                    heal_action.dice_roll = dice_roll;
+                    heal_action.player_dice_id = player_dice_id;
+                    *dice_roll_used = true;
+                }
+
+                let action_target = player.heal(amount, self.get_heal_effect());
+                heal_action.targets.push(action_target);
+                info.actions.push(heal_action);
+            }
         }
 
         Ok(())
