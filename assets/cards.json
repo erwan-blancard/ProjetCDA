@@ -923,7 +923,9 @@
     "attack": 3,
     "heal": 0,
     "draw": 0,
-    "note": "Complex effect: no simple modifier"
+    "complex_effects": [
+      { "type": "draw_from_opponent_discard" }
+    ]
   },
   {
     "name": "Pioche",

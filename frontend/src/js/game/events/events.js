@@ -297,6 +297,46 @@ export class CollectDiscardCardsEvent extends GameEvent {
 
 }
 
+export class DrawFromOpponentDiscardEvent extends GameEvent {
+    constructor(player, opponent, card_id) {
+        super();
+        this.timeout = 600;
+        this.player = player;
+        this.opponent = opponent;
+        this.card_id = card_id;
+    }
+
+    async run() {
+        // Créer la carte récupérée
+        const card = new Card(this.card_id);
+        this.player.scene.add(card);
+        
+        // Positionner la carte à la position de la défausse adverse
+        const discardPos = this.opponent.getDiscardCardPositionByIndex(this.opponent.discard_cards.length - 1);
+        card.position.set(discardPos.x, discardPos.y, discardPos.z);
+        
+        // Animation : déplacer la carte de la défausse adverse vers la main du joueur
+        const handPos = this.player.getHandCardPositionByIndex(this.player.cards.length);
+        
+        const tl = gsap.timeline();
+        tl.to(card.position, { 
+            x: handPos.x, 
+            y: handPos.y, 
+            z: handPos.z, 
+            duration: 0.6,
+            onComplete: () => {
+                // Ajouter la carte à la main du joueur
+                this.player.addCard(card);
+                this.player.updateHandCardPositions();
+                this.player.emitCardCountChange();
+                
+                // Mettre à jour l'affichage de la défausse adverse
+                this.opponent.updateDiscardCardPositions();
+                this.opponent.emitDiscardCountChange();
+            }
+        });
+    }
+}
 
 /**
  * Event for GameStatus updates

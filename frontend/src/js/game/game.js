@@ -8,7 +8,7 @@ import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, PlayerBuffStatusResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent, StealCardEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent, StealCardEvent, DrawFromOpponentDiscardEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
 import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
@@ -341,6 +341,16 @@ export function onPlayCardEvent(data) {
                     target.action.cards.sort((a, b) => a < b).forEach(card_index => {
                         events.push(new DiscardCardEvent(targetedPlayer, card_index));
                     });
+                    break;
+                case "draw_from_opponent_discard":
+                    // Récupération depuis la défausse adverse
+                    if (target.action.cards.length > 0) {
+                        events.push(new DrawFromOpponentDiscardEvent(
+                            getPlayerById(data.player_id), // joueur qui récupère
+                            targetedPlayer,                 // adversaire dont on prend la défausse
+                            target.action.cards[0]         // id de la carte récupérée
+                        ));
+                    }
                     break;
                 default:
                     console.log(`No event defined for \"${target.action.type}\"`);

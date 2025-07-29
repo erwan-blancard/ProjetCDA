@@ -28,6 +28,7 @@ pub enum ComplexEffect {
     DiscardFireCards,
     DiscardNonFireCards,
     DiscardNonWaterCards,
+    DrawFromOpponentDiscard,
 }
 
 impl<'de> Deserialize<'de> for ComplexEffect {
@@ -53,6 +54,7 @@ impl<'de> Deserialize<'de> for ComplexEffect {
                 Some("discard_fire_cards") => Ok(ComplexEffect::DiscardFireCards),
                 Some("discard_non_fire_cards") => Ok(ComplexEffect::DiscardNonFireCards),
                 Some("discard_non_water_cards") => Ok(ComplexEffect::DiscardNonWaterCards),
+                Some("draw_from_opponent_discard") => Ok(ComplexEffect::DrawFromOpponentDiscard),
                 _ => Err(serde::de::Error::custom("Unknown effect type in object")),
             }
         } else {
@@ -755,6 +757,40 @@ impl Card for ComplexEffectCard {
                                 player_id: player_idx as i32,
                                 action: ActionType::Discard { cards: discarded_indices },
                                 effect: "discard_non_water_cards".to_string(),
+                            });
+                            info.actions.push(discard_action);
+                        }
+                    }
+                }
+                ComplexEffect::DrawFromOpponentDiscard => {
+                    // Pelle : récupère la carte du dessus de la défausse adverse
+                    for &target_index in &target_indices {
+                        let target = &mut game.players[target_index];
+                        
+                        // Vérifier si la défausse adverse n'est pas vide
+                        if !target.discard_cards.is_empty() {
+                            // Récupérer la carte du dessus (dernière défaussée)
+                            let card = target.discard_cards.pop().unwrap();
+                            let card_id = card.get_id();
+                            
+                            // Ajouter la carte à la main du joueur qui joue la carte
+                            game.players[player_index].hand_cards.push(card);
+                            
+                            // Créer l'action pour informer le client
+                            let mut draw_action = PlayAction::new();
+                            draw_action.targets.push(ActionTarget {
+                                player_id: player_index as i32,
+                                action: ActionType::Draw { cards: vec![card_id] },
+                                effect: "draw_from_opponent_discard".to_string(),
+                            });
+                            info.actions.push(draw_action);
+                            
+                            // Créer une action pour informer que la défausse adverse a été modifiée
+                            let mut discard_action = PlayAction::new();
+                            discard_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Discard { cards: vec![0] }, // Index fictif
+                                effect: "opponent_discard_modified".to_string(),
                             });
                             info.actions.push(discard_action);
                         }
