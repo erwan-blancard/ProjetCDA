@@ -1,11 +1,12 @@
 use std::collections::HashSet;
 
-use super::card::{Card, CardId, Element, Kind, Stars, TargetType};
+use super::card::{Card, CardId, Element, Kind, Stars, TargetType, EffectId};
 use super::super::modifiers::Modifier;
 use super::super::buffs::{Buff, BuffType};
 use super::super::game::{Game, MAX_PLAYERS};
 use super::super::player::Player;
 use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
+use super::target_both_card::TargetBothCard;
 
 use crate::server::game::cards::card::check_apply_attack_buffs;
 use crate::utils::clamp::clamp;
@@ -24,6 +25,9 @@ pub enum ComplexEffect {
     DiscardHand,
     DiscardAllHands,
     DiscardHandAndAttack,
+    DiscardFireCards,
+    DiscardNonFireCards,
+    DiscardNonWaterCards,
 }
 
 impl<'de> Deserialize<'de> for ComplexEffect {
@@ -46,6 +50,9 @@ impl<'de> Deserialize<'de> for ComplexEffect {
                 Some("discard_hand") => Ok(ComplexEffect::DiscardHand),
                 Some("discard_all_hands") => Ok(ComplexEffect::DiscardAllHands),
                 Some("discard_hand_and_attack") => Ok(ComplexEffect::DiscardHandAndAttack),
+                Some("discard_fire_cards") => Ok(ComplexEffect::DiscardFireCards),
+                Some("discard_non_fire_cards") => Ok(ComplexEffect::DiscardNonFireCards),
+                Some("discard_non_water_cards") => Ok(ComplexEffect::DiscardNonWaterCards),
                 _ => Err(serde::de::Error::custom("Unknown effect type in object")),
             }
         } else {
@@ -55,112 +62,233 @@ impl<'de> Deserialize<'de> for ComplexEffect {
 }
 
 #[derive(Debug, Clone)]
+pub enum ComplexEffectBase {
+    Basic(BasicCard),
+    TargetBoth(TargetBothCard),
+}
+
+#[derive(Debug, Clone)]
 pub struct ComplexEffectCard {
-    pub base: BasicCard,
+    pub base: ComplexEffectBase,
     pub complex_effects: Vec<ComplexEffect>,
 }
 
 impl Card for ComplexEffectCard {
-    fn get_id(&self) -> CardId { self.base.get_id() }
-    fn get_name(&self) -> String { self.base.get_name() }
-    fn get_attack(&self) -> u32 { self.base.get_attack() }
-    fn get_attack_modifier(&self) -> Option<Box<dyn Modifier>> { self.base.get_attack_modifier() }
-    fn get_heal(&self) -> u32 { self.base.get_heal() }
-    fn get_heal_modifier(&self) -> Option<Box<dyn Modifier>> { self.base.get_heal_modifier() }
-    fn get_draw(&self) -> u32 { self.base.get_draw() }
-    fn get_draw_modifier(&self) -> Option<Box<dyn Modifier>> { self.base.get_draw_modifier() }
-    fn get_description(&self) -> String { self.base.get_description() }
-    fn get_kind(&self) -> Kind { self.base.get_kind() }
-    fn get_element(&self) -> Element { self.base.get_element() }
-    fn get_stars(&self) -> Stars { self.base.get_stars() }
-    fn get_target_type(&self) -> TargetType { self.base.get_target_type() }
+    fn get_id(&self) -> CardId { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_id(),
+            ComplexEffectBase::TargetBoth(card) => card.get_id(),
+        }
+    }
+    fn get_name(&self) -> String { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_name(),
+            ComplexEffectBase::TargetBoth(card) => card.get_name(),
+        }
+    }
+    fn get_attack(&self) -> u32 { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_attack(),
+            ComplexEffectBase::TargetBoth(card) => card.get_attack(),
+        }
+    }
+    fn get_attack_modifier(&self) -> Option<Box<dyn Modifier>> { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_attack_modifier(),
+            ComplexEffectBase::TargetBoth(card) => card.get_attack_modifier(),
+        }
+    }
+    fn get_heal(&self) -> u32 { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_heal(),
+            ComplexEffectBase::TargetBoth(card) => card.get_heal(),
+        }
+    }
+    fn get_heal_modifier(&self) -> Option<Box<dyn Modifier>> { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_heal_modifier(),
+            ComplexEffectBase::TargetBoth(card) => card.get_heal_modifier(),
+        }
+    }
+    fn get_draw(&self) -> u32 { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_draw(),
+            ComplexEffectBase::TargetBoth(card) => card.get_draw(),
+        }
+    }
+    fn get_draw_modifier(&self) -> Option<Box<dyn Modifier>> { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_draw_modifier(),
+            ComplexEffectBase::TargetBoth(card) => card.get_draw_modifier(),
+        }
+    }
+    fn get_description(&self) -> String { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_description(),
+            ComplexEffectBase::TargetBoth(card) => card.get_description(),
+        }
+    }
+    fn get_kind(&self) -> Kind { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_kind(),
+            ComplexEffectBase::TargetBoth(card) => card.get_kind(),
+        }
+    }
+    fn get_element(&self) -> Element { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_element(),
+            ComplexEffectBase::TargetBoth(card) => card.get_element(),
+        }
+    }
+    fn get_stars(&self) -> Stars { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_stars(),
+            ComplexEffectBase::TargetBoth(card) => card.get_stars(),
+        }
+    }
+    fn get_target_type(&self) -> TargetType { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_target_type(),
+            ComplexEffectBase::TargetBoth(card) => card.get_target_type(),
+        }
+    }
+
+    fn get_buffs(&self) -> Vec<Box<dyn Buff>> { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_buffs(),
+            ComplexEffectBase::TargetBoth(card) => card.get_buffs(),
+        }
+    }
+
+    fn get_damage_effect(&self) -> EffectId { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_damage_effect(),
+            ComplexEffectBase::TargetBoth(card) => card.get_damage_effect(),
+        }
+    }
+
+    fn get_heal_effect(&self) -> EffectId { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.get_heal_effect(),
+            ComplexEffectBase::TargetBoth(card) => card.get_heal_effect(),
+        }
+    }
+
+    fn validate_targets(&self, targets: &Vec<&Player>) -> Result<(), String> { 
+        match &self.base {
+            ComplexEffectBase::Basic(card) => card.validate_targets(targets),
+            ComplexEffectBase::TargetBoth(card) => card.validate_targets(targets),
+        }
+    }
 
     fn play(&self, player_index: usize, target_indices: Vec<usize>, game: &mut Game) -> Result<(PlayInfo, HashSet<usize>), String> {
         let mut info: PlayInfo = PlayInfo::new();
         let mut buffs_used: HashSet<usize> = HashSet::new();
         let targets = target_indices.iter().map(|i| &game.players[*i]).collect();
-        self.base.validate_targets(&targets)?;
+        self.validate_targets(&targets)?;
 
-        // Appliquer les effets de base (attaque, heal, draw) comme dans BasicCard::play
-        let dice_roll = rand::random_range(0..6) + 1;
-        let mut dice_roll_used = false;
-        // Attaque
-        if self.base.get_attack() > 0 || self.base.get_attack_modifier().is_some() {
-            for &target_index in &target_indices {
-                let mut attack_action: PlayAction = PlayAction::new();
-                let (player, target) = if player_index < target_index {
-                    let (left, right) = game.players.split_at_mut(target_index);
-                    (&mut left[player_index], &mut right[0])
-                } else if player_index > target_index {
-                    let (left, right) = game.players.split_at_mut(player_index);
-                    (&mut right[0], &mut left[target_index])
-                } else {
-                    return Err("Target is player !".to_string());
-                };
-                let (amount, dice_roll_val, player_dice_id) = {
-                    if let Some(modifier) = self.base.get_attack_modifier() {
-                        modifier.compute(self.base.get_attack(), player, target, Some(dice_roll))
-                    } else { (self.base.get_attack(), 0, -1) }
-                };
-                if !dice_roll_used && player_dice_id != -1 {
-                    attack_action.dice_roll = dice_roll_val;
-                    attack_action.player_dice_id = player_dice_id;
-                    dice_roll_used = true;
+        // Utiliser la logique de jeu appropriée selon le type de base
+        match &self.base {
+            ComplexEffectBase::Basic(_) => {
+                // Logique pour BasicCard (comme avant)
+                let dice_roll = rand::random_range(0..6) + 1;
+                let mut dice_roll_used = false;
+                
+                // Attaque
+                if self.get_attack() > 0 || self.get_attack_modifier().is_some() {
+                    for &target_index in &target_indices {
+                        let mut attack_action: PlayAction = PlayAction::new();
+                        let (player, target) = if player_index < target_index {
+                            let (left, right) = game.players.split_at_mut(target_index);
+                            (&mut left[player_index], &mut right[0])
+                        } else if player_index > target_index {
+                            let (left, right) = game.players.split_at_mut(player_index);
+                            (&mut right[0], &mut left[target_index])
+                        } else {
+                            return Err("Target is player !".to_string());
+                        };
+                        let (amount, dice_roll_val, player_dice_id) = {
+                            if let Some(modifier) = self.get_attack_modifier() {
+                                modifier.compute(self.get_attack(), player, target, Some(dice_roll))
+                            } else { (self.get_attack(), 0, -1) }
+                        };
+                        if !dice_roll_used && player_dice_id != -1 {
+                            attack_action.dice_roll = dice_roll_val;
+                            attack_action.player_dice_id = player_dice_id;
+                            dice_roll_used = true;
+                        }
+                        let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), &mut buffs_used);
+                        let action_target = target.damage(amount, self.get_damage_effect());
+                        attack_action.targets.push(action_target);
+                        info.actions.push(attack_action);
+                    }
                 }
-                let amount = check_apply_attack_buffs(amount, &player.buffs, self.base.get_element(), self.base.get_kind(), self.base.get_stars(), &mut buffs_used);
-                let action_target = target.damage(amount, self.base.get_damage_effect());
-                attack_action.targets.push(action_target);
-                info.actions.push(attack_action);
-            }
-        }
-        // Heal
-        if self.base.get_heal() > 0 || self.base.get_heal_modifier().is_some() {
-            let player = &mut game.players[player_index];
-            let mut heal_action: PlayAction = PlayAction::new();
-            let (amount, dice_roll_val, player_dice_id) = {
-                if let Some(modifier) = self.base.get_heal_modifier() {
-                    modifier.compute(self.base.get_heal(), player, player, Some(dice_roll))
-                } else { (self.base.get_heal(), 0, -1) }
-            };
-            if !dice_roll_used && player_dice_id != -1 {
-                heal_action.dice_roll = dice_roll_val;
-                heal_action.player_dice_id = player_dice_id;
-                dice_roll_used = true;
-            }
-            let action_target = player.heal(amount, self.base.get_heal_effect());
-            heal_action.targets.push(action_target);
-            info.actions.push(heal_action);
-        }
-        // Draw
-        if self.base.get_draw() > 0 || self.base.get_draw_modifier().is_some() {
-            let player = &mut game.players[player_index];
-            let (amount, dice_roll_val, player_dice_id) = {
-                if let Some(modifier) = self.base.get_draw_modifier() {
-                    modifier.compute(self.base.get_draw(), player, player, Some(dice_roll))
-                } else { (self.base.get_draw(), 0, -1) }
-            };
-            let drawn_cards = Game::give_from_pile(&mut game.pile, player, amount as usize);
-            if drawn_cards.len() > 0 {
-                let mut draw_action = PlayAction::new();
-                if !dice_roll_used && player_dice_id != -1 {
-                    draw_action.dice_roll = dice_roll_val;
-                    draw_action.player_dice_id = player_dice_id;
-                    dice_roll_used = true;
+                
+                // Heal
+                if self.get_heal() > 0 || self.get_heal_modifier().is_some() {
+                    let player = &mut game.players[player_index];
+                    let mut heal_action: PlayAction = PlayAction::new();
+                    let (amount, dice_roll_val, player_dice_id) = {
+                        if let Some(modifier) = self.get_heal_modifier() {
+                            modifier.compute(self.get_heal(), player, player, Some(dice_roll))
+                        } else { (self.get_heal(), 0, -1) }
+                    };
+                    if !dice_roll_used && player_dice_id != -1 {
+                        heal_action.dice_roll = dice_roll_val;
+                        heal_action.player_dice_id = player_dice_id;
+                        dice_roll_used = true;
+                    }
+                    let action_target = player.heal(amount, self.get_heal_effect());
+                    heal_action.targets.push(action_target);
+                    info.actions.push(heal_action);
                 }
-                draw_action.targets.push(ActionTarget {
-                    player_id: player.id,
-                    action: ActionType::Draw { cards: drawn_cards },
-                    effect: String::new()
-                });
-                info.actions.push(draw_action);
+                
+                // Draw
+                if self.get_draw() > 0 || self.get_draw_modifier().is_some() {
+                    let player = &mut game.players[player_index];
+                    let (amount, dice_roll_val, player_dice_id) = {
+                        if let Some(modifier) = self.get_draw_modifier() {
+                            modifier.compute(self.get_draw(), player, player, Some(dice_roll))
+                        } else { (self.get_draw(), 0, -1) }
+                    };
+                    let drawn_cards = Game::give_from_pile(&mut game.pile, player, amount as usize);
+                    if drawn_cards.len() > 0 {
+                        let mut draw_action = PlayAction::new();
+                        if !dice_roll_used && player_dice_id != -1 {
+                            draw_action.dice_roll = dice_roll_val;
+                            draw_action.player_dice_id = player_dice_id;
+                            dice_roll_used = true;
+                        }
+                        draw_action.targets.push(ActionTarget {
+                            player_id: player.id,
+                            action: ActionType::Draw { cards: drawn_cards },
+                            effect: String::new()
+                        });
+                        info.actions.push(draw_action);
+                    }
+                }
+            },
+            ComplexEffectBase::TargetBoth(_) => {
+                // Pour TargetBothCard, utiliser la logique de jeu de TargetBothCard
+                // qui gère automatiquement l'attaque/heal/draw sur le joueur ET les cibles
+                let base_card = match &self.base {
+                    ComplexEffectBase::TargetBoth(card) => card,
+                    _ => unreachable!(),
+                };
+                
+                // Utiliser la méthode play de TargetBothCard pour les effets de base
+                let (base_info, base_buffs_used) = base_card.play(player_index, target_indices.clone(), game)?;
+                info.actions.extend(base_info.actions);
+                buffs_used.extend(base_buffs_used);
             }
         }
+        
         // Appliquer les effets complexes
         for effect in &self.complex_effects {
             match effect {
                 ComplexEffect::Steal { count, element, kind, stars } => {
                     // Cas spécial : tornade (vole 2 cartes aléatoires et inflige 8 dégâts)
-                    if let Some(name) = Some(self.base.get_name()) {
+                    if let Some(name) = Some(self.get_name()) {
                         if name.to_lowercase() == "tornade" {
                             let target_index = target_indices[0];
                             let (player, target) = if player_index < target_index {
@@ -243,7 +371,7 @@ impl Card for ComplexEffectCard {
                     info.actions.push(steal_action);
                 }
                 ComplexEffect::Give => {
-                    let card_name = self.base.get_name().to_lowercase();
+                    let card_name = self.get_name().to_lowercase();
                     let target_index = target_indices[0];
                     let (player, target) = if player_index < target_index {
                         let (left, right) = game.players.split_at_mut(target_index);
@@ -257,7 +385,7 @@ impl Card for ComplexEffectCard {
                     // Pour Flambeau, on ne défausse pas la carte, on la transfère au joueur ciblé
                     if card_name == "flambeau" {
                         // 1. Infliger les dégâts
-                        let damage = self.base.get_attack();
+                        let damage = self.get_attack();
                         if damage > 0 {
                             let mut attack_action = PlayAction::new();
                             let action_target = target.damage(damage, "flambeau_damage".to_string());
@@ -403,7 +531,7 @@ impl Card for ComplexEffectCard {
                     
                     // Défausser toutes les cartes de la main dans un ordre aléatoire
                     // SAUF la carte jouée (qui sera défaussée normalement par le système)
-                    let card_name = self.base.get_name().to_lowercase();
+                    let card_name = self.get_name().to_lowercase();
                     let mut cards_to_keep = Vec::new();
                     
                     // Séparer les cartes à défausser de celles à garder
@@ -434,7 +562,7 @@ impl Card for ComplexEffectCard {
                 }
                 ComplexEffect::DiscardAllHands => {
                     // Bourrasque : défausse toutes les mains de tous les joueurs
-                    let card_name = self.base.get_name().to_lowercase();
+                    let card_name = self.get_name().to_lowercase();
                     
                     for (player_idx, player) in game.players.iter_mut().enumerate() {
                         let mut discarded_indices = Vec::new();
@@ -480,7 +608,7 @@ impl Card for ComplexEffectCard {
                     let mut discarded_indices = Vec::new();
                     
                     // SAUF la carte jouée (qui sera défaussée normalement par le système)
-                    let card_name = self.base.get_name().to_lowercase();
+                    let card_name = self.get_name().to_lowercase();
                     let mut cards_to_keep = Vec::new();
                     
                     // Séparer les cartes à défausser de celles à garder
@@ -521,6 +649,116 @@ impl Card for ComplexEffectCard {
                     let action_target = target.damage(discard_pile_size, "discard_hand_attack".to_string());
                     attack_action.targets.push(action_target);
                     info.actions.push(attack_action);
+                }
+                ComplexEffect::DiscardFireCards => {
+                    // Extincteur : défausse toutes les cartes d'élément Feu de la main adverse
+                    for &target_index in &target_indices {
+                        let target = &mut game.players[target_index];
+                        let mut discarded_indices = Vec::new();
+                        let mut cards_to_keep = Vec::new();
+                        
+                        // Séparer les cartes à défausser (Feu) de celles à garder
+                        while !target.hand_cards.is_empty() {
+                            let card = target.hand_cards.remove(0);
+                            if card.get_element() == Element::Fire {
+                                // Défausser les cartes Feu
+                                discarded_indices.push(0); // Index fictif pour l'affichage
+                                target.discard_cards.push(card);
+                            } else {
+                                // Garder les cartes non-Feu
+                                cards_to_keep.push(card);
+                            }
+                        }
+                        
+                        // Remettre les cartes non-Feu dans la main
+                        target.hand_cards.append(&mut cards_to_keep);
+                        
+                        if !discarded_indices.is_empty() {
+                            let mut discard_action = PlayAction::new();
+                            discard_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Discard { cards: discarded_indices },
+                                effect: "discard_fire_cards".to_string(),
+                            });
+                            info.actions.push(discard_action);
+                        }
+                    }
+                }
+                ComplexEffect::DiscardNonFireCards => {
+                    // Feu de forêt : défausse toutes les cartes non-Feu de la main adverse
+                    for &target_index in &target_indices {
+                        let target = &mut game.players[target_index];
+                        let mut discarded_indices = Vec::new();
+                        let mut cards_to_keep = Vec::new();
+                        
+                        // Séparer les cartes à défausser (non-Feu) de celles à garder
+                        while !target.hand_cards.is_empty() {
+                            let card = target.hand_cards.remove(0);
+                            if card.get_element() != Element::Fire {
+                                // Défausser les cartes non-Feu
+                                discarded_indices.push(0); // Index fictif pour l'affichage
+                                target.discard_cards.push(card);
+                            } else {
+                                // Garder les cartes Feu
+                                cards_to_keep.push(card);
+                            }
+                        }
+                        
+                        // Remettre les cartes Feu dans la main
+                        target.hand_cards.append(&mut cards_to_keep);
+                        
+                        if !discarded_indices.is_empty() {
+                            let mut discard_action = PlayAction::new();
+                            discard_action.targets.push(ActionTarget {
+                                player_id: target_index as i32,
+                                action: ActionType::Discard { cards: discarded_indices },
+                                effect: "discard_non_fire_cards".to_string(),
+                            });
+                            info.actions.push(discard_action);
+                        }
+                    }
+                }
+                ComplexEffect::DiscardNonWaterCards => {
+                    // Inondation : défausse toutes les cartes non-Eau de TOUS les joueurs
+                    let card_name = self.get_name().to_lowercase();
+                    
+                    for (player_idx, player) in game.players.iter_mut().enumerate() {
+                        let mut discarded_indices = Vec::new();
+                        let mut cards_to_keep = Vec::new();
+                        
+                        // Si c'est le joueur qui joue la carte, garder la carte jouée
+                        let is_current_player = player_idx == player_index;
+                        
+                        // Défausser toutes les cartes non-Eau de la main
+                        while !player.hand_cards.is_empty() {
+                            let card = player.hand_cards.remove(0);
+                            
+                            // Si c'est le joueur actuel et que c'est la carte jouée, la garder
+                            if is_current_player && card.get_name().to_lowercase() == card_name {
+                                cards_to_keep.push(card);
+                            } else if card.get_element() != Element::Water {
+                                // Défausser les cartes non-Eau
+                                discarded_indices.push(0); // Index fictif pour l'affichage
+                                player.discard_cards.push(card);
+                            } else {
+                                // Garder les cartes Eau
+                                cards_to_keep.push(card);
+                            }
+                        }
+                        
+                        // Remettre les cartes Eau (et la carte jouée) dans la main
+                        player.hand_cards.append(&mut cards_to_keep);
+                        
+                        if !discarded_indices.is_empty() {
+                            let mut discard_action = PlayAction::new();
+                            discard_action.targets.push(ActionTarget {
+                                player_id: player_idx as i32,
+                                action: ActionType::Discard { cards: discarded_indices },
+                                effect: "discard_non_water_cards".to_string(),
+                            });
+                            info.actions.push(discard_action);
+                        }
+                    }
                 }
             }
         }
