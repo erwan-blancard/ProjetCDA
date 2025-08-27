@@ -14,6 +14,7 @@ import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
 import gsap, { Power1 } from 'gsap';
 import { BuffTooltip } from '../ui/buff_tooltip';
+import { usesTouchControls } from '../utils';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -471,6 +472,61 @@ function stopSelectionGlow() {
 }
 
 
+function updateCardTooltip(card) {
+    if (cardTooltip.card != card)
+        cardTooltip.update(card);
+
+    cardTooltip.position.set(card.position.x, card.position.y, card.position.z-2.5);
+    cardTooltip.visible = true;
+}
+
+
+function updateBuffTooltip(buff_select_obj) {
+    const buff = buff_select_obj.parent;
+    const player = buff.parent.parent;
+    const pos = new THREE.Vector3();
+    buff_select_obj.getWorldPosition(pos);
+    
+    if (buffTooltip.buff != buff)
+        buffTooltip.update(buff);
+
+    buffTooltip.position.set(pos.x, pos.y, pos.z + (player == PLAYER ? -2 : 1.5));
+    buffTooltip.visible = true;
+}
+
+
+/**
+ * @param {TargetType} targetType 
+ */
+function showValidTargets(targetType) {
+    switch (targetType) {
+        case TargetType.SINGLE:
+        case TargetType.MULTIPLE:
+            OPPONENTS.values().forEach(opponent => {
+                if (opponent.health > 0)
+                    opponent.startGlowLoop();
+            });
+            break;
+        case TargetType.SINGLE_AND_SELF:
+        case TargetType.MULTIPLE_AND_SELF:
+            PLAYER.startGlowLoop();
+            OPPONENTS.values().forEach(opponent => {
+                if (opponent.health > 0)
+                    opponent.startGlowLoop();
+            });
+            break;
+        case TargetType.SELF:
+            PLAYER.startGlowLoop();
+            break;
+        case TargetType.ALL:
+        case TargetType.ALL_AND_SELF:
+            // TODO
+            selectHintBox.startGlowLoop();
+            break;
+    }
+}
+
+
 function updateTurnTimer() {
     const now = Math.ceil(Date.now() / 1000);   // in seconds
     const diff = currentPlayerTurnEnd - now;
@@ -497,6 +553,9 @@ function onWindowResize() {
 
 
 function onPointerMove( event ) {
+    if (usesTouchControls())
+        return;
+
     pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 
     if (currentPlayerTurn == PLAYER && !eventMgr.isWaitingForEvents()) {
@@ -511,11 +570,7 @@ function onPointerMove( event ) {
 
             // hover
 
-            if (cardTooltip.card != card)
-                cardTooltip.update(card);
-
-            cardTooltip.position.set(card.position.x, card.position.y, card.position.z-2.5);
-            cardTooltip.visible = true;
+            updateCardTooltip(card);
 
         } else {
             cardTooltip.visible = false;
@@ -528,17 +583,8 @@ function onPointerMove( event ) {
 
     if ( buff_intersects.length > 0 ) {
 
-        const buff_child = buff_intersects[ 0 ].object;
-        const buff = buff_child.parent;
-        const player = buff.parent.parent;
-        let pos = new THREE.Vector3();
-        buff_child.getWorldPosition(pos);
-
-        if (buffTooltip.buff != buff)
-            buffTooltip.update(buff);
-
-        buffTooltip.position.set(pos.x, pos.y, pos.z + (player == PLAYER ? -2 : 1.5));
-        buffTooltip.visible = true;
+        const buff_select_obj = buff_intersects[ 0 ].object;
+        updateBuffTooltip(buff_select_obj);
 
     } else {
         buffTooltip.visible = false;
@@ -567,39 +613,47 @@ function onPointerDown( event ) {
 
                 if (PLAYER.selected_card != null) {
                     console.log(`SELECT CARD TARGET TYPE: ${PLAYER.selected_card.info.targets}`);
-                    switch (PLAYER.selected_card.info.targets) {
-                        case TargetType.SINGLE:
-                        case TargetType.MULTIPLE:
-                            OPPONENTS.values().forEach(opponent => {
-                                opponent.startGlowLoop();
-                            });
-                            break;
-                        case TargetType.SINGLE_AND_SELF:
-                        case TargetType.MULTIPLE_AND_SELF:
-                            PLAYER.startGlowLoop();
-                            OPPONENTS.values().forEach(opponent => {
-                                opponent.startGlowLoop();
-                            });
-                            break;
-                        case TargetType.SELF:
-                            PLAYER.startGlowLoop();
-                            break;
-                        case TargetType.ALL:
-                        case TargetType.ALL_AND_SELF:
-                            // TODO
-                            selectHintBox.startGlowLoop();
-                            break;
-                    }
+                    showValidTargets(PLAYER.selected_card.info.targets);
+                }
 
+                if (usesTouchControls()) {
+                    if (PLAYER.selected_card != null)
+                        updateCardTooltip(PLAYER.selected_card);
+                    else
+                        cardTooltip.visible = false;
                 }
             }
 
         } else {
             // choose target, TODO handle multiple targets
-            handleTargetSelection();
+            let targetSelected = handleTargetSelection();
+            
+            // clear selection if touch controls and no target was selected
+            if (!targetSelected && usesTouchControls()) {
+                cardTooltip.visible = false;
+                PLAYER.clearSelection();
+                stopSelectionGlow();
+            }
         }
     }
 
+    // buff selection (touchs only)
+    if (usesTouchControls()) {
+        pointer.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+
+        buffRaycaster.setFromCamera( pointer, camera );
+
+        let buff_intersects = buffRaycaster.intersectObjects( scene.children, true );
+
+        if ( buff_intersects.length > 0 ) {
+
+            const buff_select_obj = buff_intersects[ 0 ].object;
+            updateBuffTooltip(buff_select_obj);
+
+        } else {
+            buffTooltip.visible = false;
+        }
+    }
 }
 
 
@@ -626,6 +680,8 @@ function handleTargetSelection() {
 
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [getIdByPlayer(opponent)]);
+
+                    return true;
                 }
                 break;
             case TargetType.ALL:    // select hint box to play the card
@@ -637,6 +693,8 @@ function handleTargetSelection() {
                     const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [] /* targets are filled by server */);
+
+                    return true;
                 }
                 break;
             case TargetType.SELF:    // select self to play the card
@@ -647,10 +705,14 @@ function handleTargetSelection() {
                     const card_index = PLAYER.cards.indexOf(PLAYER.selected_card);
                     eventMgr.pushEvent(new ChangeTurnEvent(null));
                     serverConnexion.send_play_card_action(card_index, [] /* no targets needed */);
+
+                    return true;
                 }
                 break;
         }
     }
+
+    return false;
 }
 
 

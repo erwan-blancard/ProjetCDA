@@ -90,3 +90,7 @@ export function strjoin(strings, sep, skip_empty=false) {
     }
     return result;
 }
+
+export function usesTouchControls() {
+    return navigator.maxTouchPoints > 0 && navigator.maxTouchPoints != 256 /* weird edge case ? (can happen in game view) */;
+}
