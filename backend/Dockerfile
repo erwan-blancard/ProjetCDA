@@ -12,6 +12,7 @@ RUN cargo install --path .
 
 ENV DATABASE_URL=postgres://localhost:5432/randomi
 ENV CARDS_FILE_PATH=/usr/src/backend/data/cards.json
+ENV BACKEND_DB_PATH=/tmp/randomi-backend-db
 
 EXPOSE 8080
 

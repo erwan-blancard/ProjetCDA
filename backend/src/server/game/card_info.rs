@@ -2,7 +2,7 @@ use std::{fs::File, io::BufReader, path::Path};
 use std::fmt;
 
 use lazy_static::lazy_static;
-use serde::Deserializer;
+use serde::{Deserializer, Serialize};
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
 use super::modifiers::ModifierInfo;
@@ -16,14 +16,14 @@ use super::cards::players_rolls_dice_card::{PlayersRollsDiceCard, PlayersRollsDi
 use super::cards::target_both_card::TargetBothCard;
 
 
-lazy_static! {
-    pub static ref CARD_DATABASE: Vec<Box<dyn Card>> = {
-        get_card_database()
-    };
-}
+// lazy_static! {
+//     pub static ref CARD_DATABASE: Vec<Box<dyn Card>> = {
+//         get_card_database()
+//     };
+// }
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type")]
 enum CardVariant {
     BasicCard(BasicCardData),
@@ -34,7 +34,7 @@ enum CardVariant {
     PearthCard,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct BasicCardData {
     #[serde(default)]
     attack: u32,
@@ -53,7 +53,7 @@ struct BasicCardData {
 }
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct MultiHitCardData {
     attacks: Vec<u32>,
     #[serde(default)]
@@ -67,7 +67,7 @@ struct MultiHitCardData {
 }
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct MultiActionCardData {
     actions: usize,
     #[serde(default)]
@@ -87,7 +87,7 @@ struct MultiActionCardData {
 }
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct PlayersRollsDiceCardData {
     #[serde(default)]
     attack: bool,
@@ -102,8 +102,8 @@ struct PlayersRollsDiceCardData {
 
 
 /// Common card data
-#[derive(Debug, Deserialize)]
-struct CardInfo {
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CardInfo {
     #[serde(default)]
     id: CardId,
     name: String,
@@ -119,7 +119,7 @@ struct CardInfo {
 }
 
 impl CardInfo {
-    fn make_card(&self) -> Box<dyn Card> {
+    pub fn make_card(&self) -> Box<dyn Card> {
         match &self.variant {
             CardVariant::BasicCard(data) => {
                 Box::new(BasicCard {
@@ -223,7 +223,7 @@ impl CardInfo {
 }
 
 
-struct CardInfoList(Vec<CardInfo>);
+pub struct CardInfoList(pub Vec<CardInfo>);
 
 impl<'de> Deserialize<'de> for CardInfoList {
     fn deserialize<D>(deserializer: D) -> Result<CardInfoList, D::Error>
@@ -261,27 +261,27 @@ impl<'de> Deserialize<'de> for CardInfoList {
 }
 
 
-pub fn get_card_database() -> Vec<Box<dyn Card>> {
-    let path = std::env::var("CARDS_FILE_PATH").expect("CARDS_FILE_PATH not set !");
+// pub fn get_card_database() -> Vec<Box<dyn Card>> {
+//     let path = std::env::var("CARDS_FILE_PATH").expect("CARDS_FILE_PATH not set !");
 
-    if !Path::new(&path).exists() {
-        panic!("JSON file for cards not found ({})", path);
-    }
+//     if !Path::new(&path).exists() {
+//         panic!("JSON file for cards not found ({})", path);
+//     }
 
-    let file = File::open(&path).expect("Could not open JSON file");
-    let reader = BufReader::new(file);
+//     let file = File::open(&path).expect("Could not open JSON file");
+//     let reader = BufReader::new(file);
 
-    let cards_info: CardInfoList = serde_json::from_reader(reader).expect("Error reading JSON file");
+//     let cards_info: CardInfoList = serde_json::from_reader(reader).expect("Error reading JSON file");
 
-    let mut deck: Vec<Box<dyn Card>> = Vec::new();
+//     let mut deck: Vec<Box<dyn Card>> = Vec::new();
 
-    for card_info in cards_info.0.iter() {
-        deck.push(card_info.make_card());
-    }
+//     for card_info in cards_info.0.iter() {
+//         deck.push(card_info.make_card());
+//     }
 
-    for (i, card) in deck.iter().enumerate() {
-        println!("Card {} : {:?}", i + 1, card);
-    }
+//     for (i, card) in deck.iter().enumerate() {
+//         println!("Card {} : {:?}", i + 1, card);
+//     }
 
-    deck
-}
+//     deck
+// }

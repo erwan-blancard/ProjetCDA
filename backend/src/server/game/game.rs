@@ -6,7 +6,6 @@ use rand::seq::SliceRandom;
 use rand::rng;
 
 use super::cards::card::{Card, CardId};
-use super::database;
 use super::player::{Player, PlayerId};
 use super::play_info::PlayInfo;
 use super::buffs::BuffLifeTime;
@@ -49,7 +48,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(player_profiles: &Vec<PlayerProfile>) -> Self {
+    pub fn new(player_profiles: &Vec<PlayerProfile>, cards: Vec<Box<dyn Card>>) -> Self {
         let players = player_profiles.iter()
             .map(|prf| Player::new(prf.id, prf.name.clone()))
             .collect();
@@ -57,7 +56,7 @@ impl Game {
         Self {
             players: players,
             player_profiles: player_profiles.clone(),
-            pile: database::CARD_DATABASE.clone(),
+            pile: cards,
             current_player_turn: 0,
             current_player_turn_end: Utc::now(),
             estimated_turn_end_offset: Duration::ZERO,

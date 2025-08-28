@@ -12,7 +12,7 @@ use chrono::Utc;
 use tokio::{sync::{mpsc, oneshot}, time::interval};
 use uid::IdU64;
 
-use crate::{routes::game::Lobbies, server::{dto::responses::ServerResponse, game::{cards::card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
+use crate::{backend_db::BackendDb, server::{dto::responses::ServerResponse, game::{cards::card::CardId, game::{GameState, DRAW_CARD_LIMIT}, play_info::PlayInfo}}, GameId};
 
 use super::{dto::responses::PlayerProfile, game::{game::Game, player::PlayerId}};
 
@@ -95,26 +95,27 @@ pub struct GameServer {
     /// GameId for this server
     game_id: GameId,
 
-    /// Shared lobbies handle
-    lobbies: Lobbies,
+    backend_db: BackendDb,
 
     /// sent when run is called
     ready_tx: Option<oneshot::Sender<()>>,
 }
 
 impl GameServer {
-    pub fn new(players: Vec<PlayerProfile>, game_id: GameId, lobbies: Lobbies, ready_tx: oneshot::Sender<()>,) -> (Self, GameServerHandle) {
+    pub fn new(players: Vec<PlayerProfile>, game_id: GameId, backend_db: BackendDb, ready_tx: oneshot::Sender<()>,) -> (Self, GameServerHandle) {
 
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
+
+        let cards = backend_db.collect_cards().unwrap();
 
         (
             Self {
                 sessions: Mutex::new(SessionsInner { sessions: HashMap::new() }),
-                game: Game::new(&players),
+                game: Game::new(&players, cards),
                 accounts: players,
                 cmd_rx,
                 game_id,
-                lobbies,
+                backend_db,
                 ready_tx: Some(ready_tx),
             },
             GameServerHandle { cmd_tx },
@@ -164,12 +165,9 @@ impl GameServer {
                 self.notify_game_end(winner_id).await;
                 
                 // Reset ready status in the associated lobby
-                {
-                    let mut lobbies = self.lobbies.lock().unwrap();
-                    let maybe_lobby = lobbies.iter_mut().find(|(_, lobby)| lobby.game_id == Some(self.game_id));
-                    if let Some((_lobby_id, lobby)) = maybe_lobby {
-                        lobby.users_ready.clear();
-                    }
+                match self.backend_db.reset_users_ready_on_game_end(&self.game_id) {
+                    Err(e) => { log::error!("Error when resetting users ready status on game end: {}", e.to_string()) }
+                    _ => {}
                 }
                 return;
             }

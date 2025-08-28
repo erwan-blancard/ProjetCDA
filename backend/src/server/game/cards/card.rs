@@ -58,7 +58,7 @@ impl Display for Element {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Default)]
 pub enum TargetType {
     #[default]
     Single,     // no targets if only heal

@@ -21,47 +21,20 @@ export function getCookie(name) {
 
 
 /** @type {AccountDTO | null} */
-export async function login_guard(silent=true) {
-    if (silent) {
+export async function login_guard() {
+    try {
+        const account = await get_my_account();
+        if (account == null)
+            throw new Error("You are not logged in !")
 
-        try {
-            const account = await get_my_account();
-            if (account == null)
-                throw new Error("You are not logged in !")
-
-            APP_STATE.account = account;
-            return account;
-        } catch (error) {
-            console.log("Error: " + error.message);
-            window.location.href = "/login.html";
-            APP_STATE.account = account;
-            return null;
-        }
-
-    } else {
-
-        const msgFrame = displayMessageNoControls("Connecting...");
-
-        try {
-            if (!getCookie("token"))
-                throw new Error("You are not logged in !")
-
-            const account = await get_my_account();
-            msgFrame.remove();
-            APP_STATE.account = account;
-            return account;
-        } catch (error) {
-            msgFrame.remove();
-
-            displayPopup(error.message, "Error", "Go to Login Page", () => {
-                window.location.href = "/login.html";
-            })
-            APP_STATE.account = account;
-            return null;
-        }
-
+        APP_STATE.account = account;
+        return account;
+    } catch (error) {
+        console.log("Error: " + error.message);
+        window.location.href = "/login.html";
+        APP_STATE.account = null;
+        return null;
     }
-    
 }
 
 

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::server::game::cards::card::check_apply_attack_buffs;
 
@@ -10,7 +10,7 @@ use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
 use super::super::buffs::Buff;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum PlayersRollsDiceCardAction {
     /// All players are affected individually by the card's effects.
     AffectsAllPlayers,

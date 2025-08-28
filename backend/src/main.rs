@@ -9,6 +9,7 @@ use actix_web::middleware::Logger;
 use actix_cors::Cors;
 use diesel::PgConnection;
 use diesel::r2d2;
+use polodb_core::bson::doc;
 use server::handler;
 use server::server::GameServerHandle;
 use tokio::time::Instant;
@@ -27,6 +28,7 @@ mod database;
 mod server;
 mod email;
 mod docs;
+mod backend_db;
 
 type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
@@ -35,7 +37,6 @@ use uuid::Uuid;
 
 use crate::docs::ApiDoc;
 use crate::email::mailer::Mailer;
-use crate::routes::game::{Lobbies, Lobby, LobbyId};
 use crate::routes::sse::Broadcaster;
 
 
@@ -106,8 +107,10 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let website_url = std::env::var("WEBSITE_URL").expect("WEBSITE_URL env var not set !");
-
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not set !");
+
+    let backend_db = backend_db::create_backend_db().expect("Could not create PoloDB !");
+
     let manager = r2d2::ConnectionManager::<PgConnection>::new(database_url.clone());
     let pool = r2d2::Pool::builder()
         .build(manager)
@@ -115,7 +118,6 @@ async fn main() -> std::io::Result<()> {
 
     println!("Connected to database!");
 
-    let lobbies: Lobbies = Arc::new(Mutex::new(HashMap::<LobbyId, Lobby>::new()));
     let server_handlers: GameHandlers = Arc::new(Mutex::new(HashMap::<GameId, (GameJoinHandle, GameServerHandle)>::new()));
     let handlers_to_purge = server_handlers.clone();
 
@@ -139,7 +141,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(lobbies.clone()))
+            .app_data(web::Data::new(backend_db.clone()))
             .app_data(web::Data::new(server_handlers.clone()))
             .app_data(web::Data::from(Arc::clone(&broadcaster)))
             .app_data(web::Data::new(mailer.clone()))

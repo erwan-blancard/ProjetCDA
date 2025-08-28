@@ -7,10 +7,6 @@ services:
     ports:
       - '5432:5432'
     env_file: .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     restart: always
     
     volumes:
@@ -28,7 +24,6 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${POSTGRES_DB}
-      BACKEND_SECRET_KEY: ${BACKEND_SECRET_KEY}
     
     volumes:
       - ./data:/usr/src/backend/data

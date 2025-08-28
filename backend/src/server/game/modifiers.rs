@@ -1,5 +1,5 @@
 use std::{fmt::Debug};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::{cards::card::Element, eval::EvalOp, player::{Player, PlayerId}};
 
@@ -33,7 +33,7 @@ impl Clone for Box<dyn Modifier> {
 
 
 /// Enum to use to deserialize the different modifiers from cards.json
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub enum ModifierInfo {
     DiceRollModifier(DiceRollModifier),
@@ -59,7 +59,7 @@ impl ModifierInfo {
 fn default_cap() -> u32 { u32::MAX }
 
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub struct DiceRollModifier {
     pub dice_op: EvalOp,
@@ -85,7 +85,7 @@ impl Modifier for DiceRollModifier {
 }
 
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub struct HandSizeModifier {
     pub hand_size_op: EvalOp,
@@ -111,7 +111,7 @@ impl Modifier for HandSizeModifier {
 }
 
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub struct DiscardSizeModifier {
     pub discard_size_op: EvalOp,
@@ -138,7 +138,7 @@ impl Modifier for DiscardSizeModifier {
 
 
 /// Result value is based on the hand size times the dice roll (base_value is ignored)
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub struct HandAndDiceModifier {
     pub op: EvalOp,
@@ -168,7 +168,7 @@ impl Modifier for HandAndDiceModifier {
 
 
 /// Modifier tied to the number of cards matching a specific element in the hand of the player or its target
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub struct HandElementsCountModifier {
     pub element: Element,

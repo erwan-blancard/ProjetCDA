@@ -6,9 +6,9 @@ use serde::{Serialize, Deserialize};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use utoipa::ToSchema;
 
+use crate::backend_db::BackendDb;
 use crate::database::models::*;
 use crate::database::schema::*;
-use crate::routes::game::Lobbies;
 use crate::routes::game::LobbyId;
 
 use super::models::{Account, Friend};
@@ -266,11 +266,10 @@ pub struct FriendWithLobbyStatus {
 pub fn list_friends_with_status_for_account(
     conn: &mut PgConnection,
     account_id: i32,
-    lobbies: &Lobbies,
+    backend_db: &BackendDb,
 ) -> diesel::QueryResult<Vec<FriendWithLobbyStatus>> {
     use super::schema::friends::dsl::{friends, account1, account2, status, id as friend_id};
     use super::schema::accounts::dsl::{accounts, username, id as acc_id};
-    use crate::routes::game::get_lobby_id_for_user;
 
     let results = friends
         .filter(
@@ -284,15 +283,17 @@ pub fn list_friends_with_status_for_account(
         .select((friend_id, acc_id, username))
         .load::<(i32, i32, String)>(conn)?;
 
-    let lobbies = lobbies.lock().unwrap();
     let mut friends_with_status = Vec::new();
     for (id, friend_account_id, other_username) in results {
-        let lobby_id = get_lobby_id_for_user(friend_account_id, &lobbies);
+        let lobby = backend_db.get_lobby_for_user(friend_account_id);
+
+        let lobby_id = if let Some(lobby) = lobby { lobby.game_id } else { None };
+
         friends_with_status.push(FriendWithLobbyStatus {
             id,
             account_id: friend_account_id,
             username: other_username,
-            lobby_id,
+            lobby_id: if lobby_id.is_some() { Some(lobby_id.unwrap().to_string()) } else { None },
         });
     }
     Ok(friends_with_status)

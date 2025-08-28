@@ -3,7 +3,7 @@ use actix_web::{get, patch, post};
 use serde::Deserialize;
 use utoipa::ToSchema;
 
-use crate::routes::game::Lobbies;
+use crate::backend_db::BackendDb;
 use crate::routes::sse::Broadcaster;
 use crate::{database::actions, DbPool};
 use crate::database::actions::FriendWithLobbyStatus;
@@ -32,19 +32,18 @@ pub struct FriendRequestResponseJSON {
     tag = "Friends"
 )]
 #[get("/account/friends")]
-async fn get_friends_for_account(req: HttpRequest, pool: web::Data<DbPool>, lobbies: web::Data<Lobbies>) -> actix_web::Result<impl Responder> {
+async fn get_friends_for_account(req: HttpRequest, pool: web::Data<DbPool>, backend_db: web::Data<BackendDb>) -> actix_web::Result<impl Responder> {
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
                              .clone();
 
-    let lobbies = lobbies.clone();
     let requests = web::block(move || {
         // Obtaining a connection from the pool is also a potentially blocking operation.
         // So, it should be called within the `web::block` closure, as well.
         let mut conn = pool.get().expect("couldn't get db connection from pool");
 
         // actions::list_friends_for_account(&mut conn, account_id)
-        actions::list_friends_with_status_for_account(&mut conn, account_id, &lobbies)
+        actions::list_friends_with_status_for_account(&mut conn, account_id, backend_db.get_ref())
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
