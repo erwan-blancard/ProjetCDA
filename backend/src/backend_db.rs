@@ -1,15 +1,97 @@
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::{fs::File, io::BufReader, path::Path};
 
 use actix_web::error::{ErrorBadRequest, ErrorConflict, ErrorInternalServerError, ErrorNotFound};
-use polodb_core::bson::doc;
+use nanoid::nanoid;
+use polodb_core::bson::{doc, Document};
 use polodb_core::{Collection, CollectionT, Database};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::server::game::card_info::{CardInfo, CardInfoList};
-use crate::routes::game::{Lobby, LobbyId};
 use crate::server::game::cards::card::Card;
 use crate::server::game::game::MAX_PLAYERS;
 use crate::GameId;
+
+
+pub type LobbyId = String;
+
+pub const LOBBY_ID_LEN: usize = 7;
+pub const LOBBY_ID_CHARS: [char; 35] = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+];
+
+const LOBBY_PAGE_SIZE: usize = 20;
+
+
+#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
+pub struct Lobby {
+    pub id: String,
+    pub users: HashSet<i32>,
+    pub users_ready: HashSet<i32>,
+    /// if unlisted the lobby is not returned by /lobby/list route
+    pub unlisted: bool,
+    #[schema(value_type = Option<String>)]
+    pub game_id: Option<GameId>
+}
+
+impl Lobby {
+    pub fn new(id: String, unlisted: bool) -> Self {
+        Self { id, users: HashSet::new(), users_ready: HashSet::new(), unlisted, game_id: None }
+    }
+
+    pub fn all_users_ready(&self) -> bool {
+        self.users.iter()
+            .map(|id| self.users_ready.get(id).is_some())
+            .all(|is_some| is_some)
+    }
+
+    pub fn info(&self) -> LobbyInfo {
+        LobbyInfo {
+            id: self.id.clone(),
+            users: self.users.clone(),
+            users_ready: self.users_ready.clone(),
+            ingame: self.game_id.is_some()
+        }
+    }
+}
+
+
+/// Simplified struct for Lobby
+#[derive(Debug, Serialize, Clone, ToSchema)]
+pub struct LobbyInfo {
+    pub id: String,
+    pub users: HashSet<i32>,
+    pub users_ready: HashSet<i32>,
+    pub ingame: bool
+}
+
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LobbyPageList {
+    pub entries: Vec<LobbyInfo>,
+    pub page: usize,
+    pub page_count: usize,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct CreateLobbyInfo {
+    #[serde(default)]
+    pub unlisted: bool,
+}
+
+
+/// Struct used as a temporary fix to not being able
+/// to query elements in vectors with polodb.
+/// This is just used for indexing.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RUsersLobby {
+    pub user_id: i32,
+    pub lobby_id: LobbyId
+}
 
 
 #[derive(Clone)]
@@ -24,6 +106,50 @@ impl BackendDb {
         self.0.collection("lobbies")
     }
 
+    /// This is just used for indexing.
+    pub fn lobby_users_collection(&self) -> polodb_core::Collection<RUsersLobby> {
+        self.0.collection("lobby_users")
+    }
+
+    /// List lobbies, skipping unlisted ones
+    pub fn paginate_lobby_list(&self, page: usize) -> Result<LobbyPageList, polodb_core::Error> {
+        let lobbies = self.lobbies_collection();
+
+        // count lobbies only if they aren't unlisted
+        // output (print): [Document({"count": Int64(...)})]
+        let count = lobbies.aggregate(vec![
+            doc! {
+                "$match": { "unlisted": false }
+            },
+            doc! {
+                "$count": "count"
+            }
+        ]).run()?
+            .collect::<polodb_core::Result<Vec<Document>>>()?
+            [0].get_i64("count").unwrap();
+
+        println!("Count: {}", count);
+
+        // filter out unlisted lobbies
+        let entries = lobbies.find(doc! { "unlisted": false })
+            .skip((page * LOBBY_PAGE_SIZE) as u64)
+            .limit(LOBBY_PAGE_SIZE as u64)
+            .run()?
+            .collect::<polodb_core::Result<Vec<Lobby>>>()?;
+
+        for entry in entries.iter() {
+            println!("Entry: {:?}", entry);
+        }
+
+        let entries = entries.iter()
+            .map(Lobby::info)
+            .collect();
+
+        let page_count = (count as f64 / LOBBY_PAGE_SIZE as f64).ceil() as usize;
+
+        Ok(LobbyPageList { entries, page, page_count })
+    }
+
     pub fn collect_cards(&self) -> Result<Vec<Box<dyn Card>>, polodb_core::Error> {
         let cards_info = self.cards_collection()
             .find(doc! {})
@@ -36,10 +162,57 @@ impl BackendDb {
     }
 
     pub fn get_lobby_for_user(&self, account_id: i32) -> Option<Lobby> {
-        None
+        // neither of these filters seem to work with arrays...
+        // let filter = doc! { "users": account_id };
+        // let filter = doc! { "users": { "$in": account_id } };
+
+        // code to use if the filter works
+        // match self.lobbies_collection().find_one(filter) {
+        //     Ok(lobby) => lobby,
+        //     Err(_) => None
+        // }
+
+        // use collection "lobby_users" for indexing
+        if let Some(result) = self.lobby_users_collection()
+                .find_one(doc! { "user_id": &account_id })
+                .unwrap_or(None) {
+            let lobby_id = result.lobby_id;
+            let result = self.lobbies_collection()
+                .find_one(doc! { "id": &lobby_id });
+
+            result.unwrap_or(None)
+        } else { None }
+    }
+
+    pub fn create_lobby(&self, creator_id: i32, info: &CreateLobbyInfo) -> Result<Lobby, actix_web::Error> {
+        // check if user is already in a lobby
+        if self.get_lobby_for_user(creator_id).is_some() {
+            return Err(ErrorConflict("User is already in a lobby !"));
+        }
+
+        let txn = self.0.start_transaction().map_err(ErrorInternalServerError)?;
+
+        let lobbies = self.lobbies_collection();
+
+        let lobby_id = self.generate_lobby_id().map_err(ErrorInternalServerError)?;
+
+        let mut lobby = Lobby::new(lobby_id.to_owned(), info.unlisted);
+        lobby.users.insert(creator_id);
+
+        // insert in collection
+        lobbies.insert_one(&lobby).map_err(ErrorInternalServerError)?;
+
+        // update index
+        self.set_user_lobby_index(&lobby.id, creator_id).map_err(ErrorInternalServerError)?;
+
+        txn.commit().map_err(ErrorInternalServerError)?;
+
+        Ok(lobby)
     }
 
     pub fn join_lobby(&self, lobby_id: &LobbyId, account_id: i32) -> Result<Lobby, actix_web::Error> {
+        let txn = self.0.start_transaction().map_err(ErrorInternalServerError)?;
+
         let lobbies = self.lobbies_collection();
 
         if self.get_lobby_for_user(account_id).is_some() {
@@ -47,7 +220,7 @@ impl BackendDb {
         }
 
         if let Some(mut lobby) = lobbies.find_one(doc! { "id": lobby_id })
-                .map_err(|e| ErrorInternalServerError(e.to_string()))? {
+                .map_err(ErrorInternalServerError)? {
             if lobby.users.len() + 1 > MAX_PLAYERS {
                 return Err(ErrorBadRequest("Lobby is full !"));
             }
@@ -63,7 +236,12 @@ impl BackendDb {
                 "$set": doc! {
                     "users": lobby.users.iter().cloned().collect::<Vec<i32>>(),
                 }
-            }).map_err(|e| ErrorInternalServerError(e.to_string()))?;
+            }).map_err(ErrorInternalServerError)?;
+
+            // update index
+            self.set_user_lobby_index(&lobby.id, account_id).map_err(ErrorInternalServerError)?;
+
+            txn.commit().map_err(ErrorInternalServerError)?;
 
             Ok(lobby)
         } else {
@@ -72,10 +250,12 @@ impl BackendDb {
     }
 
     pub fn leave_lobby(&self, account_id: i32) -> Result<Lobby, actix_web::Error> {
+        let txn = self.0.start_transaction().map_err(ErrorInternalServerError)?;
+
         let lobbies = self.lobbies_collection();
 
         if let Some(mut lobby) = self.get_lobby_for_user(account_id) {
-            if lobby.all_users_ready() {
+            if lobby.all_users_ready() && lobby.users.len() > 1 {
                 return Err(ErrorConflict("Can't leave because all users are ready !"));
             }
 
@@ -87,7 +267,7 @@ impl BackendDb {
                 lobbies.delete_one(doc! {
                     "id": &lobby.id
                 })
-                .map_err(|e| ErrorInternalServerError(e.to_string()))?;
+                .map_err(ErrorInternalServerError)?;
 
             } else {
                 // update
@@ -99,8 +279,13 @@ impl BackendDb {
                         "users_ready": lobby.users_ready.iter().cloned().collect::<Vec<i32>>()
                     }
                 })
-                .map_err(|e| ErrorInternalServerError(e.to_string()))?;
+                .map_err(ErrorInternalServerError)?;
             }
+
+            // update index
+            self.unset_user_lobby_index(account_id).map_err(ErrorInternalServerError)?;
+
+            txn.commit().map_err(ErrorInternalServerError)?;
 
             Ok(lobby)
         } else {
@@ -131,7 +316,7 @@ impl BackendDb {
                 "$set": doc! {
                     "users_ready": lobby.users_ready.iter().cloned().collect::<Vec<i32>>(),
                 }
-            }).map_err(|e| ErrorInternalServerError(e.to_string()))?;
+            }).map_err(ErrorInternalServerError)?;
 
             Ok(lobby)
         } else {
@@ -145,10 +330,61 @@ impl BackendDb {
         lobbies.update_one(doc! {
             "game_id": game_id.to_string()
         }, doc! {
-            "users_ready": []
-        }).map_err(|e| ErrorInternalServerError(e.to_string()))?;
+            "$set": doc! {
+                "users_ready": []
+            }
+        }).map_err(ErrorInternalServerError)?;
 
         Ok(())
+    }
+
+    fn set_user_lobby_index(&self, lobby_id: &LobbyId, account_id: i32) -> Result<(), polodb_core::Error> {
+        let user_indexes = self.lobby_users_collection();
+
+        if let Some(_) = user_indexes
+                .find_one(doc! { "user_id": &account_id })? {
+            user_indexes.update_one(doc! {
+                "user_id": &account_id
+            }, doc! {
+                "lobby_id": &lobby_id
+            })?;
+        } else {
+            user_indexes.insert_one(RUsersLobby { user_id: account_id, lobby_id: lobby_id.to_owned() })?;
+        }
+
+        Ok(())
+    }
+
+    fn unset_user_lobby_index(&self, account_id: i32) -> Result<(), polodb_core::Error> {
+        let user_indexes = self.lobby_users_collection();
+
+        user_indexes.delete_one(doc! { "user_id": &account_id })?;
+
+        Ok(())
+    }
+
+    fn generate_lobby_id(&self) -> Result<LobbyId, String> {
+        let lobbies = self.lobbies_collection();
+
+        let mut i: usize = 0;
+        // attempt to generate new random id
+        // in case it was already generated, try again until limit is reached
+        // this is very unlikely but possible
+        while i < 10 {
+            let id = nanoid!(LOBBY_ID_LEN, &LOBBY_ID_CHARS);
+
+            let existing = lobbies.find_one(doc! {
+                "id": &id
+            }).map_err(|_| "Could not check existing lobbies")?;
+
+            if existing.is_none() {
+                return Ok(id);
+            }
+
+            i += 1;
+        }
+
+        Err("Unable to generate new lobby id !".to_string())
     }
 }
 

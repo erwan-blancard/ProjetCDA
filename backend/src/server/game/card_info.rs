@@ -1,7 +1,5 @@
-use std::{fs::File, io::BufReader, path::Path};
 use std::fmt;
 
-use lazy_static::lazy_static;
 use serde::{Deserializer, Serialize};
 use serde::{de::{SeqAccess, Visitor}, Deserialize};
 
@@ -14,13 +12,6 @@ use super::cards::multi_hit_card::MultiHitCard;
 use super::cards::pearth_card::PearthCard;
 use super::cards::players_rolls_dice_card::{PlayersRollsDiceCard, PlayersRollsDiceCardAction};
 use super::cards::target_both_card::TargetBothCard;
-
-
-// lazy_static! {
-//     pub static ref CARD_DATABASE: Vec<Box<dyn Card>> = {
-//         get_card_database()
-//     };
-// }
 
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -259,29 +250,3 @@ impl<'de> Deserialize<'de> for CardInfoList {
         deserializer.deserialize_seq(CardInfoVisitor)
     }
 }
-
-
-// pub fn get_card_database() -> Vec<Box<dyn Card>> {
-//     let path = std::env::var("CARDS_FILE_PATH").expect("CARDS_FILE_PATH not set !");
-
-//     if !Path::new(&path).exists() {
-//         panic!("JSON file for cards not found ({})", path);
-//     }
-
-//     let file = File::open(&path).expect("Could not open JSON file");
-//     let reader = BufReader::new(file);
-
-//     let cards_info: CardInfoList = serde_json::from_reader(reader).expect("Error reading JSON file");
-
-//     let mut deck: Vec<Box<dyn Card>> = Vec::new();
-
-//     for card_info in cards_info.0.iter() {
-//         deck.push(card_info.make_card());
-//     }
-
-//     for (i, card) in deck.iter().enumerate() {
-//         println!("Card {} : {:?}", i + 1, card);
-//     }
-
-//     deck
-// }

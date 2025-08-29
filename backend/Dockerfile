@@ -2,11 +2,15 @@ FROM rust:1.84.1
 
 WORKDIR /usr/src/backend
 
-COPY ./src ./src
-COPY ./migrations ./migrations
+# required for polodb
+RUN apt-get update
+RUN apt-get install clang -y
 
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./diesel.toml ./diesel.toml
+
+COPY ./migrations ./migrations
+COPY ./src ./src
 
 RUN cargo install --path .
 

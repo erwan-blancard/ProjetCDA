@@ -1,111 +1,20 @@
-use std::collections::HashSet;
-
-use actix_web::error::{ErrorConflict, ErrorInternalServerError, ErrorNotFound};
+use actix_web::error::{ErrorInternalServerError, ErrorNotFound};
 use actix_web::{web, Error, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web::{get, post, delete, patch};
-use nanoid::nanoid;
-use polodb_core::bson::{doc, Document};
-use polodb_core::{Collection, CollectionT};
+use polodb_core::bson::doc;
+use polodb_core::CollectionT;
 use tokio::spawn;
 use tokio::sync::oneshot;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 use utoipa::ToSchema;
 
 use crate::routes::sse::Broadcaster;
 use crate::server::dto::{GameSessionInfo, responses::PlayerProfile};
 use crate::server::server::GameServer;
-use crate::backend_db::BackendDb;
+use crate::backend_db::{BackendDb, CreateLobbyInfo, Lobby, LobbyId, LobbyInfo, LobbyPageList, LOBBY_ID_LEN};
 use crate::{GameHandlers, GameId};
 use crate::{database::actions, DbPool};
-
-
-pub const LOBBY_ID_LEN: usize = 7;
-pub const LOBBY_ID_CHARS: [char; 35] = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-];
-
-
-pub type LobbyId = String;
-
-
-pub fn generate_lobby_id(existing_lobbies: &Lobbies) -> Result<String, String> {
-    let mut i: usize = 0;
-    // attempt to generate new random id
-    // in case it was already generated, try again until limit is reached
-    // this is very unlikely but possible
-    while i < 10 {
-        let id = nanoid!(LOBBY_ID_LEN, &LOBBY_ID_CHARS);
-
-        let existing = existing_lobbies.find_one(doc! {
-            "id": &id
-        }).map_err(|_| "Could not check existing lobbies")?;
-
-        if existing.is_none() {
-            return Ok(id);
-        }
-
-        i += 1;
-    }
-
-    Err("Unable to generate new lobby id !".to_string())
-}
-
-
-/// Simplified struct for Lobby
-#[derive(Debug, Serialize, Clone, ToSchema)]
-pub struct LobbyInfo {
-    pub id: String,
-    pub users: HashSet<i32>,
-    pub users_ready: HashSet<i32>,
-    pub ingame: bool
-}
-
-
-#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
-pub struct Lobby {
-    pub id: String,
-    pub users: HashSet<i32>,
-    pub users_ready: HashSet<i32>,
-    /// if unlisted the lobby is not returned by /lobby/list route
-    pub unlisted: bool,
-    #[schema(value_type = Option<String>)]
-    pub game_id: Option<GameId>
-}
-
-impl Lobby {
-    pub fn new(id: String, unlisted: bool) -> Self {
-        Self { id, users: HashSet::new(), users_ready: HashSet::new(), unlisted, game_id: None }
-    }
-
-    pub fn all_users_ready(&self) -> bool {
-        self.users.iter()
-            .map(|id| self.users_ready.get(id).is_some())
-            .all(|is_some| is_some)
-    }
-
-    pub fn info(&self) -> LobbyInfo {
-        LobbyInfo {
-            id: self.id.clone(),
-            users: self.users.clone(),
-            users_ready: self.users_ready.clone(),
-            ingame: self.game_id.is_some()
-        }
-    }
-}
-
-pub type Lobbies = Collection<Lobby>;
-
-
-const LOBBY_PAGE_SIZE: usize = 20;
-
-
-#[derive(Serialize, Deserialize, Debug, ToSchema)]
-pub struct CreateLobbyInfo {
-    #[serde(default)]
-    pub unlisted: bool,
-}
 
 
 async fn create_game_session(
@@ -139,10 +48,10 @@ async fn create_game_session(
         .update_one(doc! {
                 "id": &lobby.id
             }, doc! {
-                "$set": {
+                "$set": doc! {
                     "game_id": game_id.to_string()
                 }
-            }).map_err(|e| ErrorInternalServerError(e.to_string()))?;
+            }).map_err(ErrorInternalServerError)?;
 
     // create server process
 
@@ -180,21 +89,8 @@ async fn create_lobby(
     let account_id: i32 = req.extensions().get::<i32>()
                              .unwrap()
                              .clone();
-    
-    let lobbies = backend_db.lobbies_collection();
-    
-    if backend_db.get_lobby_for_user(account_id).is_some() {
-        return Err(ErrorConflict("User is already in a lobby !"));
-    }
 
-    let lobby_id = generate_lobby_id(&lobbies)
-        .map_err(ErrorInternalServerError)?;
-
-    let mut lobby = Lobby::new(lobby_id.clone(), json.unlisted);
-    lobby.users.insert(account_id);
-
-    lobbies.insert_one(&lobby)
-        .map_err(|e| ErrorInternalServerError(e.to_string()))?;
+    let lobby = backend_db.create_lobby(account_id, &json.0)?;
     
     Ok(HttpResponse::Created().json(lobby))
 
@@ -228,13 +124,6 @@ async fn get_current_lobby(
 }
 
 
-#[derive(Debug, Serialize, ToSchema)]
-pub struct LobbyPageList {
-    pub entries: Vec<LobbyInfo>,
-    pub page: usize,
-    pub page_count: usize,
-}
-
 #[utoipa::path(
     get,
     path = "/lobby/list/{page}",
@@ -252,42 +141,10 @@ async fn list_lobbies(
     // page count starts at 0
     let (page,) = path.into_inner();
 
-    let page_list = list_lobby_page_list_from_db(&backend_db, page)
+    let page_list = backend_db.paginate_lobby_list(page)
         .map_err(|_| ErrorInternalServerError(format!("Could not list lobbies for page {}", page)))?;
 
     Ok(HttpResponse::Ok().json(page_list))
-}
-
-
-// TODO move to BackendDb struct ?
-pub fn list_lobby_page_list_from_db(backend_db: &web::Data<BackendDb>, page: usize) -> Result<LobbyPageList, polodb_core::Error> {
-    let lobbies = backend_db.lobbies_collection();
-
-    // count lobbies only if they aren't unlisted
-    // output (print): [Document({"count": Int64(...)})]
-    let count = lobbies.aggregate(vec![
-        doc! {
-            "$match": { "unlisted": false },
-            "$count": "count",
-        }
-    ]).run()?
-        .collect::<polodb_core::Result<Vec<Document>>>()?
-        [0].get_i64("count").unwrap();
-
-    // filter out unlisted lobbies
-    let entries = lobbies.find(doc! { "unlisted": false })
-        .skip((page * LOBBY_PAGE_SIZE) as u64)
-        .limit(LOBBY_PAGE_SIZE as u64)
-        .run()?
-        .collect::<polodb_core::Result<Vec<Lobby>>>()?;
-
-    let entries = entries.iter()
-        .map(Lobby::info)
-        .collect();
-
-    let page_count = (count as f64 / LOBBY_PAGE_SIZE as f64).ceil() as usize;
-
-    Ok(LobbyPageList { entries, page, page_count })
 }
 
 
@@ -313,7 +170,7 @@ async fn get_lobby_info(
     let lobbies = backend_db.lobbies_collection();
 
     if let Some(lobby) = lobbies.find_one(doc! { "id": &lobby_id })
-            .map_err(|e| ErrorInternalServerError(e.to_string()))? {
+            .map_err(ErrorInternalServerError)? {
         Ok(HttpResponse::Found().json(lobby.info()))
     } else {
         Err(ErrorNotFound(format!("No lobby with id {}", lobby_id)))
@@ -501,9 +358,7 @@ async fn get_current_game_session_info(
                              .clone();
     
 
-    log::info!("ROUTE /game/current");
     let game_handlers = game_handlers.lock().unwrap();
-    log::info!("ROUTE /game/current -> lock acquired");
 
     // convert to tokio stream to be able to use async filters
     // let handlers = tokio_stream::iter(game_handlers.values());
@@ -511,11 +366,8 @@ async fn get_current_game_session_info(
     let mut info: Option<GameSessionInfo> = None;
 
     for (game_id, (_, handler)) in game_handlers.iter() {
-        log::info!("ROUTE /game/current -> checking handler (closed: {})", handler.is_closed());
         if !handler.is_closed() {
-            log::info!("ROUTE /game/current -> handler is not closed");
             let players = handler.get_session_info().await;
-            log::info!("ROUTE /game/current -> players gathered");
 
             if players.iter().any(|prf| prf.id == account_id) {
                 info = Some(GameSessionInfo { game_id: *game_id, players });
@@ -523,8 +375,6 @@ async fn get_current_game_session_info(
             }
         }
     }
-
-    log::info!("ROUTE /game/current -> after info gathering");
 
     if let Some(info) = info {
         for prf in info.players.iter() {

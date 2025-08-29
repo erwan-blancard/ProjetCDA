@@ -15,7 +15,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use serde::Serialize;
 
 use crate::database::models::Friend;
-use crate::routes::game::Lobby;
+use crate::backend_db::Lobby;
 use crate::GameId;
 
 

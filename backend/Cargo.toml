@@ -24,7 +24,6 @@ actix-service = "2.0.3"
 futures = "0.3.31"
 actix-cors = "0.7.1"
 tokio = { version = "1.45.1", features = ["full"] }
-lazy_static = "1.5.0"
 reqwest = { version = "0.12.15", features = ["json"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 rand = "0.9.1"
@@ -43,5 +42,4 @@ nanoid = "0.4.0"
 utoipa = { version = "5.4.0", features = ["actix_extras", "chrono", "time", "openapi_extensions"] }
 utoipa-actix-web = "0.1.2"
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
-actix-files = "0.6.6"
 polodb_core = "5.1.4"

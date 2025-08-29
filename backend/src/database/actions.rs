@@ -9,7 +9,7 @@ use utoipa::ToSchema;
 use crate::backend_db::BackendDb;
 use crate::database::models::*;
 use crate::database::schema::*;
-use crate::routes::game::LobbyId;
+use crate::backend_db::LobbyId;
 
 use super::models::{Account, Friend};
 
@@ -287,13 +287,13 @@ pub fn list_friends_with_status_for_account(
     for (id, friend_account_id, other_username) in results {
         let lobby = backend_db.get_lobby_for_user(friend_account_id);
 
-        let lobby_id = if let Some(lobby) = lobby { lobby.game_id } else { None };
+        let lobby_id = if let Some(lobby) = lobby { Some(lobby.id) } else { None };
 
         friends_with_status.push(FriendWithLobbyStatus {
             id,
             account_id: friend_account_id,
             username: other_username,
-            lobby_id: if lobby_id.is_some() { Some(lobby_id.unwrap().to_string()) } else { None },
+            lobby_id,
         });
     }
     Ok(friends_with_status)
