@@ -29,6 +29,8 @@ pub enum ComplexEffect {
     DiscardNonFireCards,
     DiscardNonWaterCards,
     DrawFromOpponentDiscard,
+    TakeOpponentDiscardPile,
+    RecoverFoodCards,
 }
 
 impl<'de> Deserialize<'de> for ComplexEffect {
@@ -55,6 +57,8 @@ impl<'de> Deserialize<'de> for ComplexEffect {
                 Some("discard_non_fire_cards") => Ok(ComplexEffect::DiscardNonFireCards),
                 Some("discard_non_water_cards") => Ok(ComplexEffect::DiscardNonWaterCards),
                 Some("draw_from_opponent_discard") => Ok(ComplexEffect::DrawFromOpponentDiscard),
+                Some("take_opponent_discard_pile") => Ok(ComplexEffect::TakeOpponentDiscardPile),
+                Some("recover_food_cards") => Ok(ComplexEffect::RecoverFoodCards),
                 _ => Err(serde::de::Error::custom("Unknown effect type in object")),
             }
         } else {
@@ -193,82 +197,82 @@ impl Card for ComplexEffectCard {
         match &self.base {
             ComplexEffectBase::Basic(_) => {
                 // Logique pour BasicCard (comme avant)
-                let dice_roll = rand::random_range(0..6) + 1;
-                let mut dice_roll_used = false;
+        let dice_roll = rand::thread_rng().gen_range(1..=6);
+        let mut dice_roll_used = false;
                 
-                // Attaque
+        // Attaque
                 if self.get_attack() > 0 || self.get_attack_modifier().is_some() {
-                    for &target_index in &target_indices {
-                        let mut attack_action: PlayAction = PlayAction::new();
-                        let (player, target) = if player_index < target_index {
-                            let (left, right) = game.players.split_at_mut(target_index);
-                            (&mut left[player_index], &mut right[0])
-                        } else if player_index > target_index {
-                            let (left, right) = game.players.split_at_mut(player_index);
-                            (&mut right[0], &mut left[target_index])
-                        } else {
-                            return Err("Target is player !".to_string());
-                        };
-                        let (amount, dice_roll_val, player_dice_id) = {
+            for &target_index in &target_indices {
+                let mut attack_action: PlayAction = PlayAction::new();
+                let (player, target) = if player_index < target_index {
+                    let (left, right) = game.players.split_at_mut(target_index);
+                    (&mut left[player_index], &mut right[0])
+                } else if player_index > target_index {
+                    let (left, right) = game.players.split_at_mut(player_index);
+                    (&mut right[0], &mut left[target_index])
+                } else {
+                    return Err("Target is player !".to_string());
+                };
+                let (amount, dice_roll_val, player_dice_id) = {
                             if let Some(modifier) = self.get_attack_modifier() {
                                 modifier.compute(self.get_attack(), player, target, Some(dice_roll))
                             } else { (self.get_attack(), 0, -1) }
-                        };
-                        if !dice_roll_used && player_dice_id != -1 {
-                            attack_action.dice_roll = dice_roll_val;
-                            attack_action.player_dice_id = player_dice_id;
-                            dice_roll_used = true;
-                        }
+                };
+                if !dice_roll_used && player_dice_id != -1 {
+                    attack_action.dice_roll = dice_roll_val;
+                    attack_action.player_dice_id = player_dice_id;
+                    dice_roll_used = true;
+                }
                         let amount = check_apply_attack_buffs(amount, &player.buffs, self.get_element(), self.get_kind(), self.get_stars(), &mut buffs_used);
                         let action_target = target.damage(amount, self.get_damage_effect());
-                        attack_action.targets.push(action_target);
-                        info.actions.push(attack_action);
-                    }
-                }
+                attack_action.targets.push(action_target);
+                info.actions.push(attack_action);
+            }
+        }
                 
-                // Heal
+        // Heal
                 if self.get_heal() > 0 || self.get_heal_modifier().is_some() {
-                    let player = &mut game.players[player_index];
-                    let mut heal_action: PlayAction = PlayAction::new();
-                    let (amount, dice_roll_val, player_dice_id) = {
+            let player = &mut game.players[player_index];
+            let mut heal_action: PlayAction = PlayAction::new();
+            let (amount, dice_roll_val, player_dice_id) = {
                         if let Some(modifier) = self.get_heal_modifier() {
                             modifier.compute(self.get_heal(), player, player, Some(dice_roll))
                         } else { (self.get_heal(), 0, -1) }
-                    };
-                    if !dice_roll_used && player_dice_id != -1 {
-                        heal_action.dice_roll = dice_roll_val;
-                        heal_action.player_dice_id = player_dice_id;
-                        dice_roll_used = true;
-                    }
+            };
+            if !dice_roll_used && player_dice_id != -1 {
+                heal_action.dice_roll = dice_roll_val;
+                heal_action.player_dice_id = player_dice_id;
+                dice_roll_used = true;
+            }
                     let action_target = player.heal(amount, self.get_heal_effect());
-                    heal_action.targets.push(action_target);
-                    info.actions.push(heal_action);
-                }
+            heal_action.targets.push(action_target);
+            info.actions.push(heal_action);
+        }
                 
-                // Draw
+        // Draw
                 if self.get_draw() > 0 || self.get_draw_modifier().is_some() {
-                    let player = &mut game.players[player_index];
-                    let (amount, dice_roll_val, player_dice_id) = {
+            let player = &mut game.players[player_index];
+            let (amount, dice_roll_val, player_dice_id) = {
                         if let Some(modifier) = self.get_draw_modifier() {
                             modifier.compute(self.get_draw(), player, player, Some(dice_roll))
                         } else { (self.get_draw(), 0, -1) }
-                    };
-                    let drawn_cards = Game::give_from_pile(&mut game.pile, player, amount as usize);
-                    if drawn_cards.len() > 0 {
-                        let mut draw_action = PlayAction::new();
-                        if !dice_roll_used && player_dice_id != -1 {
-                            draw_action.dice_roll = dice_roll_val;
-                            draw_action.player_dice_id = player_dice_id;
-                            dice_roll_used = true;
-                        }
-                        draw_action.targets.push(ActionTarget {
-                            player_id: player.id,
-                            action: ActionType::Draw { cards: drawn_cards },
-                            effect: String::new()
-                        });
-                        info.actions.push(draw_action);
-                    }
+            };
+            let drawn_cards = Game::give_from_pile(&mut game.pile, player, amount as usize);
+            if drawn_cards.len() > 0 {
+                let mut draw_action = PlayAction::new();
+                if !dice_roll_used && player_dice_id != -1 {
+                    draw_action.dice_roll = dice_roll_val;
+                    draw_action.player_dice_id = player_dice_id;
+                    dice_roll_used = true;
                 }
+                draw_action.targets.push(ActionTarget {
+                    player_id: player.id,
+                    action: ActionType::Draw { cards: drawn_cards },
+                    effect: String::new()
+                });
+                info.actions.push(draw_action);
+            }
+        }
             },
             ComplexEffectBase::TargetBoth(_) => {
                 // Pour TargetBothCard, utiliser la logique de jeu de TargetBothCard
@@ -522,7 +526,7 @@ impl Card for ComplexEffectCard {
                         }
                     }
                 }
-                &ComplexEffect::Exchange => {
+                ComplexEffect::Exchange => {
                     // TODO: implémenter la mécanique d'échange si besoin
                     todo!("Effet Exchange non encore implémenté");
                 }
@@ -796,9 +800,99 @@ impl Card for ComplexEffectCard {
                         }
                     }
                 }
+                ComplexEffect::TakeOpponentDiscardPile => {
+                    for &target_index in &target_indices {
+                        // On utilise split_at_mut pour éviter le double borrow
+                        if target_index < player_index {
+                            let (left, right) = game.players.split_at_mut(player_index);
+                            let target = &mut left[target_index];
+                            let player = &mut right[0];
+                            transfer_discard_pile(target, player, target_index, player_index, &mut info);
+                        } else if target_index > player_index {
+                            let (left, right) = game.players.split_at_mut(target_index);
+                            let player = &mut left[player_index];
+                            let target = &mut right[0];
+                            transfer_discard_pile(target, player, target_index, player_index, &mut info);
+                        }
+                        // Si target_index == player_index, on ne fait rien (pas de sens)
+                    }
+                }
+                ComplexEffect::RecoverFoodCards => {
+                    // ÉTAPE 1: Scanner la défausse du lanceur
+                    let player = &mut game.players[player_index];
+                    let mut recovered_cards = Vec::new();
+                    let mut remaining_cards = Vec::new();
+                    
+                    // ÉTAPE 2: Vérifier les cartes aliment présentes
+                    while let Some(card) = player.discard_cards.pop() {
+                        if card.get_kind() == Kind::Food {
+                            recovered_cards.push(card);
+                        } else {
+                            remaining_cards.push(card);
+                        }
+                    }
+                    
+                    // ÉTAPE 3: Sélectionner (déjà fait dans l'étape 2)
+                    let recovered_count = recovered_cards.len();
+                    
+                    // ÉTAPE 4: Transférer les cartes de la défausse vers la main
+                    let recovered_card_ids: Vec<CardId> = recovered_cards.iter().map(|card| card.get_id()).collect();
+                    
+                    // Ajouter les cartes Aliment à la main du lanceur
+                    for card in recovered_cards {
+                        player.hand_cards.push(card);
+                    }
+                    
+                    // Remettre les cartes non-Aliment dans la défausse
+                    for card in remaining_cards {
+                        player.discard_cards.push(card);
+                    }
+                    
+                    // Générer l'action de récupération
+                    if recovered_count > 0 {
+                        let mut recover_action = PlayAction::new();
+                        recover_action.targets.push(ActionTarget {
+                            player_id: player_index as i32,
+                            action: ActionType::Draw { cards: recovered_card_ids },
+                            effect: "recover_food_cards".to_string(),
+                        });
+                        info.actions.push(recover_action);
+                        
+                        // Log pour debug
+                        println!("[RecoverFoodCards] Joueur {} a récupéré {} cartes aliment de sa défausse", 
+                                player_index, recovered_count);
+                    } else {
+                        println!("[RecoverFoodCards] Joueur {} n'avait aucune carte aliment dans sa défausse", 
+                                player_index);
+                    }
+                }
             }
         }
         Ok((info, buffs_used))
+    }
+}
+
+// Fonction helper pour transférer la défausse d'un joueur vers un autre
+fn transfer_discard_pile(
+    target: &mut Player, 
+    player: &mut Player, 
+    target_index: usize, 
+    player_index: usize, 
+    info: &mut PlayInfo
+) {
+    if !target.discard_cards.is_empty() {
+        // On transfère toutes les cartes de la défausse adverse vers la nôtre
+        while let Some(card) = target.discard_cards.pop() {
+            player.discard_cards.push(card);
+        }
+        // Action pour le transfert de la défausse adverse
+        let mut take_discard_action = PlayAction::new();
+        take_discard_action.targets.push(ActionTarget {
+            player_id: target_index as i32,
+            action: ActionType::Discard { cards: vec![] },
+            effect: "take_opponent_discard_pile".to_string(),
+        });
+        info.actions.push(take_discard_action);
     }
 }
 

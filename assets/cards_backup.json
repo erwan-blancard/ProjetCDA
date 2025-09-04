@@ -21,9 +21,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "give"
-      }
+      { "type": "give" }
     ]
   },
   {
@@ -93,14 +91,8 @@
     "desc": "Enlevez 10 points à votre adversaire. Lancez un dé. Enlevez le nombre indiqué par le dé à tous vos adversaires.",
     "type": "MultiActionCard",
     "actions": 2,
-    "attacks": [
-      10,
-      0
-    ],
-    "target_types": [
-      "Single",
-      "All"
-    ],
+    "attacks": [10, 0],
+    "target_types": ["Single", "All"],
     "attack_modifiers": [
       null,
       {
@@ -146,9 +138,7 @@
     "buffs": [
       {
         "type": "PlayAllCardsBuff",
-        "elements": [
-          "Air"
-        ]
+        "elements": ["Air"]
       }
     ],
     "note": "Complex effect: no simple modifier"
@@ -160,23 +150,23 @@
     "kind": "Spell",
     "desc": "Enlevez 2 points à votre adversaire. Enlevez 2 points à votre adversaire.",
     "type": "MultiHitCard",
-    "attacks": [
-      2,
-      2
-    ],
+    "attacks": [2, 2],
     "heal": 0,
     "draw": 0
   },
   {
-    "name": "Bille de feu",
-    "element": "Fire",
-    "stars": "Two",
+    "name": "Puisage",
+    "element": "Water",
+    "stars": "One",
     "kind": "Spell",
-    "desc": "Enlevez 3 points à votre adversaire.",
+    "desc": "Piochez une carte de la pile de défausse de votre adversaire.",
     "type": "BasicCard",
-    "attack": 3,
+    "attack": 0,
     "heal": 0,
-    "draw": 0
+    "draw": 0,
+    "complex_effects": [
+      { "type": "draw_from_opponent_discard" }
+    ]
   },
   {
     "name": "Bombe à eau",
@@ -224,9 +214,7 @@
     "draw": 0,
     "targets": "All",
     "complex_effects": [
-      {
-        "type": "discard_all_hands"
-      }
+      { "type": "discard_all_hands" }
     ]
   },
   {
@@ -301,9 +289,7 @@
         "type": "AttackBuff",
         "value": 2,
         "op": "Mul",
-        "elements": [
-          "Fire"
-        ]
+        "elements": ["Fire"]
       }
     ]
   },
@@ -318,11 +304,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "steal",
-        "count": 1,
-        "on_water_replay": true
-      }
+      { "type": "steal", "count": 1, "on_water_replay": true }
     ]
   },
   {
@@ -349,9 +331,7 @@
         "type": "AttackBuff",
         "value": 2,
         "op": "Mul",
-        "elements": [
-          "Air"
-        ]
+        "elements": ["Air"]
       }
     ]
   },
@@ -394,9 +374,7 @@
       {
         "type": "AttackBuff",
         "value": 10,
-        "elements": [
-          "Fire"
-        ],
+        "elements": ["Fire"],
         "lifetime": "UntilUsed"
       }
     ]
@@ -412,8 +390,8 @@
     "heal": 0,
     "draw": 0,
     "heal_modifier": {
-      "type": "HandAndDiceModifier",
-      "op": "Mul"
+        "type": "HandAndDiceModifier",
+        "op": "Mul"
     }
   },
   {
@@ -426,11 +404,7 @@
     "attack": 2,
     "heal": 0,
     "draw": 0,
-    "complex_effects": [
-      {
-        "type": "steal"
-      }
-    ]
+    "complex_effects": [ { "type": "steal" } ]
   },
   {
     "name": "Cyclone",
@@ -443,8 +417,8 @@
     "heal": 0,
     "draw": 0,
     "attack_modifier": {
-      "type": "HandAndDiceModifier",
-      "op": "Mul"
+        "type": "HandAndDiceModifier",
+        "op": "Mul"
     }
   },
   {
@@ -454,10 +428,7 @@
     "kind": "Weapon",
     "desc": "Enlevez 6 points à votre adversaire. Enlevez 6 points à votre adversaire.",
     "type": "MultiHitCard",
-    "attacks": [
-      6,
-      6
-    ],
+    "attacks": [6, 6],
     "heal": 0,
     "draw": 0
   },
@@ -526,9 +497,7 @@
         "type": "AttackBuff",
         "value": 2,
         "op": "Mul",
-        "elements": [
-          "Water"
-        ]
+        "elements": ["Water"]
       }
     ]
   },
@@ -540,14 +509,8 @@
     "desc": "Lancez un dé. Enlevez à votre adversaire autant de points que le nombre indiqué par le dé. Enlevez 3 points à tous les autres joueurs.",
     "type": "MultiActionCard",
     "actions": 2,
-    "targets": [
-      "Single",
-      "All"
-    ],
-    "attacks": [
-      0,
-      3
-    ],
+    "targets": ["Single", "All"],
+    "attacks": [0, 3],
     "attack_modifiers": [
       {
         "type": "DiceRollModifier",
@@ -579,8 +542,8 @@
     "heal": 0,
     "draw": 0,
     "attack_modifier": {
-      "type": "HandSizeModifier",
-      "hand_size_op": "Mul"
+        "type": "HandSizeModifier",
+        "hand_size_op": "Mul"
     }
   },
   {
@@ -594,9 +557,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "discard_fire_cards"
-      }
+      { "type": "discard_fire_cards" }
     ]
   },
   {
@@ -608,22 +569,10 @@
     "type": "MultiActionCard",
     "actions": 4,
     "attack_modifiers": [
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      }
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" },
+      { "type": "DiceRollModifier", "dice_op": "Add" }
     ],
     "note": "Not accurate but good enough"
   },
@@ -638,9 +587,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "discard_hand"
-      }
+      { "type": "discard_hand" }
     ]
   },
   {
@@ -654,13 +601,11 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "discard_non_fire_cards"
-      }
+      { "type": "discard_non_fire_cards" }
     ]
   },
   {
-    "name": "Feuraise",
+    "name": "Feurise",
     "element": "Fire",
     "stars": "One",
     "kind": "Food",
@@ -701,9 +646,7 @@
     "heal": 0,
     "draw": 1,
     "complex_effects": [
-      {
-        "type": "give"
-      }
+      { "type": "give" }
     ]
   },
   {
@@ -733,9 +676,7 @@
       {
         "type": "AttackBuff",
         "value": 7,
-        "elements": [
-          "Fire"
-        ],
+        "elements": ["Fire"],
         "lifetime": "UntilUsed"
       }
     ]
@@ -778,9 +719,7 @@
         "type": "AttackBuff",
         "value": 2,
         "op": "Mul",
-        "kinds": [
-          "Weapon"
-        ]
+        "kinds": ["Weapon"]
       }
     ],
     "note": "Complex effect: no simple modifier"
@@ -820,9 +759,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "discard_hand_and_attack"
-      }
+      { "type": "discard_hand_and_attack" }
     ]
   },
   {
@@ -837,9 +774,7 @@
     "draw": 0,
     "targets": "All",
     "complex_effects": [
-      {
-        "type": "discard_non_water_cards"
-      }
+      { "type": "discard_non_water_cards" }
     ]
   },
   {
@@ -911,12 +846,7 @@
     "kind": "Weapon",
     "desc": "Enlevez 4 points à votre adversaire. Enlevez 3 points à votre adversaire. Enlevez 2 points à votre adversaire. Enlevez 1 point à votre adversaire.",
     "type": "MultiHitCard",
-    "attacks": [
-      4,
-      3,
-      2,
-      1
-    ],
+    "attacks": [4, 3, 2, 1],
     "heal": 0,
     "draw": 0
   },
@@ -929,34 +859,13 @@
     "type": "MultiActionCard",
     "actions": 7,
     "heal_modifiers": [
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      },
-      {
-        "type": "DiceRollModifier",
-        "dice_op": "Add"
-      }
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"},
+      {"type": "DiceRollModifier", "dice_op": "Add"}
     ]
   },
   {
@@ -970,15 +879,12 @@
     "heal": 0,
     "draw": 0,
     "attack_modifier": {
-      "type": "HandSizeModifier",
-      "hand_size_op": "Mul",
-      "from_target": true
+        "type": "HandSizeModifier",
+        "hand_size_op": "Mul",
+        "from_target": true
     },
     "complex_effects": [
-      {
-        "type": "steal",
-        "count": 2
-      }
+      { "type": "steal", "count": 2 }
     ]
   },
   {
@@ -1021,9 +927,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "draw_from_opponent_discard"
-      }
+      { "type": "draw_from_opponent_discard" }
     ]
   },
   {
@@ -1044,11 +948,7 @@
     "kind": "Weapon",
     "desc": "Enlevez 4 points à votre adversaire. Enlevez 2 points à votre adversaire. Enlevez 1 point à votre adversaire.",
     "type": "MultiHitCard",
-    "attacks": [
-      4,
-      2,
-      1
-    ],
+    "attacks": [4, 2, 1],
     "heal": 0,
     "draw": 0
   },
@@ -1083,20 +983,9 @@
     "heal": 2,
     "draw": 0,
     "heal_modifier": {
-      "type": "DiscardSizeModifier",
-      "discard_size_op": "Mul"
+        "type": "DiscardSizeModifier",
+        "discard_size_op": "Mul"
     }
-  },
-  {
-    "name": "Poussière",
-    "element": "Earth",
-    "stars": "One",
-    "kind": "Spell",
-    "desc": "Enlevez 2 points à votre adversaire. Piochez une carte.",
-    "type": "BasicCard",
-    "attack": 2,
-    "heal": 0,
-    "draw": 1
   },
   {
     "name": "Râteau",
@@ -1109,9 +998,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "take_opponent_discard_pile"
-      }
+      { "type": "take_opponent_discard_pile" }
     ]
   },
   {
@@ -1140,11 +1027,7 @@
     "attack": 0,
     "heal": 0,
     "draw": 0,
-    "complex_effects": [
-      {
-        "type": "recover_food_cards"
-      }
-    ],
+    "complex_effects": [{"type": "recover_food_cards"}],
     "note": "Complex effect: no simple modifier"
   },
   {
@@ -1163,22 +1046,6 @@
     }
   },
   {
-    "name": "Puisage",
-    "element": "Water",
-    "stars": "One",
-    "kind": "Spell",
-    "desc": "Piochez une carte de la pile de défausse de votre adversaire.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "complex_effects": [
-      {
-        "type": "draw_from_opponent_discard"
-      }
-    ]
-  },
-  {
     "name": "Sarbacane",
     "element": "Air",
     "stars": "Three",
@@ -1188,11 +1055,7 @@
     "attack": 8,
     "heal": 0,
     "draw": 0,
-    "complex_effects": [
-      {
-        "type": "steal"
-      }
-    ]
+    "complex_effects": [ { "type": "steal" } ]
   },
   {
     "name": "Secousse",
@@ -1237,9 +1100,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "give"
-      }
+      { "type": "give" }
     ]
   },
   {
@@ -1249,10 +1110,7 @@
     "kind": "Weapon",
     "desc": "Enlevez 6 points à votre adversaire. Enlevez 3 points à votre adversaire.",
     "type": "MultiHitCard",
-    "attacks": [
-      6,
-      3
-    ],
+    "attacks": [6, 3],
     "heal": 0,
     "draw": 0
   },
@@ -1361,10 +1219,7 @@
     "heal": 0,
     "draw": 0,
     "complex_effects": [
-      {
-        "type": "steal",
-        "element": "Air"
-      }
+      { "type": "steal", "element": "Air" }
     ]
   },
   {

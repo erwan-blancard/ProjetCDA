@@ -35,23 +35,23 @@ enum CardVariant {
     PearthCard,
 }
 
-#[derive(Debug, Deserialize)]
-struct BasicCardData {
-    #[serde(default)]
-    attack: u32,
-    #[serde(default)]
-    heal: u32,
-    #[serde(default)]
-    draw: u32,
-    #[serde(default)]
-    attack_modifier: Option<ModifierInfo>,
-    #[serde(default)]
-    heal_modifier: Option<ModifierInfo>,
-    #[serde(default)]
-    draw_modifier: Option<ModifierInfo>,
-    #[serde(default)]
-    targets: TargetType,
-}
+    #[derive(Debug, Deserialize)]
+    struct BasicCardData {
+        #[serde(default)]
+        attack: u32,
+        #[serde(default)]
+        heal: u32,
+        #[serde(default)]
+        draw: u32,
+        #[serde(default)]
+        attack_modifier: Option<ModifierInfo>,
+        #[serde(default)]
+        heal_modifier: Option<ModifierInfo>,
+        #[serde(default)]
+        draw_modifier: Option<ModifierInfo>,
+        #[serde(default)]
+        targets: TargetType,
+    }
 
 
 #[derive(Debug, Deserialize)]
@@ -123,9 +123,10 @@ struct CardInfo {
 
 impl CardInfo {
     fn make_card(&self) -> Box<dyn Card> {
+        // Vérifier si la carte a des effets complexes
         if let Some(effects) = &self.complex_effects {
             if !effects.is_empty() {
-                // Si la carte a des complex_effects, on crée une ComplexEffectCard
+                // Créer une ComplexEffectCard
                 let base = match &self.variant {
                     CardVariant::BasicCard(data) => ComplexEffectBase::Basic(BasicCard {
                         id: self.id,
@@ -142,7 +143,7 @@ impl CardInfo {
                         draw_modifier: data.draw_modifier.clone().map(|m| m.into_boxed()),
                         target_type: data.targets,
                         buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
-                        complex_effects: None,
+                        complex_effects: None, // Pas d'effets complexes dans la carte de base
                     }),
                     CardVariant::TargetBothCard(data) => ComplexEffectBase::TargetBoth(TargetBothCard {
                         id: self.id,
@@ -160,14 +161,36 @@ impl CardInfo {
                         target_type: data.targets,
                         buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
                     }),
-                    _ => panic!("ComplexEffectCard only support BasicCard and TargetBothCard as base for l'instant"),
+                    _ => {
+                        // Pour les autres types, créer une BasicCard par défaut
+                        ComplexEffectBase::Basic(BasicCard {
+                            id: self.id,
+                            name: self.name.clone(),
+                            element: self.element,
+                            stars: self.stars,
+                            kind: self.kind,
+                            desc: self.desc.clone(),
+                            attack: 0,
+                            heal: 0,
+                            attack_modifier: None,
+                            heal_modifier: None,
+                            draw: 0,
+                            draw_modifier: None,
+                            target_type: TargetType::Single,
+                            buffs: self.buffs.clone().into_iter().map(|b| b.into_boxed()).collect(),
+                            complex_effects: None,
+                        })
+                    }
                 };
+                
                 return Box::new(ComplexEffectCard {
                     base,
                     complex_effects: effects.clone(),
                 });
             }
         }
+        
+        // Pas d'effets complexes, créer une carte normale
         match &self.variant {
             CardVariant::BasicCard(data) => {
                 Box::new(BasicCard {

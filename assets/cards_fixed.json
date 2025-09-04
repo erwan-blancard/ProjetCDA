@@ -168,17 +168,6 @@
     "draw": 0
   },
   {
-    "name": "Bille de feu",
-    "element": "Fire",
-    "stars": "Two",
-    "kind": "Spell",
-    "desc": "Enlevez 3 points à votre adversaire.",
-    "type": "BasicCard",
-    "attack": 3,
-    "heal": 0,
-    "draw": 0
-  },
-  {
     "name": "Bombe à eau",
     "element": "Water",
     "stars": "Three",
@@ -660,22 +649,6 @@
     ]
   },
   {
-    "name": "Feuraise",
-    "element": "Fire",
-    "stars": "One",
-    "kind": "Food",
-    "desc": "Lancez un dé. Récupérez le nombre indiqué par le dé. Si vous obtenez 5 ou 6, rejouez Feuraise.",
-    "type": "BasicCard",
-    "attack": 0,
-    "heal": 0,
-    "draw": 0,
-    "heal_modifier": {
-      "type": "DiceRollModifier",
-      "dice_op": "Add"
-    },
-    "note": "Complex effect: no simple modifier"
-  },
-  {
     "name": "Feurise",
     "element": "Fire",
     "stars": "Three",
@@ -1086,17 +1059,6 @@
       "type": "DiscardSizeModifier",
       "discard_size_op": "Mul"
     }
-  },
-  {
-    "name": "Poussière",
-    "element": "Earth",
-    "stars": "One",
-    "kind": "Spell",
-    "desc": "Enlevez 2 points à votre adversaire. Piochez une carte.",
-    "type": "BasicCard",
-    "attack": 2,
-    "heal": 0,
-    "draw": 1
   },
   {
     "name": "Râteau",

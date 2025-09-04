@@ -462,3 +462,60 @@ export class StealCardEvent extends GameEvent {
         this.onTimeout();
     }
 }
+
+export class TakeOpponentDiscardPileEvent extends GameEvent {
+    /**
+     * @param {PlayerObject} player - Le joueur qui récupère la défausse
+     * @param {PlayerObject} opponent - Le joueur dont la défausse est prise
+     */
+    constructor(player, opponent) {
+        super();
+        this.player = player;
+        this.opponent = opponent;
+        this.timeout = 1200; // Animation plus longue car on déplace tout le tas
+    }
+
+    async run() {
+        try {
+            // 1. Vérifier que l'adversaire a des cartes en défausse
+            if (this.opponent.discard_cards.length === 0) {
+                console.log("TakeOpponentDiscardPileEvent: défausse adverse vide");
+                this.onTimeout();
+                return;
+            }
+
+            // 2. Animation de déplacement de toutes les cartes de la défausse adverse
+            // vers la défausse du joueur actif
+            const cardsToMove = [...this.opponent.discard_cards];
+            
+            // 3. Animer chaque carte individuellement
+            for (let i = 0; i < cardsToMove.length; i++) {
+                const card = cardsToMove[i];
+                const targetPosition = this.player.getDiscardCardPosition();
+                
+                // Animation avec délai progressif pour créer un effet de cascade
+                await gsap.to(card.position, { 
+                    x: targetPosition.x, 
+                    y: targetPosition.y, 
+                    z: targetPosition.z, 
+                    duration: 0.6, 
+                    ease: "power1.inOut",
+                    delay: i * 0.1 // Délai progressif
+                });
+            }
+
+            // 4. Mettre à jour les défausses
+            // Les cartes sont déjà transférées côté backend, on met juste à jour l'affichage
+            this.player.updateDiscardCards(this.player.discard_cards);
+            this.opponent.updateDiscardCards([]); // Vider la défausse adverse
+            
+            // 5. Mettre à jour les positions des cartes de défausse
+            this.player.updateDiscardCardPositions();
+            this.opponent.updateDiscardCardPositions();
+
+        } catch (e) {
+            console.error("Erreur dans TakeOpponentDiscardPileEvent:", e);
+        }
+        this.onTimeout();
+    }
+}

@@ -1,5 +1,6 @@
 use std::{fmt::Debug};
 use serde::Deserialize;
+use rand::Rng;
 
 use super::{cards::card::Element, eval::EvalOp, player::{Player, PlayerId}};
 
@@ -75,7 +76,7 @@ pub struct DiceRollModifier {
 
 impl Modifier for DiceRollModifier {
     fn compute(&self, base_value: u32, player: &Player, target: &Player, dice_roll: Option<u8>) -> (u32, u8, PlayerId) {
-        let dice_roll: u8 = dice_roll.unwrap_or_else(|| rand::random_range(0..6) + 1);
+        let dice_roll: u8 = dice_roll.unwrap_or_else(|| rand::thread_rng().gen_range(1..=6));
         let mut result: u32 = self.dice_op.eval(base_value, dice_roll as u32);
         // cap result
         if result > self.cap { result = self.cap; }
@@ -102,8 +103,8 @@ pub struct DoubleDiceModifier {
 impl Modifier for DoubleDiceModifier {
     fn compute(&self, base_value: u32, player: &Player, target: &Player, _dice_roll: Option<u8>) -> (u32, u8, PlayerId) {
         // Generate two dice rolls
-        let dice_roll1: u8 = rand::random_range(0..6) + 1;
-        let dice_roll2: u8 = rand::random_range(0..6) + 1;
+        let dice_roll1: u8 = rand::thread_rng().gen_range(1..=6);
+        let dice_roll2: u8 = rand::thread_rng().gen_range(1..=6);
         
         // Multiply the two dice rolls
         let mut result: u32 = self.dice_op.eval(dice_roll1 as u32, dice_roll2 as u32);

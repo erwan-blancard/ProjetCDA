@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::fmt::{self, Debug, Display};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use rand::Rng;
 
 use crate::utils::clamp::clamp;
 
@@ -90,7 +91,7 @@ pub trait Card: Sync + Send + Debug + CardClone {
                     } else { target_indices }
                 };
 
-                let dice_roll = rand::random_range(0..6) + 1;   // dice roll value to give to modifiers
+                let dice_roll = rand::thread_rng().gen_range(1..=6);   // dice roll value to give to modifiers
                 let mut dice_roll_used = false;
 
                 self.handle_attack(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, &mut buffs_used)?;
@@ -127,8 +128,8 @@ pub trait Card: Sync + Send + Debug + CardClone {
                 // Special handling for DoubleDiceModifier (player_dice_id = -999)
                 if player_dice_id == -999 {
                     // Generate two dice rolls for display
-                    let dice_roll1: u8 = rand::random_range(0..6) + 1;
-                    let dice_roll2: u8 = rand::random_range(0..6) + 1;
+                    let dice_roll1: u8 = rand::thread_rng().gen_range(1..=6);
+                    let dice_roll2: u8 = rand::thread_rng().gen_range(1..=6);
                     
                     // First dice roll action
                     let mut action1: PlayAction = PlayAction::new();
@@ -187,8 +188,8 @@ pub trait Card: Sync + Send + Debug + CardClone {
             // Special handling for DoubleDiceModifier (player_dice_id = -999)
             if player_dice_id == -999 {
                 // Generate two dice rolls for display
-                let dice_roll1: u8 = rand::random_range(0..6) + 1;
-                let dice_roll2: u8 = rand::random_range(0..6) + 1;
+                                    let dice_roll1: u8 = rand::thread_rng().gen_range(1..=6);
+                    let dice_roll2: u8 = rand::thread_rng().gen_range(1..=6);
                 
                 // First dice roll action
                 let mut action1: PlayAction = PlayAction::new();

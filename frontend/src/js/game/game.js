@@ -8,7 +8,7 @@ import { degToRad } from 'three/src/math/MathUtils';
 import { CardTooltip } from '../ui/card_tooltip';
 import { ActionTypeDTO, ChangeTurnResponse, CollectDiscardCardsResponse, DrawCardResponse, GameEndResponse, GameStatusResponse, PlayCardResponse, PlayerBuffStatusResponse, SessionInfoResponse } from '../server/dto';
 import { EventMgr } from './events/event_mgr';
-import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent, StealCardEvent, DrawFromOpponentDiscardEvent } from './events/events';
+import { ChangeTurnEvent, DamagePlayerEvent, DrawCardEvent, GameUpdateEvent, HealPlayerEvent, PutCardInPile, PutCardForward, ThrowDiceEvent, CollectDiscardCardsEvent, GameEndEvent, DiscardCardEvent, PlayerBuffsUpdateEvent, StealCardEvent, DrawFromOpponentDiscardEvent, TakeOpponentDiscardPileEvent } from './events/events';
 import { displayPopup } from '../ui/popup';
 import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
@@ -351,6 +351,13 @@ export function onPlayCardEvent(data) {
                             target.action.cards[0]         // id de la carte récupérée
                         ));
                     }
+                    break;
+                case "take_opponent_discard_pile":
+                    // Récupération de toute la défausse adverse
+                    events.push(new TakeOpponentDiscardPileEvent(
+                        getPlayerById(data.player_id), // joueur qui récupère la défausse
+                        targetedPlayer                  // adversaire dont on prend la défausse
+                    ));
                     break;
                 default:
                     console.log(`No event defined for \"${target.action.type}\"`);

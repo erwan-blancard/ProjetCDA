@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use serde::Deserialize;
+use rand::Rng;
 
 use crate::server::game::cards::card::check_apply_attack_buffs;
 
@@ -137,7 +138,7 @@ impl Card for PlayersRollsDiceCard {
                 };
 
                 let mut dice_rolls: Vec<u32> = Vec::with_capacity(target_indices.len() + 1);
-                let dice_roll = rand::random_range(0..6) + 1;   // dice roll value to give to modifiers
+                let dice_roll = rand::thread_rng().gen_range(1..=6);   // dice roll value to give to modifiers
                 dice_rolls.push(dice_roll as u32);
 
                 // push action
@@ -151,7 +152,7 @@ impl Card for PlayersRollsDiceCard {
                 for &target_index in target_indices.iter() {
                     let mut dice_roll_action: PlayAction = PlayAction::new();
                     
-                    let dice_roll = rand::random_range(0..6) + 1;
+                    let dice_roll = rand::thread_rng().gen_range(1..=6);
                     dice_rolls.push(dice_roll as u32);
 
                     dice_roll_action.dice_roll = dice_roll;

@@ -9,6 +9,7 @@ use super::super::play_info::{PlayAction, PlayInfo, ActionTarget, ActionType};
 
 use crate::server::game::cards::card::check_apply_attack_buffs;
 use crate::utils::clamp::clamp;
+use rand::Rng;
 
 
 /// Card variant that runs the play logic as many times as necessary with different values
@@ -193,7 +194,7 @@ impl Card for MultiActionCard {
             let targets = target_indices.iter().map(|i| &game.players[*i]).collect();
             match self.validate_targets_for_action(action_idx, &targets) {
                 Ok(_) => {
-                    let dice_roll = rand::random_range(0..6) + 1;   // dice roll value to give to modifiers
+                    let dice_roll = rand::thread_rng().gen_range(1..=6);   // dice roll value to give to modifiers
                     let mut dice_roll_used = false;
 
                     self.handle_attack_for_action(&mut info, game, player_index, &target_indices, dice_roll, &mut dice_roll_used, action_idx, &mut buffs_used)?;
