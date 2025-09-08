@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Card, CardPile, getCardTexturePathById, OpponentCard } from './cards';
+import { Card, CardPile, getCardTexturePathById, OpponentCard, getCardElement } from './cards';
 import { ServerConnexion } from '../server/server_connection';
 import { Opponent, Player } from './player';
 import { BuffInfo, PlayerUI } from '../ui/player_ui';
@@ -14,6 +14,7 @@ import { CardKind, TargetType } from './collection';
 import { Dice } from '../ui/dice';
 import gsap, { Power1 } from 'gsap';
 import { BuffTooltip } from '../ui/buff_tooltip';
+import { AnimationManager } from './animations/AnimationManager.js';
 
 /** @type {THREE.Scene | null} */
 export let scene;
@@ -37,6 +38,9 @@ export let OPPONENTS = new Map();
 export let currentPlayerTurn;
 /** @type {number} */
 export let currentPlayerTurnEnd = 0;
+
+/** @type {AnimationManager | null} */
+export let animationManager;
 
 /** @type {HTMLElement | null} */
 let turnTimer = null;
@@ -165,6 +169,9 @@ export function initGame() {
     renderSceneView();
 
     eventMgr = new EventMgr();
+
+    // Initialize animation manager with camera for screen shake effects
+    animationManager = new AnimationManager(scene, camera);
 
     turnTimer = document.getElementById("turn-timer");
 
@@ -308,7 +315,9 @@ export function onPlayCardEvent(data) {
 
             switch (target.action.type) {
                 case ActionTypeDTO.ATTACK:
-                    events.push(new DamagePlayerEvent(targetedPlayer, target.action.amount));
+                    // Déterminer l'élément de la carte pour l'effet shake
+                    const cardElement = getCardElement(card_id);
+                    events.push(new DamagePlayerEvent(targetedPlayer, target.action.amount, cardElement, card_id));
                     break;
                 case ActionTypeDTO.HEAL:
                     events.push(new HealPlayerEvent(targetedPlayer, target.action.amount));

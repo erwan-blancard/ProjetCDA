@@ -33,6 +33,35 @@ export function getCardTexturePathById(id) {
     return `assets/randomi_recto_cards_page-${number}.jpg`;
 }
 
+/**
+ * Détermine l'élément d'une carte basé sur son ID
+ * @param {number} cardId - ID de la carte
+ * @returns {string} Nom de l'élément
+ */
+export function getCardElement(cardId) {
+    if (cardId < 0) return 'fire'; // Carte couverte par défaut
+    
+    // Mapping des éléments par plage d'ID
+    const elementRanges = {
+        'fire': [0, 19],      // Cartes 0-19 : Feu
+        'water': [20, 39],    // Cartes 20-39 : Eau
+        'earth': [40, 59],    // Cartes 40-59 : Terre
+        'air': [60, 79],      // Cartes 60-79 : Air
+        'lightning': [80, 99], // Cartes 80-99 : Foudre
+        'ice': [100, 119],    // Cartes 100-119 : Glace
+        'dark': [120, 139]    // Cartes 120-139 : Ténèbres
+    };
+    
+    for (const [element, range] of Object.entries(elementRanges)) {
+        if (cardId >= range[0] && cardId <= range[1]) {
+            return element;
+        }
+    }
+    
+    // Par défaut, retourner feu pour les cartes hors plage
+    return 'fire';
+}
+
 
 export class CardPile extends THREE.Mesh {
     static max_visible_cards = 25;
